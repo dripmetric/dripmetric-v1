@@ -157,6 +157,31 @@ importers:
         specifier: 2.9.1
         version: 2.9.1
 
+  packages/sim:
+    dependencies:
+      '@dripmetric/catalog':
+        specifier: workspace:*
+        version: link:../catalog
+      '@dripmetric/db':
+        specifier: workspace:*
+        version: link:../db
+    devDependencies:
+      '@dripmetric/ingest':
+        specifier: workspace:*
+        version: link:../ingest
+      '@types/pg':
+        specifier: 8.23.1
+        version: 8.23.1
+      pg:
+        specifier: 8.23.1
+        version: 8.23.1
+      tsx:
+        specifier: 4.23.15
+        version: 4.23.15
+      vitest:
+        specifier: 5.0.5
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@24.10.1)(vite@8.3.5(@types/node@24.10.1)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.9.1))
+
 packages:
 
   '@cacheable/memory@2.2.0':

@@ -303,3 +303,104 @@ running the moving parts by hand (`node scripts/check-licenses.mjs`, `npx vitest
 `npx eslint`) without ever running `pnpm verify` or `pnpm licenses` themselves. Those
 are the commands CI runs and the ones a founder would type, so they are the ones that
 have to be run. `pnpm verify` and every individual CI step are now confirmed green.
+
+---
+
+## M2 — Simulator
+
+### 2026-10-28 · The simulator records truth as it generates, not afterwards
+
+`packages/sim` plays synthetic people through three dummy products and writes down
+what will happen to each one **at the moment the decision is made**, not by inferring
+it from the events later. That is the whole difference between a simulator you can
+score an engine against and a pile of plausible-looking data: "what share of stalled
+users did leak detection catch?" is only answerable because something independent
+recorded that the stall was deliberate.
+
+Deterministic by seed (mulberry32, no `Math.random` anywhere) and on a virtual clock,
+so a 30-day journey generates in milliseconds and a 49-hour stall is a number rather
+than a wait. A person's stream is seeded from the run seed **and their index**, so
+adding users does not reshuffle the ones already there — otherwise growing a run would
+invalidate every number measured from a smaller one.
+
+Seven personas: the brief's four (converter, staller, intent-then-leaves,
+payer-gone-quiet) plus a tourist on a disposable address, a crawler and the founder's
+own team. The last three exist to prove the filters work rather than to be measured.
+
+### 2026-10-28 · The products send the founder's OWN event names
+
+Ledgerly sends `Invoice Sent`, Loomwork sends `Board Created`, Hookrelay sends
+`Webhook Delivered` — never `Core Action`. A test asserts the canonical name is
+_absent_. A product whose names were already canonical would never exercise the event
+dictionary or the Inbox, which is the thing most likely to be subtly wrong
+(brief section 7).
+
+### 2026-10-28 · Four real bugs the simulator found in M1's pipeline
+
+This is the return on building it, so each is recorded with what it would have cost.
+
+1. **Within-batch duplicates reported `ok` twice for one stored row.** Postgres's
+   `ON CONFLICT DO NOTHING` inserts the first of two identical keys in a statement
+   and skips the second silently, so `RETURNING` listed the hash once while both
+   pending rows matched it. The stored count was right; the per-message result lied,
+   and a client retrying inside one batch would never learn its retry was collapsed.
+   M1's exit check missed it because it replayed a batch as a _second request_.
+
+2. **The request user-agent beat the per-message one, so no crawler was ever
+   dropped.** `isBot(project.userAgent ?? message.context?.userAgent)` — and Node's
+   fetch sends `user-agent: node`, which is non-null, so the message's own context
+   was never consulted. This was not a simulator artefact: every server-side batch,
+   and every Segment, RudderStack or PostHog feed, carries one HTTP user-agent (the
+   forwarding server's) and a per-message context describing the real visitor. In a
+   300-person run, not one of the 12 crawlers was filtered. The precedence is now
+   stated once, in `visitorUserAgent`, and both call sites use it.
+
+3. **Internal users kept events that arrived before their `identify`.** A step event
+   and the identify shared a millisecond and the messageId tiebreak put the event
+   first, so it was stored before we knew the address was the founder's own.
+   `markInternal` now deletes what is already stored — events, step state, daily
+   counters, tracked-user rows — and drops rows queued earlier in the same batch.
+   "The founder's own team is out of every number" is now true rather than nearly
+   true, instead of relying on every future query remembering to filter on
+   `internal`.
+
+4. **Only the dozen mappable meanings were recognised as canonical.** So
+   `Onboarding Step Viewed`, `Email Verified` and `Trial Started` all landed in the
+   Inbox as unmapped, and step **entry** was lost for every step without a URL rule.
+   The score showed 67 of 126 known stalls. The dozen meanings are what a founder may
+   map their _own_ names onto; they were never meant to limit what we recognise when
+   a catalog name is sent verbatim ("named right at the source", brief section 7).
+   Checking the whole catalog took it to 126 of 126.
+
+A fifth was a crash rather than a silent wrong answer: `applyStepUpdates` sent one
+multi-row `INSERT … ON CONFLICT DO UPDATE` whose own rows collided, which Postgres
+refuses outright ("cannot affect row a second time"). A batch routinely carries two
+updates for one person and step, because entering a step and completing it are two
+events — 1,065 of 6,458 messages failed with a 500 the moment a funnel existed to
+match against. `mergeStepUpdates` now collapses a batch to one row per (person, step)
+with the same semantics the SQL had.
+
+### 2026-10-28 · The simulator configures the funnel, because otherwise nothing is visible
+
+`configureProject` applies the funnel, URL rules and the core-action mapping a founder
+confirms at setup. Step state only exists for steps that are declared, so a run
+against an unconfigured project records no stall at all — the score read 0 of 126
+until this existed. The real setup flow is M5; this is the same data applied directly,
+so M6 to M8 can be verified before that flow exists.
+
+### 2026-10-28 · Scoring runs in CI, not just in the CLI
+
+All three products score 100% on filtered / tracked / paid / stalls-visible /
+intent-signals-present, and still do with duplicates, late events and clock skew
+injected together — a fault is a tracking problem, not a user problem, so it must not
+cost a single known person. The per-engine shares the brief asks for ("what share of
+stalled users did leak detection catch") need the engines themselves and arrive with
+M7 and M8; what is scored now is whether ingest put the right people and events in
+the database at all, which is the floor those later scores stand on.
+
+### 2026-10-28 · `visits` counts distinct sessions within a batch only
+
+Counting a step's visits across batches needs the session recorded per
+(person, step), which is M6's job. Until then the merge counts distinct sessions in
+the batch, so a visitor returning in a later batch is **under**counted rather than
+over-counted. Noted because an undercount is the safer direction but still wrong.

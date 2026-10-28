@@ -22,7 +22,8 @@
     "test:watch": "vitest",
     "check:names": "node scripts/check-script-names.mjs",
     "check:licenses": "node scripts/check-licenses.mjs",
-    "verify": "pnpm check:names && pnpm lint && pnpm format:check && pnpm typecheck && pnpm check:licenses && pnpm test"
+    "verify": "pnpm check:names && pnpm lint && pnpm format:check && pnpm typecheck && pnpm check:licenses && pnpm test",
+    "sim": "pnpm --filter @dripmetric/sim sim"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

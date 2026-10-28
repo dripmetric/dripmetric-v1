@@ -120,6 +120,83 @@ export interface StepUpdate {
   kind: 'entered' | 'completed';
   at: Date;
   activeSeconds: number;
+  /** Which session it happened in, so `visits` can count distinct sessions. */
+  sessionId: number | null;
+}
+
+/** One row per (person, step), after merging everything the batch said about it. */
+interface MergedStepUpdate {
+  userKey: number;
+  stepId: number;
+  firstEnteredAt: Date | null;
+  firstCompletedAt: Date | null;
+  attempts: number;
+  visits: number;
+  activeSeconds: number;
+  lastEventAt: Date;
+}
+
+/**
+ * Merges a batch's step updates down to one row per (person, step).
+ *
+ * This is not an optimisation. A multi-row `INSERT … ON CONFLICT DO UPDATE` whose
+ * rows collide with each other fails outright — "ON CONFLICT DO UPDATE command
+ * cannot affect row a second time" — and a batch routinely carries two updates for
+ * the same person and step, because entering a step and completing it are two
+ * events. The simulator is what surfaced it: 1,065 of 6,458 messages failed with a
+ * 500 the moment a funnel existed to match against.
+ *
+ * The merge keeps the same semantics the SQL does, so the result is identical to
+ * applying the updates one at a time: earliest entered, earliest completed, attempts
+ * summed, active time summed, latest event time.
+ */
+export function mergeStepUpdates(updates: readonly StepUpdate[]): MergedStepUpdate[] {
+  const merged = new Map<string, MergedStepUpdate & { sessions: Set<number> }>();
+
+  for (const update of updates) {
+    const key = `${update.userKey}:${update.stepId}`;
+    let row = merged.get(key);
+
+    if (!row) {
+      row = {
+        userKey: update.userKey,
+        stepId: update.stepId,
+        firstEnteredAt: null,
+        firstCompletedAt: null,
+        attempts: 0,
+        visits: 0,
+        activeSeconds: 0,
+        lastEventAt: update.at,
+        sessions: new Set<number>(),
+      };
+      merged.set(key, row);
+    }
+
+    if (update.kind === 'entered') {
+      row.firstEnteredAt =
+        row.firstEnteredAt === null || update.at < row.firstEnteredAt
+          ? update.at
+          : row.firstEnteredAt;
+    } else {
+      row.firstCompletedAt =
+        row.firstCompletedAt === null || update.at < row.firstCompletedAt
+          ? update.at
+          : row.firstCompletedAt;
+    }
+
+    row.attempts += 1;
+    row.activeSeconds += Math.max(0, Math.round(update.activeSeconds));
+    if (update.at > row.lastEventAt) row.lastEventAt = update.at;
+    if (update.sessionId !== null) row.sessions.add(update.sessionId);
+  }
+
+  return [...merged.values()].map(({ sessions, ...row }) => ({
+    ...row,
+    // Distinct sessions in THIS batch. Counting them across batches needs the
+    // session stored per (person, step), which is M6's job; until then this
+    // undercounts a visitor who returns in a later batch rather than overcounting.
+    visits: Math.max(1, sessions.size),
+  }));
 }
 
 /**
@@ -132,30 +209,36 @@ export async function applyStepUpdates(
   db: ScopedDb,
   updates: readonly StepUpdate[],
 ): Promise<void> {
-  if (updates.length === 0) return;
+  const merged = mergeStepUpdates(updates);
+  if (merged.length === 0) return;
 
   await db.exec(
     `INSERT INTO user_step_state (
        project_id, user_key, step_id, first_entered_at, first_completed_at,
        attempts, visits, active_seconds, last_event_at
      )
-     SELECT $1, u.user_key, u.step_id, u.entered_at, u.completed_at, 1, 1, u.active_seconds, u.at
-       FROM unnest($2::int[], $3::int[], $4::timestamptz[], $5::timestamptz[], $6::int[], $7::timestamptz[])
-            AS u(user_key, step_id, entered_at, completed_at, active_seconds, at)
+     SELECT $1, u.user_key, u.step_id, u.entered_at, u.completed_at,
+            u.attempts, u.visits, u.active_seconds, u.at
+       FROM unnest($2::int[], $3::int[], $4::timestamptz[], $5::timestamptz[],
+                   $6::int[], $7::int[], $8::int[], $9::timestamptz[])
+            AS u(user_key, step_id, entered_at, completed_at, attempts, visits, active_seconds, at)
      ON CONFLICT (project_id, user_key, step_id) DO UPDATE SET
        first_entered_at   = LEAST(user_step_state.first_entered_at,   COALESCE(EXCLUDED.first_entered_at,   user_step_state.first_entered_at)),
        first_completed_at = LEAST(user_step_state.first_completed_at, COALESCE(EXCLUDED.first_completed_at, user_step_state.first_completed_at)),
-       attempts       = user_step_state.attempts + 1,
+       attempts       = user_step_state.attempts + EXCLUDED.attempts,
+       visits         = user_step_state.visits + EXCLUDED.visits,
        active_seconds = user_step_state.active_seconds + EXCLUDED.active_seconds,
        last_event_at  = GREATEST(user_step_state.last_event_at, EXCLUDED.last_event_at)`,
     [
       db.projectId,
-      updates.map((u) => u.userKey),
-      updates.map((u) => u.stepId),
-      updates.map((u) => (u.kind === 'entered' ? u.at : null)),
-      updates.map((u) => (u.kind === 'completed' ? u.at : null)),
-      updates.map((u) => Math.max(0, Math.round(u.activeSeconds))),
-      updates.map((u) => u.at),
+      merged.map((u) => u.userKey),
+      merged.map((u) => u.stepId),
+      merged.map((u) => u.firstEnteredAt),
+      merged.map((u) => u.firstCompletedAt),
+      merged.map((u) => u.attempts),
+      merged.map((u) => u.visits),
+      merged.map((u) => u.activeSeconds),
+      merged.map((u) => u.lastEventAt),
     ],
   );
 }

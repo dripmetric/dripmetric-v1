@@ -45,15 +45,21 @@ pg-boss wired up.
 
 111 tests, 11 files. `pnpm verify` green (script names, lint, format, typecheck, licences, tests) plus `pnpm build`.
 
-## M2 · Simulator and test harness — `[ ]`
+## M2 · Simulator and test harness — `[x]`
 
 **Build:** `packages/sim` (brief §10): three products, personas, fault injection, a virtual
 clock, a truth file, payload emitters for Segment, RudderStack and PostHog, and `pnpm sim`.
 
-- [ ] `pnpm sim --product selfserve --users 300 --seed 1` loads events through the HTTP API and writes a truth file
-- [ ] the same seed gives identical data
-- [ ] injected duplicates do not change counts
-- [ ] late events are accepted and flagged `late`
+- [x] `pnpm sim --product selfserve --users 300 --seed 1` loads events through the HTTP API and writes a truth file — 6,458 messages, 6,326 stored, 129 filtered, 0 errors
+- [x] the same seed gives identical data
+- [x] injected duplicates do not change counts
+- [x] late events are accepted and flagged `late`
+
+
+**Scored against truth, all three products at 100%** (filtered / tracked / paid /
+stalls visible / intent signals), and still 100% with duplicates, late events and
+clock skew injected together. Found and fixed five real bugs in M1's pipeline; see
+docs/decisions.md.
 
 ## M3 · Browser SDK — `[ ]`
 

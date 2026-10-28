@@ -66,6 +66,38 @@ describe('POST /v1/batch', () => {
     expect(rows[0]?.count).toBe('1');
   });
 
+  it('reports the second copy of a messageId IN THE SAME BATCH as a duplicate', async () => {
+    // Found by the simulator's `duplicates` fault. Postgres's ON CONFLICT DO NOTHING
+    // inserts the first of two identical keys in one statement and skips the second
+    // without saying so, so both pending rows used to look like they had landed and
+    // both were reported 'ok' for a single stored row. A client retrying inside one
+    // batch would never learn its retry had been collapsed.
+    const message = track('Core Action', { messageId: 'same-id-twice' });
+
+    const response = await postBatch([message, { ...message }], { key: fx.secretKey });
+    const body = reply(response);
+
+    expect(body.results.map((r) => r.status)).toEqual(['ok', 'duplicate']);
+    expect(body.accepted).toBe(1);
+
+    const rows = await withProject(fx.project.live.id, (db) =>
+      db.query<{ count: string }>('SELECT count(*) FROM events'),
+    );
+    expect(rows[0]?.count).toBe('1');
+  });
+
+  it('still counts a within-batch duplicate toward the daily volume guard', async () => {
+    // The cap is a guard against a runaway loop, so it has to count what ARRIVED.
+    // A retry storm is exactly the volume it exists to notice.
+    const message = track('Core Action', { messageId: 'retry-storm-1' });
+    await postBatch([message, { ...message }, { ...message }], { key: fx.secretKey });
+
+    const counts = await withProject(fx.project.live.id, (db) =>
+      db.query<{ total_count: number }>('SELECT total_count FROM daily_event_counts'),
+    );
+    expect(counts[0]?.total_count).toBe(3);
+  });
+
   it('returns 200 with one error when a single message in the batch is bad', async () => {
     const response = await postBatch(
       [
@@ -312,6 +344,79 @@ describe('POST /v1/batch', () => {
       },
     );
     expect(reply(later).results[0]?.code).toBe('internal_filtered');
+  });
+
+  it('removes what was already stored when an identify reveals an internal address', async () => {
+    // The identify can arrive AFTER an event from the same person: the simulator
+    // found a step event and an identify sharing a millisecond, with the id tiebreak
+    // putting the event first. Leaving the row means any query that forgets to
+    // filter on `internal` counts the founder's own team.
+    await withProject(fx.project.live.id, (db) =>
+      db.exec(
+        `UPDATE projects SET settings = settings || '{"internalDomains":["acme.com"]}'::jsonb WHERE id = $1`,
+        [fx.project.live.id],
+      ),
+    );
+
+    // An event lands first, under a person we know nothing about yet.
+    const first = await postBatch(
+      [track('Activated', { messageId: 'pre-1', userId: 'founder_2' })],
+      {
+        key: fx.secretKey,
+      },
+    );
+    expect(reply(first).results[0]?.status).toBe('ok');
+
+    const before = await withProject(fx.project.live.id, (db) =>
+      db.query<{ count: string }>('SELECT count(*) FROM events'),
+    );
+    expect(before[0]?.count).toBe('1');
+
+    // Then the identify reveals they are internal.
+    await postBatch(
+      [
+        {
+          type: 'identify',
+          messageId: 'pre-2',
+          userId: 'founder_2',
+          traits: { email: 'me@acme.com' },
+        },
+      ],
+      { key: fx.secretKey },
+    );
+
+    const after = await withProject(fx.project.live.id, (db) =>
+      db.query<{ count: string }>('SELECT count(*) FROM events'),
+    );
+    expect(after[0]?.count).toBe('0');
+  });
+
+  it('drops rows queued earlier in the SAME batch for an internal person', async () => {
+    await withProject(fx.project.live.id, (db) =>
+      db.exec(
+        `UPDATE projects SET settings = settings || '{"internalDomains":["acme.com"]}'::jsonb WHERE id = $1`,
+        [fx.project.live.id],
+      ),
+    );
+
+    await postBatch(
+      [
+        track('Activated', { messageId: 'batch-pre-1', userId: 'founder_3' }),
+        {
+          type: 'identify',
+          messageId: 'batch-pre-2',
+          userId: 'founder_3',
+          traits: { email: 'me@acme.com' },
+        },
+        track('Core Action', { messageId: 'batch-pre-3', userId: 'founder_3' }),
+      ],
+      { key: fx.secretKey },
+    );
+
+    const rows = await withProject(fx.project.live.id, (db) =>
+      db.query<{ count: string }>('SELECT count(*) FROM events'),
+    );
+    expect(rows[0]?.count).toBe('0');
   });
 
   it('takes the country from the platform header and never stores an IP', async () => {

@@ -5,6 +5,7 @@
     { "path": "./packages/db" },
     { "path": "./packages/engine" },
     { "path": "./packages/ingest" },
+    { "path": "./packages/sim" },
     { "path": "./apps/worker" }
   ]
 }

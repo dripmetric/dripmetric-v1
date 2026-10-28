@@ -1,0 +1,183 @@
+# Progress
+
+Milestones M0–M13 with their exit checks, copied from brief §11 on 2026-10-28. One
+milestone per go-ahead; M0 and M1 together first. Tick a box only when the check has
+actually been run and its command is in the milestone report.
+
+Legend: `[ ]` not done · `[~]` in progress · `[x]` done and proven
+
+---
+
+## M0 · Foundations — `[x]`
+
+**Build:** pnpm monorepo with the brief §4 layout; Docker Compose (Postgres, web, worker);
+CI; env validation; plain-SQL migrations for `projects`, `api_keys`, founder users and
+sessions (magic-link login: a console mailbox in dev, Resend in production), `plans` and
+`audit_log`; the scoped query helper; `can(project, feature)`; project creation with live
+and test keys; `packages/catalog` holding Appendix A as typed data and Zod schemas; the
+three living files.
+
+- [x] `pnpm install && pnpm dev` brings up web, worker and Postgres
+- [x] tests and CI are green
+- [x] sign in with a magic link, create a project, see its keys (secret shown once, stored hashed)
+- [x] a test proves a query without a project cannot be written
+- [x] a test counts every event name from Appendix A in the catalog package
+
+## M1 · Ingest API and storage — `[x]`
+
+**Build:** `packages/ingest` and the `/v1/batch` and `/v1/import` handlers (brief §5): all
+three key forms, limits, rate limits, dedupe, filters, enrichment, identity linking, the
+compact tables, `user_step_state`, the daily cap, tracked-user rows, the OpenAPI spec and
+pg-boss wired up.
+
+- [x] the curl example in Appendix B returns a per-message result
+- [x] replaying it changes nothing
+- [x] a batch with one bad message returns 200 with one error
+- [x] a 600 KB batch returns 413 and a 33 KB message errors alone
+- [x] a publishable key cannot set `stripeCustomerId` or send billing events
+- [x] a wrong origin is refused
+- [x] the rate limit returns 429 with `Retry-After`
+- [x] a `text/plain` beacon body is accepted
+- [x] on 200,000 generated events, measured bytes/event (indexes included) within 20% of 215
+- [x] a 1,000-event batch inserts quickly (events/second recorded)
+
+**→ STOP. First report sent. Wait for "continue".**
+
+## M2 · Simulator and test harness — `[ ]`
+
+**Build:** `packages/sim` (brief §10): three products, personas, fault injection, a virtual
+clock, a truth file, payload emitters for Segment, RudderStack and PostHog, and `pnpm sim`.
+
+- [ ] `pnpm sim --product selfserve --users 300 --seed 1` loads events through the HTTP API and writes a truth file
+- [ ] the same seed gives identical data
+- [ ] injected duplicates do not change counts
+- [ ] late events are accepted and flagged `late`
+
+## M3 · Browser SDK — `[ ]`
+
+**Build:** the browser library (brief §6), an example page and Playwright tests.
+
+- [ ] with consent required and not given: no network request, nothing stored (cookies, localStorage)
+- [ ] after `consent(true)` queued events flush with their original timestamps
+- [ ] an SPA route change produces Page Viewed and Page Left with active-time totals
+- [ ] hiding the tab sends a beacon
+- [ ] with the network blocked the page stays responsive and nothing throws
+- [ ] core ≤ 5 KB gzipped (CI fails above it); lazy chunk size reported
+
+## M4 · Server SDK — `[ ]`
+
+**Build:** the Node library, the serverless flush helper, the identity-verification helper,
+an example Next.js app.
+
+- [ ] the example sends Signed Up, Activated and Checkout Started
+- [ ] killing the ingest server mid-send neither throws nor blocks the request
+- [ ] the serverless helper delivers after the response
+- [ ] `stripeCustomerId` from a browser key refused, from the server accepted
+
+## M5 · Product model and event matching — `[ ]`
+
+**Build:** brief §7: URL rules, the event dictionary and Inbox, AI suggestions (a real call
+behind an env var, a mock in tests), the five product facts and setup logic, paid-event
+gating, the `recompute` job, the coverage checklist.
+
+- [ ] with renamed simulator events, the Inbox lists the unmapped names
+- [ ] the mock AI proposes mappings
+- [ ] confirming one recomputes history
+- [ ] the equivalence test passes (recompute == ingest with final mapping from the start)
+- [ ] the scrub test shows no email, phone, id or token reaches the model prompt
+
+## M6 · Funnel and timing engine — `[ ]`
+
+**Build:** brief §8.1 as pure functions, worker jobs, hourly and daily aggregates, segment
+splits, retention cohorts (week 1 and week 4), the API the dashboard reads.
+
+- [ ] per-step drop-off, medians and stuck counts match the truth file
+- [ ] fixtures cover stuck, cooling, rushed and the highlight logic
+- [ ] thresholds freeze when a change is marked
+- [ ] percentiles appear only after 20 completions
+
+## M7 · Intent engine — `[ ]`
+
+**Build:** brief §8.2: signals and points, decay, peak, bands, accounts, the calibration
+job, per-project config, "intent but didn't pay", a potential-revenue function that returns
+its formula text.
+
+- [ ] a fixture test for every row of the points table, incl. the fit cap, the clamp at 0, shared signals
+- [ ] a decay test
+- [ ] replaying events twice gives identical scores
+- [ ] the simulator report prints the share of "shows intent, then leaves" users who reached 60
+- [ ] the calibration job prints recall, precision and lift on a product with ≥ 30 payers
+
+## M8 · Leak engine — `[ ]`
+
+**Build:** brief §8.3: all nine leaks with episodes and resets, the sweeps, the adaptive
+stall, the quick-exit rate.
+
+- [ ] fixtures with time travel for every leak
+- [ ] each fires exactly once per episode; a returning user resets it
+- [ ] none fires for a paid, deleted or opted-out user
+- [ ] the collapse test fires only when ≥ 10 completions were expected and p < 0.01
+- [ ] the simulator report prints the share of stalled users caught
+- [ ] a leak lacking the paid event or trial dates shows as off, with its reason
+
+## M9 · Dashboard, masking and entitlements — `[ ]`
+
+**Build:** the eight modules from real data, the settings page, masked and full
+serializers, the reveal allowance, plain-language copy, empty/loading/error states.
+
+- [ ] all modules render from simulator data
+- [ ] the formula is visible beside potential revenue
+- [ ] an automated scan: a free project's API and HTML contain no seeded email, name or user id; a paid project shows them
+- [ ] the reveal allowance works (default 0)
+- [ ] screenshots of every module saved in `docs/screens/`
+
+## M10 · Alerts and reports — `[ ]`
+
+**Build:** Slack and Discord OAuth (against mocks), encrypted webhook URLs, the in-app feed
+with an unread badge, the 10-a-day cap, quiet hours, the daily digest, Resend system email,
+the weekly report, the Changes comparison, the dev preview route.
+
+- [ ] a Monday run produces the 8-part report with correct numbers
+- [ ] the 11th alert in a day goes only to the feed
+- [ ] an alert in quiet hours is held until morning
+- [ ] payloads match the samples in Slack's and Discord's docs
+- [ ] no alert for a paid, deleted or opted-out user
+- [ ] Changes says "too early to tell" under 100 users per window
+
+## M11 · Tracking health, retention and deletion — `[ ]`
+
+**Build:** tracking health (brief §9), nightly summaries and retention job, `deleteUser`,
+`DELETE /v1/users/:userId`, an audit-log view, the legal placeholder pages.
+
+- [ ] stopping a key event raises a tracking alert within one sweep, not a "users vanished" alert
+- [ ] shape drift and double-sent events are detected
+- [ ] the nightly job writes summaries first, deletes only raw events past the window
+- [ ] deleting a user removes every row for them (verified with SQL) and is audited
+
+## M12 · Source adapters, free audit and AI-coder prompt — `[ ]`
+
+**Build:** the Segment, RudderStack and PostHog adapters (signature checks, the PostHog
+allow-list, one source path per event), the email-only instant project flow with claim and
+expiry, first-event detection, the AI-coder prompt generator.
+
+- [ ] recorded Segment/RudderStack/PostHog payloads produce the same canonical events as native SDK sends
+- [ ] a bad signature gets 401
+- [ ] PostHog events outside the allow-list are dropped and counted
+- [ ] the double-path warning appears
+- [ ] the free-audit flow works end to end locally (email, keys, first event, dashboard)
+- [ ] generated samples for Node, Python (via Segment's library) and plain HTTP run against local ingest
+
+## M13 · Hardening, shadow copy and load test — `[ ]`
+
+**Build:** dual writes to a shadow Postgres through the worker queue; shadow reads that log
+differences and latency; a daily reconciliation job; scripts for the monthly drills; a load
+test; Sentry; structured logs; queue-health metrics; security headers; the licence check in
+CI; a runbook, a README, SDK docs and a measured size and cost report.
+
+**Guard:** in production mode, refuse to create live (non-test) projects unless
+`BACKUPS_CONFIRMED=true`.
+
+- [ ] reconciliation shows zero gaps on a simulator run
+- [ ] killing the shadow does not slow ingest
+- [ ] the load-test report names the ceiling
+- [ ] every drill has a written result in `docs/runbook.md`

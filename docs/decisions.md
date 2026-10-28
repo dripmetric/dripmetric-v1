@@ -547,3 +547,24 @@ against a live local API with a real secret key, all three arrive with
 type `work`. It also shows the two things easiest to get wrong: one module-level
 client (a per-request instance would hold a queue discarded before it ever flushes),
 and `init` inside an effect so it only ever runs in the browser.
+
+### 2026-10-28 · CI needed a Playwright browser; the dev container had one for free
+
+The e2e tests passed locally and failed on every GitHub runner with "Executable
+doesn't exist at ~/.cache/ms-playwright/…". The dev container ships Chromium and
+points Playwright at it with `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers` and
+`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`. A CI runner has neither, so Playwright looks in
+its default cache and finds nothing.
+
+CI now caches `~/.cache/ms-playwright` and runs
+`playwright install --with-deps chromium` before the e2e step. Chromium only — it is
+all `playwright.config.ts` launches. The cache key is the lockfile hash, so bumping
+Playwright invalidates it on its own rather than silently reusing a browser the new
+version cannot drive.
+
+**The lesson, which is not about Playwright:** I had written the config around a
+convenience of _this_ container and never asked whether the runner shared it. Anything
+the dev environment provides for free — a pre-installed browser, a running Docker
+daemon, a populated `.env` — is a thing CI has to be told about explicitly. I cannot
+verify this particular fix locally either, because installing a second browser here
+would not be found by the pinned Playwright, so the CI run is the proof.

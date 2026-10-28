@@ -74,15 +74,19 @@ docs/decisions.md.
 14 Playwright checks green (`pnpm test:e2e`). The published tarball is 25 files:
 `dist`, README, LICENSE, package.json — verified with `npm pack --dry-run`.
 
-## M4 · Server SDK — `[ ]`
+## M4 · Server SDK — `[x]`
 
 **Build:** the Node library, the serverless flush helper, the identity-verification helper,
 an example Next.js app.
 
-- [ ] the example sends Signed Up, Activated and Checkout Started
-- [ ] killing the ingest server mid-send neither throws nor blocks the request
-- [ ] the serverless helper delivers after the response
-- [ ] `stripeCustomerId` from a browser key refused, from the server accepted
+- [x] the example sends Signed Up, Activated and Checkout Started
+- [x] killing the ingest server mid-send neither throws nor blocks the request
+- [x] the serverless helper delivers after the response
+- [x] `stripeCustomerId` from a browser key refused, from the server accepted
+
+Also here, early, because the SDK's `deleteUser()` would otherwise be a method that
+404s: `DELETE /v1/users/:userId`, with its own tests. M11 adds the audit-log view and
+the retention job around it.
 
 ## M5 · Product model and event matching — `[ ]`
 

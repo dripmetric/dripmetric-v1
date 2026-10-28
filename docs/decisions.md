@@ -487,3 +487,63 @@ a stale transport's retry loop lands on the _current_ test's mock.
 not get it. The fallback only has to be unique — the server dedupes on the id and
 never parses it — so hand-building a v4 UUID from `getRandomValues` was ~200 bytes of
 a 5 KB budget spent on a shape nothing reads.
+
+---
+
+## M4 — Server SDK
+
+### 2026-10-28 · One `flushAfterResponse` helper serves Vercel and Next
+
+Verified today rather than recalled, because the brief flags these names as moving:
+`@vercel/functions` 3.10.4 exports `waitUntil: (promise: Promise<unknown>) => void`,
+and Next.js 16.4.3 exports `after<T>(task: Promise<T> | (() => T | Promise<T>))` from
+`next/server`. **Both accept a promise**, so one helper works for either:
+`flushAfterResponse(dm, waitUntil)` or `flushAfterResponse(dm, after)`.
+
+Neither package is a dependency. The founder already has whichever they use, and a
+zero-dependency library should not reach for either — a dynamic import of an optional
+peer is exactly the kind of thing that breaks in someone else's bundler. With no
+scheduler the flush is left running, which is correct on a long-running server, and a
+scheduler that throws (both platforms reject a call outside a request scope) is
+caught, because the flush is already in flight and nothing is lost.
+
+### 2026-10-28 · `deleteUser` awaits, unlike every other call
+
+Every other method returns immediately — that is the point of the queue. A deletion
+request is different: the caller needs an answer they can act on, usually because
+someone asked them to erase a person. It returns `{ deleted }`, treats an unknown user
+as already gone (404 → `deleted: false`) so a retry is safe, and throws on anything
+else.
+
+The endpoint was built here rather than waiting for M11, because an SDK method that
+404s is worse than no method. It deletes events, step state, counters, tracked-user
+rows, anonymous links, account memberships, sessions and the person, children before
+parents, and writes an audit row. **Daily summaries are deliberately untouched**: they
+hold counts, not personal data, and deleting them would silently rewrite the founder's
+own history. M11 adds the audit-log view and the retention job around it.
+
+### 2026-10-28 · A publishable key is refused by the constructor
+
+`new Dripmetric({ secretKey: 'pk_…' })` throws immediately. With a publishable key
+every server-only trait and billing event would be refused one at a time,
+server-side, with no obvious cause — a slow mystery instead of a fast error.
+`signUserId` refuses one too, for a sharper reason: a publishable key is public, so
+anyone could forge the signature and identity verification would be theatre.
+
+### 2026-10-28 · Fake timers do not mix with a real HTTP server
+
+The browser transport's retry test uses fake timers and is deterministic. The
+server's equivalent could not: `vi.runAllTimersAsync()` decides there are no timers
+left while a real round trip is still in flight, so the next backoff is never queued
+and the loop ends an attempt early — two requests where three were due. That test
+uses real time (250 ms then 500 ms, about a second total) and is honest about it.
+
+### 2026-10-28 · The example app is the exit check, not a demo
+
+`examples/next-app` sends `Signed Up`, `Activated` and `Checkout Started` from server
+routes with `flushAfterResponse(dm, after)`, and identifies from the browser. Run
+against a live local API with a real secret key, all three arrive with
+`source = server`, their canonical names mapped, and the email stored encrypted with
+type `work`. It also shows the two things easiest to get wrong: one module-level
+client (a per-request instance would hold a queue discarded before it ever flushes),
+and `init` inside an effect so it only ever runs in the browser.

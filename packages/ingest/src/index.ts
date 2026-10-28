@@ -6,6 +6,7 @@
  * service when it needs to (brief section 4).
  */
 export { handleBatch, corsHeaders } from './handler.js';
+export { deleteUser } from './delete-user.js';
 export type { EnqueueFollowUps, HandleBatchOptions } from './handler.js';
 export { IngestError } from './errors.js';
 export type { IngestRequest, IngestResponse, PreparedMessage } from './types.js';

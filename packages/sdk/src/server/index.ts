@@ -1,10 +1,17 @@
 /**
  * `dripmetric/server` — the Node library (brief section 6).
  *
- * The full implementation, the serverless flush helper and the identity-verification
- * helper land at M4. The entry point exists now so the package's `exports` map is
- * complete and the build produces both halves.
+ * ```js
+ * import { Dripmetric } from 'dripmetric/server';
+ *
+ * const dm = new Dripmetric({ secretKey: process.env.DRIPMETRIC_SECRET_KEY });
+ * dm.track(user.id, 'Signed Up', { method: 'google' });
+ * ```
+ *
+ * Send `Signed Up`, `Activated`, `Checkout Started` and billing events from here
+ * rather than the browser: ad blockers and a declined consent banner cannot stop
+ * them, and they are the events every number depends on.
  */
-export { Dripmetric } from './client.js';
+export { Dripmetric, flushAfterResponse } from './client.js';
 export type { ServerOptions } from './client.js';
 export { signUserId } from './signing.js';

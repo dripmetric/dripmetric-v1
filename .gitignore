@@ -18,3 +18,6 @@ apps/web/next-env.d.ts
 
 # Simulator output: generated data, never committed.
 .sim/
+
+# Build metadata, regenerated on every SDK build.
+packages/sdk/size-report.json

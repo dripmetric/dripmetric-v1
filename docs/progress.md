@@ -60,16 +60,19 @@ stalls visible / intent signals), and still 100% with duplicates, late events an
 clock skew injected together. Found and fixed five real bugs in M1's pipeline; see
 docs/decisions.md.
 
-## M3 · Browser SDK — `[ ]`
+## M3 · Browser SDK — `[x]`
 
 **Build:** the browser library (brief §6), an example page and Playwright tests.
 
-- [ ] with consent required and not given: no network request, nothing stored (cookies, localStorage)
-- [ ] after `consent(true)` queued events flush with their original timestamps
-- [ ] an SPA route change produces Page Viewed and Page Left with active-time totals
-- [ ] hiding the tab sends a beacon
-- [ ] with the network blocked the page stays responsive and nothing throws
-- [ ] core ≤ 5 KB gzipped (CI fails above it); lazy chunk size reported
+- [x] with consent required and not given: no network request, nothing stored (cookies, localStorage)
+- [x] after `consent(true)` queued events flush with their original timestamps
+- [x] an SPA route change produces Page Viewed and Page Left with active-time totals
+- [x] hiding the tab sends a beacon
+- [x] with the network blocked the page stays responsive and nothing throws
+- [x] core ≤ 5 KB gzipped (CI fails above it); lazy chunk size reported — **core 5,018 B**, lazy chunk 1,556 B, script tag 6,488 B
+
+14 Playwright checks green (`pnpm test:e2e`). The published tarball is 25 files:
+`dist`, README, LICENSE, package.json — verified with `npm pack --dry-run`.
 
 ## M4 · Server SDK — `[ ]`
 

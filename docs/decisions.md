@@ -404,3 +404,86 @@ Counting a step's visits across batches needs the session recorded per
 (person, step), which is M6's job. Until then the merge counts distinct sessions in
 the batch, so a visitor returning in a later batch is **under**counted rather than
 over-counted. Noted because an undercount is the safer direction but still wrong.
+
+---
+
+## M3 — Browser SDK
+
+### 2026-10-28 · The SDK does not import the catalog; a test keeps it honest
+
+The catalog carries Zod schemas and 76 event definitions. Importing it into a bundle
+with a 5 KB gzipped budget is not possible, so the twelve names the SDK sends are
+string literals in `packages/sdk/src/shared/types.ts`. That trade needs a guard: a
+typo in one of those literals would reach a founder's dashboard as an event that can
+never be mapped, sitting in their Inbox forever looking like one of their own. So the
+catalog is a **devDependency** of the SDK, used by one test that reads those literals
+out of the source and asserts each is a real catalog name. `files: ["dist"]` keeps it
+out of the tarball; `npm pack --dry-run` confirms 25 files, all `dist`, README,
+LICENSE and package.json.
+
+### 2026-10-28 · `PAGE_LEFT` is its own constant, because objects do not tree-shake
+
+esbuild cannot tree-shake an object's properties, so importing `AUTO_EVENTS` for the
+one name the core sends pulled all twelve strings into the bundle. The core now
+imports `PAGE_LEFT` on its own and the object stays for the lazy chunk. Worth ~90
+bytes gzipped, which mattered.
+
+### 2026-10-28 · The lazy chunk is its own entry point, not an esbuild split chunk
+
+`splitting: true` hoisted the shared constants into a chunk that `index.js` imports
+**statically**, so the core actually cost `index.js` plus that chunk — 5,422 B against
+a 5,120 B budget — while the size report measured only `index.js` at 5,009 and passed.
+The budget was being enforced against a number that was not the download size.
+
+The lazy module is now marked external in the core build and built as its own
+self-contained entry. It duplicates a few hundred bytes of constants and makes the
+core exactly what a browser downloads for `import 'dripmetric/browser'`. The build
+also refuses to measure a core that contains any static import, so this cannot come
+back quietly.
+
+Final: **core 5,018 B gzipped** (budget 5,120), lazy chunk 1,556 B, script-tag build
+6,488 B, server 1,091 B.
+
+### 2026-10-28 · Slow Page moved to the lazy chunk, where the brief had it all along
+
+Reporting load speed from the core was wrong twice over: brief Appendix A makes
+Slow Page a **key-pages-only** event alongside forms and clicks, and putting the
+Performance API in the core is what pushed the bundle 33 bytes over budget. The
+budget check is what surfaced the misreading.
+
+### 2026-10-28 · A stale `.tsbuildinfo` silently skipped the declaration emit
+
+`tsc -p tsconfig.build.json` printed nothing, emitted nothing and exited 0. The
+incremental build info outlived `rm -rf dist`, so tsc believed its output was current
+— and the package would have shipped with `exports.types` pointing at files that did
+not exist. A declaration-only emit takes under a second, so `incremental` is off.
+
+### 2026-10-28 · Interaction capture retries when settings arrive
+
+Playwright found this one. Settings (which pages are key pages) are fetched
+asynchronously, and `init()` sends the first page view immediately, so `isKeyPage()`
+was always false the first time it was asked. On the landing page — often the only
+page in a session — forms, clicks and speed capture never started at all. The settings
+response now re-attempts the load.
+
+### 2026-10-28 · The transport will not start a second send while one is in flight
+
+A retry loop runs for seconds, and the 2-second flush timer fired inside it and queued
+another attempt behind the first. Wasted work, and the cause of a flaky test. There is
+now a `sending` guard, and `schedule()` does not set a timer while a send is running.
+
+### 2026-10-28 · The retry tests use fake timers
+
+Even with that guard the retry test stayed flaky: it counts attempts, and the backoff
+is real time (500 ms then 1 s, both jittered) racing a real 2-second timer. It saw
+three requests alone and four in the suite. `vi.useFakeTimers()` plus
+`runAllTimersAsync()` removes the race and takes seconds off the suite. Transports made
+by a test are also disposed in `afterEach`, because `fetch` is resolved at call time:
+a stale transport's retry loop lands on the _current_ test's mock.
+
+### 2026-10-28 · The id fallback does not build a real UUID
+
+`crypto.randomUUID` needs a secure context, so a founder testing on plain http does
+not get it. The fallback only has to be unique — the server dedupes on the id and
+never parses it — so hand-building a v4 UUID from `getRandomValues` was ~200 bytes of
+a 5 KB budget spent on a shape nothing reads.

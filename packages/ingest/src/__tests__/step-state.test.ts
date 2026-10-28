@@ -3,7 +3,9 @@ import {
   EMPTY_FUNNEL,
   matchSteps,
   matchesPattern,
+  mergeStepUpdates,
   type FunnelConfig,
+  type StepUpdate,
 } from '../pipeline/step-state.js';
 
 /**
@@ -77,5 +79,96 @@ describe('URL rule patterns', () => {
     // '.' in a pattern must mean a literal dot, not "any character".
     expect(matchesPattern('/aXjson', '/a.json')).toBe(false);
     expect(matchesPattern('/a.json', '/a.json')).toBe(true);
+  });
+});
+
+describe('merging a batch\u2019s step updates', () => {
+  const at = (iso: string) => new Date(iso);
+  const update = (over: Partial<StepUpdate> = {}): StepUpdate => ({
+    userKey: 1,
+    stepId: 2,
+    kind: 'entered',
+    at: at('2026-06-01T10:00:00Z'),
+    activeSeconds: 0,
+    sessionId: 100,
+    ...over,
+  });
+
+  /*
+   * This merge is not an optimisation. A multi-row INSERT ... ON CONFLICT DO UPDATE
+   * whose own rows collide fails outright - "cannot affect row a second time" - and
+   * a batch routinely carries two updates for one person and step, because entering
+   * a step and completing it are two events. The simulator found it: 1,065 of 6,458
+   * messages failed with a 500 the moment a funnel existed to match against.
+   */
+  it('collapses two updates for the same person and step into one row', () => {
+    const merged = mergeStepUpdates([
+      update({ kind: 'entered', at: at('2026-06-01T10:00:00Z') }),
+      update({ kind: 'completed', at: at('2026-06-01T10:05:00Z') }),
+    ]);
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0]?.firstEnteredAt?.toISOString()).toBe('2026-06-01T10:00:00.000Z');
+    expect(merged[0]?.firstCompletedAt?.toISOString()).toBe('2026-06-01T10:05:00.000Z');
+    expect(merged[0]?.attempts).toBe(2);
+  });
+
+  it('keeps the EARLIEST of each time, whatever order they arrive in', () => {
+    // Order-insensitive is the whole design: a late event must not overwrite a
+    // newer state (brief section 5).
+    const forwards = mergeStepUpdates([
+      update({ kind: 'entered', at: at('2026-06-01T10:00:00Z') }),
+      update({ kind: 'entered', at: at('2026-06-01T12:00:00Z') }),
+    ]);
+    const backwards = mergeStepUpdates([
+      update({ kind: 'entered', at: at('2026-06-01T12:00:00Z') }),
+      update({ kind: 'entered', at: at('2026-06-01T10:00:00Z') }),
+    ]);
+
+    expect(forwards[0]?.firstEnteredAt?.toISOString()).toBe('2026-06-01T10:00:00.000Z');
+    expect(backwards[0]?.firstEnteredAt?.toISOString()).toBe('2026-06-01T10:00:00.000Z');
+  });
+
+  it('keeps the LATEST event time', () => {
+    const merged = mergeStepUpdates([
+      update({ at: at('2026-06-01T10:00:00Z') }),
+      update({ at: at('2026-06-01T12:00:00Z') }),
+    ]);
+    expect(merged[0]?.lastEventAt.toISOString()).toBe('2026-06-01T12:00:00.000Z');
+  });
+
+  it('sums active time rather than taking the last value', () => {
+    const merged = mergeStepUpdates([
+      update({ activeSeconds: 30 }),
+      update({ activeSeconds: 45 }),
+      update({ activeSeconds: 0 }),
+    ]);
+    expect(merged[0]?.activeSeconds).toBe(75);
+  });
+
+  it('counts distinct sessions as visits, never fewer than one', () => {
+    const twoSessions = mergeStepUpdates([
+      update({ sessionId: 100 }),
+      update({ sessionId: 100 }),
+      update({ sessionId: 200 }),
+    ]);
+    expect(twoSessions[0]?.visits).toBe(2);
+
+    // A server event has no session of its own, and still counts as a visit.
+    const noSession = mergeStepUpdates([update({ sessionId: null })]);
+    expect(noSession[0]?.visits).toBe(1);
+  });
+
+  it('keeps different people and different steps apart', () => {
+    const merged = mergeStepUpdates([
+      update({ userKey: 1, stepId: 2 }),
+      update({ userKey: 1, stepId: 3 }),
+      update({ userKey: 2, stepId: 2 }),
+    ]);
+    expect(merged).toHaveLength(3);
+  });
+
+  it('returns nothing for an empty batch, so no statement is sent', () => {
+    expect(mergeStepUpdates([])).toEqual([]);
   });
 });

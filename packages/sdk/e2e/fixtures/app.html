@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ledgerly</title>
+  </head>
+  <body>
+    <h1>Ledgerly</h1>
+    <nav>
+      <button id="go-pricing">Pricing</button>
+      <button id="go-settings">Settings</button>
+      <button id="go-back">Back</button>
+    </nav>
+    <form id="signup" name="signup">
+      <input name="email" type="email" required />
+      <input name="company" type="text" />
+      <button type="submit">Create account</button>
+    </form>
+    <button id="dead">Does nothing</button>
+    <div id="log"></div>
+
+    <script type="module">
+      import * as dripmetric from '/dist/browser/index.js';
+
+      // The page exposes the library so a test can drive it.
+      window.dm = dripmetric;
+
+      const options = Object.fromEntries(new URLSearchParams(location.search));
+      dripmetric.init(options.key ?? 'pk_test_e2e', {
+        requireConsent: options.requireConsent !== 'false',
+        host: location.origin,
+        debug: true,
+        marketingHosts: [location.hostname],
+      });
+
+      // A single-page-app router: pushState only, no reload.
+      document.getElementById('go-pricing').onclick = () => history.pushState({}, '', '/pricing');
+      document.getElementById('go-settings').onclick = () =>
+        history.pushState({}, '', '/settings/99123');
+      document.getElementById('go-back').onclick = () => history.back();
+      document.getElementById('signup').onsubmit = (e) => e.preventDefault();
+    </script>
+  </body>
+</html>

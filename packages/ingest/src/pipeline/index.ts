@@ -8,7 +8,7 @@ import {
 } from '@dripmetric/catalog';
 import type { ScopedDb } from '@dripmetric/db';
 import type { PreparedMessage } from '../types.js';
-import { isBot } from '../enrich/user-agent.js';
+import { isBot, visitorUserAgent } from '../enrich/user-agent.js';
 import { emailDomain, looksLikeEmail } from '../enrich/email.js';
 import { normalisePath } from '../enrich/paths.js';
 import { newNameCache, resolveNameId, resolvePathId, type NameCache } from './names.js';
@@ -16,6 +16,7 @@ import {
   addAccountMember,
   applyTraits,
   linkAnonymousToUser,
+  markInternal,
   resolveAccount,
   resolveAnonKey,
   resolveUserKey,
@@ -143,7 +144,7 @@ export async function prepareForWrite(
   });
 
   // --- Step 4: drop bots, internal users and anyone opted out ------------------
-  if (isBot(project.userAgent ?? message.context?.userAgent)) {
+  if (isBot(visitorUserAgent(message.context?.userAgent, project.userAgent))) {
     return filtered('bot_filtered', 'This looks like a crawler, so it is not counted.');
   }
 
@@ -195,16 +196,20 @@ export async function prepareForWrite(
     // The founder's own team, by domain or by address (brief section 5, step 4).
     const email = traits['email'];
     if (looksLikeEmail(email) && isInternal(email, project)) {
-      await db.exec(
-        'UPDATE end_users SET internal = true WHERE project_id = $1 AND user_key = $2',
-        [db.projectId, userKey],
-      );
+      // Also removes anything already stored for them: an event can arrive BEFORE
+      // the identify that reveals who they are (see markInternal).
+      await markInternal(db, userKey);
       state.users.set(message.userId!, {
         userKey,
         internal: true,
         optedOut: false,
         deleted: false,
       });
+
+      // Rows queued earlier in THIS batch for the same person must not be written.
+      for (let i = state.pending.length - 1; i >= 0; i--) {
+        if (state.pending[i]?.write.userKey === userKey) state.pending.splice(i, 1);
+      }
       return filtered('internal_filtered', 'This address is on your internal list.');
     }
 
@@ -307,6 +312,7 @@ export async function prepareForWrite(
         kind: match.kind,
         at: prepared.occurredAt,
         activeSeconds,
+        sessionId,
       });
     }
 
@@ -350,9 +356,28 @@ export async function flushBatch(
   await writeCounters(db, state, project);
   if (state.pending.length === 0) return [];
 
+  /*
+   * Within-batch duplicates are settled BEFORE the insert.
+   *
+   * `ON CONFLICT DO NOTHING` inserts the first of two identical keys in a statement
+   * and skips the second without saying so, so RETURNING lists the hash once while
+   * both pending entries match it — and both would be reported 'ok' for a single
+   * stored row. A client retrying inside one batch would never learn its retry had
+   * been collapsed. The simulator's `duplicates` fault is what caught this.
+   */
+  const firstOccurrence = new Map<string, number>();
+  const withinBatchDuplicates = new Set<number>();
+  for (const [index, entry] of state.pending.entries()) {
+    const seen = firstOccurrence.get(entry.write.messageHash);
+    if (seen === undefined) firstOccurrence.set(entry.write.messageHash, index);
+    else withinBatchDuplicates.add(index);
+  }
+
+  const unique = state.pending.filter((_, index) => !withinBatchDuplicates.has(index));
+
   const inserted = await writeEvents(
     db,
-    state.pending.map((p) => p.write),
+    unique.map((p) => p.write),
   );
 
   // Page Left reports running totals, so a second message for the same page view
@@ -372,14 +397,15 @@ export async function flushBatch(
   // an attempt count.
   await applyStepUpdates(
     db,
-    state.pending.filter(landed).flatMap((p) => p.steps),
+    unique.filter(landed).flatMap((p) => p.steps),
   );
 
-  return state.pending.map((p) => ({
+  return state.pending.map((p, index) => ({
     index: p.index,
-    result: landed(p)
-      ? { messageId: p.messageId, status: 'ok' as const, code: 'ok' as const }
-      : { messageId: p.messageId, status: 'duplicate' as const, code: 'duplicate' as const },
+    result:
+      !withinBatchDuplicates.has(index) && landed(p)
+        ? { messageId: p.messageId, status: 'ok' as const, code: 'ok' as const }
+        : { messageId: p.messageId, status: 'duplicate' as const, code: 'duplicate' as const },
   }));
 }
 

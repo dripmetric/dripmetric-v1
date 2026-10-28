@@ -1,0 +1,65 @@
+{
+  "name": "dripmetric",
+  "version": "2.0.0",
+  "description": "See where revenue leaks between a visitor's first visit and their first payment.",
+  "license": "MIT",
+  "author": "Dripmetric",
+  "homepage": "https://dripmetric.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harshit110927/dripmetric-v1.git"
+  },
+  "bugs": {
+    "url": "https://github.com/harshit110927/dripmetric-v1/issues"
+  },
+  "keywords": [
+    "analytics",
+    "saas",
+    "funnel",
+    "conversion",
+    "churn",
+    "product-analytics"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    "./browser": {
+      "types": "./dist/browser/index.d.ts",
+      "import": "./dist/browser/index.js",
+      "require": "./dist/browser/index.cjs"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js",
+      "require": "./dist/server/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "size": "node build.mjs --size-only",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@dripmetric/catalog": "workspace:*",
+    "@playwright/test": "1.63.0",
+    "@types/node": "24.10.1",
+    "esbuild": "0.28.2",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

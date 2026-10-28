@@ -45,36 +45,48 @@ pg-boss wired up.
 
 111 tests, 11 files. `pnpm verify` green (script names, lint, format, typecheck, licences, tests) plus `pnpm build`.
 
-## M2 · Simulator and test harness — `[ ]`
+## M2 · Simulator and test harness — `[x]`
 
 **Build:** `packages/sim` (brief §10): three products, personas, fault injection, a virtual
 clock, a truth file, payload emitters for Segment, RudderStack and PostHog, and `pnpm sim`.
 
-- [ ] `pnpm sim --product selfserve --users 300 --seed 1` loads events through the HTTP API and writes a truth file
-- [ ] the same seed gives identical data
-- [ ] injected duplicates do not change counts
-- [ ] late events are accepted and flagged `late`
+- [x] `pnpm sim --product selfserve --users 300 --seed 1` loads events through the HTTP API and writes a truth file — 6,458 messages, 6,326 stored, 129 filtered, 0 errors
+- [x] the same seed gives identical data
+- [x] injected duplicates do not change counts
+- [x] late events are accepted and flagged `late`
 
-## M3 · Browser SDK — `[ ]`
+**Scored against truth, all three products at 100%** (filtered / tracked / paid /
+stalls visible / intent signals), and still 100% with duplicates, late events and
+clock skew injected together. Found and fixed five real bugs in M1's pipeline; see
+docs/decisions.md.
+
+## M3 · Browser SDK — `[x]`
 
 **Build:** the browser library (brief §6), an example page and Playwright tests.
 
-- [ ] with consent required and not given: no network request, nothing stored (cookies, localStorage)
-- [ ] after `consent(true)` queued events flush with their original timestamps
-- [ ] an SPA route change produces Page Viewed and Page Left with active-time totals
-- [ ] hiding the tab sends a beacon
-- [ ] with the network blocked the page stays responsive and nothing throws
-- [ ] core ≤ 5 KB gzipped (CI fails above it); lazy chunk size reported
+- [x] with consent required and not given: no network request, nothing stored (cookies, localStorage)
+- [x] after `consent(true)` queued events flush with their original timestamps
+- [x] an SPA route change produces Page Viewed and Page Left with active-time totals
+- [x] hiding the tab sends a beacon
+- [x] with the network blocked the page stays responsive and nothing throws
+- [x] core ≤ 5 KB gzipped (CI fails above it); lazy chunk size reported — **core 5,018 B**, lazy chunk 1,556 B, script tag 6,488 B
 
-## M4 · Server SDK — `[ ]`
+14 Playwright checks green (`pnpm test:e2e`). The published tarball is 25 files:
+`dist`, README, LICENSE, package.json — verified with `npm pack --dry-run`.
+
+## M4 · Server SDK — `[x]`
 
 **Build:** the Node library, the serverless flush helper, the identity-verification helper,
 an example Next.js app.
 
-- [ ] the example sends Signed Up, Activated and Checkout Started
-- [ ] killing the ingest server mid-send neither throws nor blocks the request
-- [ ] the serverless helper delivers after the response
-- [ ] `stripeCustomerId` from a browser key refused, from the server accepted
+- [x] the example sends Signed Up, Activated and Checkout Started
+- [x] killing the ingest server mid-send neither throws nor blocks the request
+- [x] the serverless helper delivers after the response
+- [x] `stripeCustomerId` from a browser key refused, from the server accepted
+
+Also here, early, because the SDK's `deleteUser()` would otherwise be a method that
+404s: `DELETE /v1/users/:userId`, with its own tests. M11 adds the audit-log view and
+the retention job around it.
 
 ## M5 · Product model and event matching — `[ ]`
 

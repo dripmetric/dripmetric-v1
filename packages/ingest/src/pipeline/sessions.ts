@@ -1,5 +1,5 @@
 import type { ScopedDb } from '@dripmetric/db';
-import { parseUserAgent } from '../enrich/user-agent.js';
+import { parseUserAgent, visitorUserAgent } from '../enrich/user-agent.js';
 import { normalisePath, referrerDomain, screenBucket } from '../enrich/paths.js';
 import type { MessageContextInput } from '@dripmetric/catalog';
 
@@ -36,7 +36,10 @@ export async function ensureSession(db: ScopedDb, args: EnsureSessionArgs): Prom
   const landing = page.path ?? page.url;
   const normalised = landing ? normalisePath(landing + (page.search ?? '')) : null;
 
-  const ua = parseUserAgent(context.userAgent ?? args.request.userAgent, context.userAgentData);
+  const ua = parseUserAgent(
+    visitorUserAgent(context.userAgent, args.request.userAgent),
+    context.userAgentData,
+  );
   const campaign = context.campaign ?? {};
 
   const row = await db.one<{ id: number }>(

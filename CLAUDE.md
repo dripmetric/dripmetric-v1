@@ -17,8 +17,13 @@ Paid adds _who_, _why_ and _what to do_. Stripe, nudges and recovery are later l
    Commit at least once per milestone.
 3. **Dev only.** Local Postgres in Docker. No production credentials. `.env` is ignored,
    `.env.example` is committed. Tests mock Anthropic, Resend, Slack and Discord.
-4. **Done means proven.** Exit checks pass, CI green, commands shown. Prove a command
-   by running THAT command, not its moving parts: `pnpm verify`, not the steps inside it.
+4. **Done means proven.** Exit checks pass, CI green, commands shown. Two habits,
+   each learned from a CI failure:
+   - Prove a command by running THAT command, not its moving parts: `pnpm verify`,
+     not the steps inside it. (`pnpm licenses` was a pnpm built-in and never ran our
+     check.)
+   - Run `pnpm ready` (format, then verify) as the LAST action before a commit.
+     Running it earlier and then editing a doc is what broke `format:check`.
 5. **Settled is settled.** `docs/decisions.md` §"Settled product decisions" is closed.
 6. **Ask only for product calls** (what is free, prices, promise-changing wording, anything
    that costs money). Everything else: pick a default, record it, carry on.

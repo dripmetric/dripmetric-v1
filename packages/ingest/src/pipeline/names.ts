@@ -1,5 +1,5 @@
 import type { ScopedDb } from '@dripmetric/db';
-import { isCanonicalEventName, isCanonicalMeaning } from '@dripmetric/catalog';
+import { isCanonicalEventName } from '@dripmetric/catalog';
 
 /**
  * The event dictionary (settled decision 10).
@@ -31,9 +31,20 @@ export async function resolveNameId(
   const cached = cache.get(rawName);
   if (cached) return cached;
 
-  // A canonical name needs no mapping: the SDK docs and the AI-coder prompt use these,
-  // so a new integration is mapped from the first event.
-  const canonical = isCanonicalEventName(rawName) && isCanonicalMeaning(rawName) ? rawName : null;
+  /*
+   * A name from the catalog, sent verbatim, IS already canonical — "named right at
+   * the source", the first of the four ways an event gets its meaning (brief
+   * section 7). The SDK docs and the AI-coder prompt use these names, so a new
+   * integration is mapped from its first event.
+   *
+   * This deliberately checks the WHOLE catalog, not the dozen mappable meanings.
+   * The dozen are what a founder may map their OWN names onto; they are not the
+   * limit of what we recognise. Checking only those meant `Onboarding Step Viewed`,
+   * `Email Verified` and `Trial Started` all landed in the Inbox as unmapped, which
+   * cost the engines step ENTRY for every step without a URL rule — the simulator
+   * saw 67 of 126 known stalls, because only the URL-rule steps registered.
+   */
+  const canonical = isCanonicalEventName(rawName) ? rawName : null;
 
   const row = await db.one<{ id: number; canonical: string | null }>(
     `INSERT INTO event_names (project_id, raw_name, canonical, status, confidence, first_seen_at, last_seen_at, event_count, owning_source)

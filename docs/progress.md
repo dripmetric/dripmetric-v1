@@ -55,7 +55,6 @@ clock, a truth file, payload emitters for Segment, RudderStack and PostHog, and 
 - [x] injected duplicates do not change counts
 - [x] late events are accepted and flagged `late`
 
-
 **Scored against truth, all three products at 100%** (filtered / tracked / paid /
 stalls visible / intent signals), and still 100% with duplicates, late events and
 clock skew injected together. Found and fixed five real bugs in M1's pipeline; see

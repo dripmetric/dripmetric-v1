@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [v2-observe, main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: dripmetric
+          POSTGRES_PASSWORD: dripmetric
+          POSTGRES_DB: dripmetric
+        ports: ['54329:5432']
+        options: >-
+          --health-cmd "pg_isready -U dripmetric -d dripmetric"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+
+    env:
+      NODE_ENV: test
+      # The app connects as the non-owner role, so RLS applies to it in CI too.
+      DATABASE_URL: postgres://dripmetric_app:dripmetric_app@localhost:54329/dripmetric
+      ADMIN_DATABASE_URL: postgres://dripmetric:dripmetric@localhost:54329/dripmetric
+      APP_URL: http://localhost:3000
+      AUTH_SECRET: ci-only-auth-secret-0000000000000000000000
+      ENCRYPTION_KEYS: k1:ZGV2LW9ubHktMzItYnl0ZS1rZXktZm9yLWxvY2FsISE=
+      LOG_LEVEL: silent
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Apply migrations
+        run: pnpm db:migrate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Formatting
+        run: pnpm format:check
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Nothing GPL or AGPL may ship to customers (CLAUDE.md rule 8).
+      - name: Licences
+        run: pnpm licenses
+
+      - name: Tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

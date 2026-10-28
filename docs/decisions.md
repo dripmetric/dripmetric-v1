@@ -10,25 +10,25 @@ engineering log: every choice I make, with date, choice, reason, in 2–5 lines.
 
 Numbers in brackets are decision numbers in the Observe spec.
 
-| Topic | Settled answer |
-|---|---|
-| Repo | `harshit110927/dripmetric-v1`, branch `v2-observe`. Held only a README on 28 Oct 2026, so build fresh unless v1 code appears. |
-| Free and paid | The table in brief §2 (the "latest plan": segment splits are free). |
-| Database [1] | Supabase Free now, plain Postgres features only, so leaving is a dump and a restore. Plus a parallel self-managed **shadow copy** (M13): dual writes through the worker, shadow reads that log differences and latency, daily reconciliation, monthly drills. Switch triggers: storage > 400 MB of 500 MB, p95 dashboard query > 1 s, or real data needing backups we control. **Gate: no real founder data until the shadow copy or Supabase Pro backups exist.** |
-| Event table [3] | The compact design (brief §4): dictionary-encoded event names, integer user keys, context stored once per session, ~215 bytes per event. |
-| Retention [4] | Free keeps 90 days of raw events, paid keeps 13 months, daily summaries kept forever. |
-| Alert channels [5] | Instant masked alerts to Slack **or** Discord (founder's choice) plus an always-on in-app feed. Founders with neither get one email digest a day, only on days with alerts. |
-| Masking [6] | A 6-character tag from an HMAC of the user id under a per-project secret; coarse times. |
-| Intent score [7] | Defaults in brief §8.2. The "didn't pay" window is a **manual per-project setting, default 14 days**. Leave `TODO(decision-7)` where the window is read. Do not build trial-aware logic. |
-| Leaks [8] | Defaults in brief §8.3: 24-hour stalls (adaptive per step once data exists), a 2-hour checkout window, 7 days quiet. |
-| Paid event [9] | **Required to finish setup**: `Subscription Started`, or a Stripe connection later. The dashboard works before it arrives; "intent but didn't pay" and potential revenue stay off, with a plain note, until it does. |
-| Event matching [10] | Built from day one: an event dictionary, an Inbox for unmapped events, AI-suggested mappings the founder confirms. Founders map to ~a dozen fixed meanings only. |
-| Libraries [11] | We build the **browser and Node libraries only**. We accept Segment's message format, so Segment's own open-source libraries (Python, Ruby, PHP, Go) work pointed at our host. Any other language uses plain HTTP. |
-| No-code feeds [12] | Adapters for Segment, RudderStack and PostHog. |
-| Consent [13] | Where consent is required, the browser SDK stores nothing on the device and sends nothing — not even a config fetch — until `consent(true)`. Events wait in memory and go out only if consent arrives. Server events are unaffected. |
-| Potential revenue [14] | Always shown, with its formula on screen. |
-| Event catalog [16] | Settled. Brief Appendix A is the list. |
-| Deferred | Database choice at relaunch [2] and the tier-plan update [15]. Ignored. |
+| Topic                  | Settled answer                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Repo                   | `harshit110927/dripmetric-v1`, branch `v2-observe`. Held only a README on 28 Oct 2026, so build fresh unless v1 code appears.                                                                                                                                                                                                                                                                                                                                      |
+| Free and paid          | The table in brief §2 (the "latest plan": segment splits are free).                                                                                                                                                                                                                                                                                                                                                                                                |
+| Database [1]           | Supabase Free now, plain Postgres features only, so leaving is a dump and a restore. Plus a parallel self-managed **shadow copy** (M13): dual writes through the worker, shadow reads that log differences and latency, daily reconciliation, monthly drills. Switch triggers: storage > 400 MB of 500 MB, p95 dashboard query > 1 s, or real data needing backups we control. **Gate: no real founder data until the shadow copy or Supabase Pro backups exist.** |
+| Event table [3]        | The compact design (brief §4): dictionary-encoded event names, integer user keys, context stored once per session, ~215 bytes per event.                                                                                                                                                                                                                                                                                                                           |
+| Retention [4]          | Free keeps 90 days of raw events, paid keeps 13 months, daily summaries kept forever.                                                                                                                                                                                                                                                                                                                                                                              |
+| Alert channels [5]     | Instant masked alerts to Slack **or** Discord (founder's choice) plus an always-on in-app feed. Founders with neither get one email digest a day, only on days with alerts.                                                                                                                                                                                                                                                                                        |
+| Masking [6]            | A 6-character tag from an HMAC of the user id under a per-project secret; coarse times.                                                                                                                                                                                                                                                                                                                                                                            |
+| Intent score [7]       | Defaults in brief §8.2. The "didn't pay" window is a **manual per-project setting, default 14 days**. Leave `TODO(decision-7)` where the window is read. Do not build trial-aware logic.                                                                                                                                                                                                                                                                           |
+| Leaks [8]              | Defaults in brief §8.3: 24-hour stalls (adaptive per step once data exists), a 2-hour checkout window, 7 days quiet.                                                                                                                                                                                                                                                                                                                                               |
+| Paid event [9]         | **Required to finish setup**: `Subscription Started`, or a Stripe connection later. The dashboard works before it arrives; "intent but didn't pay" and potential revenue stay off, with a plain note, until it does.                                                                                                                                                                                                                                               |
+| Event matching [10]    | Built from day one: an event dictionary, an Inbox for unmapped events, AI-suggested mappings the founder confirms. Founders map to ~a dozen fixed meanings only.                                                                                                                                                                                                                                                                                                   |
+| Libraries [11]         | We build the **browser and Node libraries only**. We accept Segment's message format, so Segment's own open-source libraries (Python, Ruby, PHP, Go) work pointed at our host. Any other language uses plain HTTP.                                                                                                                                                                                                                                                 |
+| No-code feeds [12]     | Adapters for Segment, RudderStack and PostHog.                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Consent [13]           | Where consent is required, the browser SDK stores nothing on the device and sends nothing — not even a config fetch — until `consent(true)`. Events wait in memory and go out only if consent arrives. Server events are unaffected.                                                                                                                                                                                                                               |
+| Potential revenue [14] | Always shown, with its formula on screen.                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Event catalog [16]     | Settled. Brief Appendix A is the list.                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Deferred               | Database choice at relaunch [2] and the tier-plan update [15]. Ignored.                                                                                                                                                                                                                                                                                                                                                                                            |
 
 ### Settled stack (technical design D1–D6)
 
@@ -170,3 +170,112 @@ fallback source, so it is server-only like the other 20. That makes 21 billing e
 which reconciles brief section 2 ("billing adds 21") with Appendix A section H
 ("Revenue: 18 events"): 18 in section H plus `Checkout Payment Declined`,
 `Payment Method Added` and `Checkout Abandoned` in section G.
+
+### 2026-10-28 · The queue's own schema, created by a migration, not by pg-boss
+
+pg-boss keeps its tables in a schema of its own, so a dump and restore of `public`
+stays clean. But creating a schema needs `CREATE` on the **database**, and that is the
+one privilege the application role must not have: it would let the role build itself a
+table outside every RLS policy we wrote. So migration `0003_queue_schema.sql` creates
+`pgboss` as the owner, grants the app role `CREATE` on that schema alone, and the
+worker starts pg-boss with `createSchema: false`.
+
+### 2026-10-28 · pg-boss's default policy does NOT deduplicate on `singletonKey`
+
+Verified against pg-boss 12.38.0. A `singletonKey` only collapses jobs when the queue
+was **declared** with a policy that says so, and the default `standard` is not one.
+`recompute-intent` and `recompute` are declared `short` (at most one job queued per
+key, unlimited active), which is what ingest follow-ups want: a busy person yields one
+recompute per batch instead of a pile of them, without holding back one already
+running. A test asserts it, which is what caught the wrong assumption.
+
+### 2026-10-28 · `@dripmetric/db/admin` keeps migrations out of the request path
+
+Migrations, the schema reset and the `.env` loader all touch the filesystem and the
+schema itself. Exporting them from the package's main entry point meant the Next.js
+build pulled `migrate.js` into the web bundle and warned about it. They now live
+behind a subpath export that only the migrate CLI, the worker and the tests import. A
+route handler cannot reach a migration runner at all, which is the better arrangement
+regardless of the warning.
+
+### 2026-10-28 · Magic-link verification is a route handler, not a page
+
+Next.js only allows a cookie to be set from a route handler or a server action, so
+`/login/verify` as a page threw at runtime. It is now `route.ts`, and a failed link
+redirects to `/login?problem=expired|used|unknown`, where the founder reads one plain
+sentence instead of an error page.
+
+### 2026-10-28 · Creating a project returns its keys instead of redirecting
+
+A secret key is stored hashed and is readable exactly once (brief section 5), so it
+only exists in memory during the response that creates it. Redirecting would throw it
+away, and stashing it somewhere to survive the redirect would mean storing a secret
+key in the clear — the thing the hashing avoids. So `createProjectAction` returns the
+four keys and the form renders them, with the warning that this is the only time the
+two secret keys can be shown.
+
+### 2026-10-28 · Measured storage: 245 bytes per event, inside the ±20% band
+
+200,000 events on a clean table: **245.0 B/event** total — heap 124.3, indexes 120.7
+(`events_pkey` 50.3, user-and-time 39.3, name-and-time 30.8, the BRIN 0.1). Target 215
+±20% = 172–258.
+
+Two things had to be got right for the number to mean anything:
+
+1. **Dead tuples.** The first measurement said 398 B/event partly because earlier
+   tests had deleted rows from the same table and `pg_table_size` counts the dead
+   space. The test now runs `VACUUM FULL` before it measures.
+2. **Arrival order.** Index size on random keys depends almost entirely on btree page
+   fill, which depends on insert order. Interleaving all 2,000 users in strict
+   rotation measures **398 B/event**; generating sessions — one person firing a burst
+   of events, sessions following each other in time, which is how traffic actually
+   arrives — measures **245**. The realistic order is the one the test asserts, and
+   the adversarial figure is recorded here so the sensitivity is on the record rather
+   than hidden inside a passing test.
+
+The design choices that buy it: dictionary-encoded event names (4 bytes, not a
+string), 4-byte integer user keys, context stored once per session, `message_hash` as
+a `uuid` (16 bytes, no varlena header) rather than the client's text id, and a BRIN
+index for the retention job's range deletes, which costs 0.1 B/event where a btree
+would cost ~30.
+
+### 2026-10-28 · Throughput: batched inserts took 1,000 events from 202 to 803/second
+
+The first pipeline ran about a dozen serial queries per event — identity, session,
+name, path, daily cap, event, four queries of step matching, tracked-user row — and a
+1,000-event batch took 4.9 seconds, which would time out a serverless function.
+
+Brief section 3 says the hot path uses batched inserts, so the pipeline is now two
+phases. **Prepare**, per message, resolves everything through per-batch caches, so
+1,000 events from 100 people cost 100 user lookups rather than 1,000, and step
+matching became a pure in-memory function over a funnel loaded once. **Flush**, once
+per batch, does one multi-row insert each for the events, the step state, the
+tracked-user rows and the daily counters; the insert's `RETURNING` clause says which
+rows actually landed, so a duplicate is a fact rather than a guess.
+
+Result: **803 events/second**, 1,000 events in 1.25 s. The next lever, if it is ever
+needed, is batching the identity resolution itself (one query for all the distinct
+user ids in a batch instead of one each).
+
+### 2026-10-28 · Three bugs the exit-check tests caught
+
+Worth recording because each was a silent wrong answer, not a crash.
+
+1. **The daily cap stored one row too many.** `stored_count <= cap` is true on the
+   first overflow row too, because `stored_count` has already stopped climbing by
+   then. The table now keeps a `total_count` of everything that arrived and derives
+   the other two from it, so "was this row stored?" is one exact comparison.
+2. **The daily counters undercounted the overflow.** They were built from the rows
+   that got written, so the events the cap rejected were never counted — the cap would
+   have reopened on the next batch and tracking health would never have seen the
+   overflow. They are now built from what arrived.
+3. **An empty batch returned 200 before authenticating.** The shortcut sat above the
+   key check, so an unauthenticated request could learn that its body was well formed.
+   Authentication now comes first, whatever the batch holds.
+
+### 2026-10-28 · Dev conveniences, gated on there being no email provider
+
+`/dev/mailbox`, `/dev/login` and `/dev/project` exist so the whole flow — email to
+keys to first event to dashboard — can be walked by a script without driving a
+browser, which is how the M0 exit checks are shown to be true. All three are gated on
+`RESEND_API_KEY` being unset, so they cannot exist in production, where it is set.

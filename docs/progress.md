@@ -8,7 +8,7 @@ Legend: `[ ]` not done · `[~]` in progress · `[x]` done and proven
 
 ---
 
-## M0 · Foundations — `[~]`
+## M0 · Foundations — `[x]`
 
 **Build:** pnpm monorepo with the brief §4 layout; Docker Compose (Postgres, web, worker);
 CI; env validation; plain-SQL migrations for `projects`, `api_keys`, founder users and
@@ -17,31 +17,33 @@ sessions (magic-link login: a console mailbox in dev, Resend in production), `pl
 and test keys; `packages/catalog` holding Appendix A as typed data and Zod schemas; the
 three living files.
 
-- [ ] `pnpm install && pnpm dev` brings up web, worker and Postgres
-- [ ] tests and CI are green
-- [ ] sign in with a magic link, create a project, see its keys (secret shown once, stored hashed)
-- [ ] a test proves a query without a project cannot be written
-- [ ] a test counts every event name from Appendix A in the catalog package
+- [x] `pnpm install && pnpm dev` brings up web, worker and Postgres
+- [x] tests and CI are green
+- [x] sign in with a magic link, create a project, see its keys (secret shown once, stored hashed)
+- [x] a test proves a query without a project cannot be written
+- [x] a test counts every event name from Appendix A in the catalog package
 
-## M1 · Ingest API and storage — `[~]`
+## M1 · Ingest API and storage — `[x]`
 
 **Build:** `packages/ingest` and the `/v1/batch` and `/v1/import` handlers (brief §5): all
 three key forms, limits, rate limits, dedupe, filters, enrichment, identity linking, the
 compact tables, `user_step_state`, the daily cap, tracked-user rows, the OpenAPI spec and
 pg-boss wired up.
 
-- [ ] the curl example in Appendix B returns a per-message result
-- [ ] replaying it changes nothing
-- [ ] a batch with one bad message returns 200 with one error
-- [ ] a 600 KB batch returns 413 and a 33 KB message errors alone
-- [ ] a publishable key cannot set `stripeCustomerId` or send billing events
-- [ ] a wrong origin is refused
-- [ ] the rate limit returns 429 with `Retry-After`
-- [ ] a `text/plain` beacon body is accepted
-- [ ] on 200,000 generated events, measured bytes/event (indexes included) within 20% of 215
-- [ ] a 1,000-event batch inserts quickly (events/second recorded)
+- [x] the curl example in Appendix B returns a per-message result
+- [x] replaying it changes nothing
+- [x] a batch with one bad message returns 200 with one error
+- [x] a 600 KB batch returns 413 and a 33 KB message errors alone
+- [x] a publishable key cannot set `stripeCustomerId` or send billing events
+- [x] a wrong origin is refused
+- [x] the rate limit returns 429 with `Retry-After`
+- [x] a `text/plain` beacon body is accepted
+- [x] on 200,000 generated events, measured bytes/event (indexes included) within 20% of 215 — **245.0 B/event** (heap 124.3, indexes 120.7)
+- [x] a 1,000-event batch inserts quickly — **803 events/second**, 1,000 events in 1.25 s
 
-**→ STOP. First report sent. Wait for "continue".**
+**→ STOPPED. First report sent 2026-10-28. Waiting for "continue".**
+
+111 tests, 11 files. `pnpm ci` green (lint, format, typecheck, licences, tests) plus `pnpm build`.
 
 ## M2 · Simulator and test harness — `[ ]`
 

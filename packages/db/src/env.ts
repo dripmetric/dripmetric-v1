@@ -28,7 +28,9 @@ export function dbEnv(): DbEnv {
   if (cached) return cached;
   const parsed = EnvSchema.safeParse(process.env);
   if (!parsed.success) {
-    const problems = parsed.error.issues.map((i) => `  ${i.path.join('.')}: ${i.message}`).join('\n');
+    const problems = parsed.error.issues
+      .map((i) => `  ${i.path.join('.')}: ${i.message}`)
+      .join('\n');
     throw new Error(`Environment is not usable:\n${problems}\n\nCopy .env.example to .env.`);
   }
   cached = parsed.data;

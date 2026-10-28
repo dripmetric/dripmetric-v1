@@ -46,4 +46,6 @@ if (offenders.length > 0) {
   process.exit(1);
 }
 
-console.log(`Licence check passed: ${Object.keys(byLicense).length} distinct licences, no GPL/AGPL.`);
+console.log(
+  `Licence check passed: ${Object.keys(byLicense).length} distinct licences, no GPL/AGPL.`,
+);

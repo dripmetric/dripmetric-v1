@@ -37,7 +37,14 @@ export const PRIORITIES = ['must', 'should', 'could'] as const;
 export type Priority = (typeof PRIORITIES)[number];
 
 /** Where an event may enter the system from. Brief section 5. */
-export const SOURCES = ['browser', 'server', 'segment', 'rudderstack', 'posthog', 'billing'] as const;
+export const SOURCES = [
+  'browser',
+  'server',
+  'segment',
+  'rudderstack',
+  'posthog',
+  'billing',
+] as const;
 export type Source = (typeof SOURCES)[number];
 
 export interface CatalogEvent {

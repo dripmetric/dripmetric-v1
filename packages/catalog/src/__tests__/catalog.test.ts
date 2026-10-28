@@ -88,12 +88,18 @@ describe('event catalog (brief Appendix A)', () => {
 
   it('keeps every revenue event server-only, so a browser cannot forge a payment', () => {
     for (const event of CATALOG_EVENTS.filter((e) => e.section === 'revenue')) {
-      expect(SERVER_ONLY_EVENT_NAMES.has(event.name), `${event.name} must be server-only`).toBe(true);
+      expect(SERVER_ONLY_EVENT_NAMES.has(event.name), `${event.name} must be server-only`).toBe(
+        true,
+      );
     }
     // Plus the three billing-backed events that live in section G: 18 + 3 = the
     // "21 billing events" of brief section 2.
     expect(SERVER_ONLY_EVENT_NAMES.size).toBe(21);
-    for (const name of ['Checkout Payment Declined', 'Payment Method Added', 'Checkout Abandoned']) {
+    for (const name of [
+      'Checkout Payment Declined',
+      'Payment Method Added',
+      'Checkout Abandoned',
+    ]) {
       expect(SERVER_ONLY_EVENT_NAMES.has(name)).toBe(true);
     }
   });
@@ -103,7 +109,9 @@ describe('event catalog (brief Appendix A)', () => {
   });
 
   it('has a coverage checklist that matches brief Appendix B', () => {
-    const must = CATALOG_EVENTS.filter((e) => e.priority === 'must').map((e) => e.name).sort();
+    const must = CATALOG_EVENTS.filter((e) => e.priority === 'must')
+      .map((e) => e.name)
+      .sort();
     expect(must).toEqual(
       [
         'Activated',
@@ -160,7 +168,9 @@ describe('message schemas (brief section 5)', () => {
   });
 
   it('rejects a message with no messageId: retries would then double-count', () => {
-    expect(Message.safeParse({ type: 'track', userId: 'u1', event: 'Activated' }).success).toBe(false);
+    expect(Message.safeParse({ type: 'track', userId: 'u1', event: 'Activated' }).success).toBe(
+      false,
+    );
   });
 
   it('accepts a batch body with the write key inside, the way a beacon sends it', () => {

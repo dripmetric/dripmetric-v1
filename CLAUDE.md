@@ -1,8 +1,8 @@
 # Dripmetric v2 — Observe layer
 
 Shows early-stage SaaS founders where and how much revenue leaks between a visitor's
-first visit and their first payment. Observe is the free level: *where* and *how much*.
-Paid adds *who*, *why* and *what to do*. Stripe, nudges and recovery are later layers.
+first visit and their first payment. Observe is the free level: _where_ and _how much_.
+Paid adds _who_, _why_ and _what to do_. Stripe, nudges and recovery are later layers.
 
 ## Read these first, every session
 

@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import globals from 'globals';
 
 /**
  * Flat config. Two rules here are not style, they are brief invariants:
@@ -9,6 +10,10 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   { ignores: ['**/dist/**', '**/.next/**', '**/coverage/**', '**/node_modules/**'] },
   js.configs.recommended,
+  {
+    // Everything here runs on Node: the scripts, the worker, the ingest pipeline.
+    languageOptions: { globals: { ...globals.node } },
+  },
   ...tseslint.configs.recommended,
   {
     rules: {
@@ -27,10 +32,17 @@ export default tseslint.config(
     // time-travel tests can move the clock themselves.
     files: ['packages/engine/**/*.ts'],
     rules: {
-      'no-restricted-globals': ['error', { name: 'Date', message: 'engines take `now` as an argument (CLAUDE.md rule 9)' }],
+      'no-restricted-globals': [
+        'error',
+        { name: 'Date', message: 'engines take `now` as an argument (CLAUDE.md rule 9)' },
+      ],
       'no-restricted-properties': [
         'error',
-        { object: 'Date', property: 'now', message: 'engines take `now` as an argument (CLAUDE.md rule 9)' },
+        {
+          object: 'Date',
+          property: 'now',
+          message: 'engines take `now` as an argument (CLAUDE.md rule 9)',
+        },
       ],
       'no-restricted-syntax': [
         'error',
@@ -49,8 +61,15 @@ export default tseslint.config(
         'error',
         {
           patterns: [
-            { group: ['next', 'next/*'], message: 'packages/ingest and packages/engine must not import Next.js (brief section 4)' },
-            { group: ['@dripmetric/web', '../../apps/*'], message: 'packages must not import from apps/* (CLAUDE.md invariants)' },
+            {
+              group: ['next', 'next/*'],
+              message:
+                'packages/ingest and packages/engine must not import Next.js (brief section 4)',
+            },
+            {
+              group: ['@dripmetric/web', '../../apps/*'],
+              message: 'packages must not import from apps/* (CLAUDE.md invariants)',
+            },
           ],
         },
       ],
@@ -58,6 +77,10 @@ export default tseslint.config(
   },
   {
     files: ['**/*.test.ts', '**/__tests__/**/*.ts', 'packages/sim/**/*.ts', 'scripts/**/*.mjs'],
-    rules: { '@typescript-eslint/no-explicit-any': 'off', 'no-restricted-globals': 'off', 'no-restricted-syntax': 'off' },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      'no-restricted-globals': 'off',
+      'no-restricted-syntax': 'off',
+    },
   },
 );

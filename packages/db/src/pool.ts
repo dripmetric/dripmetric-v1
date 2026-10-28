@@ -28,7 +28,9 @@ function make(connectionString: string, max: number): pg.Pool {
   });
   pool.on('error', (error) => {
     // An idle client erroring must not take the process down.
-    console.error(JSON.stringify({ level: 'error', msg: 'idle pg client error', err: String(error) }));
+    console.error(
+      JSON.stringify({ level: 'error', msg: 'idle pg client error', err: String(error) }),
+    );
   });
   return pool;
 }

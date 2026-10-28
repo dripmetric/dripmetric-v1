@@ -68,9 +68,10 @@ export async function entitlementsFor(db: UnscopedDb, projectId: number): Promis
 }
 
 function foldEntitlements(row: PlanRow): Entitlements {
-  const features = Object.fromEntries(
-    FEATURES.map((f) => [f, row.features[f] === true]),
-  ) as Record<Feature, boolean>;
+  const features = Object.fromEntries(FEATURES.map((f) => [f, row.features[f] === true])) as Record<
+    Feature,
+    boolean
+  >;
 
   const limits = Object.fromEntries(
     LIMITS.map((l) => [l, typeof row.limits[l] === 'number' ? row.limits[l] : 0]),

@@ -17,9 +17,15 @@ import { pool, workerDbPool, type QueryResultRow } from './pool.js';
 export interface ScopedDb {
   /** The project every query inside this scope is confined to. */
   readonly projectId: number;
-  query<T extends QueryResultRow = QueryResultRow>(sql: string, params?: readonly unknown[]): Promise<T[]>;
+  query<T extends QueryResultRow = QueryResultRow>(
+    sql: string,
+    params?: readonly unknown[],
+  ): Promise<T[]>;
   /** Exactly one row, or an error naming the query. For `RETURNING` and by-id reads. */
-  one<T extends QueryResultRow = QueryResultRow>(sql: string, params?: readonly unknown[]): Promise<T>;
+  one<T extends QueryResultRow = QueryResultRow>(
+    sql: string,
+    params?: readonly unknown[],
+  ): Promise<T>;
   maybeOne<T extends QueryResultRow = QueryResultRow>(
     sql: string,
     params?: readonly unknown[],
@@ -33,13 +39,19 @@ export type UnscopedDb = Omit<ScopedDb, 'projectId'>;
 
 function wrap(client: pg.PoolClient): UnscopedDb {
   return {
-    async query<T extends QueryResultRow = QueryResultRow>(sql: string, params: readonly unknown[] = []) {
+    async query<T extends QueryResultRow = QueryResultRow>(
+      sql: string,
+      params: readonly unknown[] = [],
+    ) {
       // No `name` is ever passed, so `pg` never prepares the statement and the code
       // works through Supabase's transaction pooler (brief section 12).
       const result = await client.query<T>(sql, params as unknown[]);
       return result.rows;
     },
-    async one<T extends QueryResultRow = QueryResultRow>(sql: string, params: readonly unknown[] = []) {
+    async one<T extends QueryResultRow = QueryResultRow>(
+      sql: string,
+      params: readonly unknown[] = [],
+    ) {
       const result = await client.query<T>(sql, params as unknown[]);
       const row = result.rows[0];
       if (result.rows.length !== 1 || row === undefined) {
@@ -47,7 +59,10 @@ function wrap(client: pg.PoolClient): UnscopedDb {
       }
       return row;
     },
-    async maybeOne<T extends QueryResultRow = QueryResultRow>(sql: string, params: readonly unknown[] = []) {
+    async maybeOne<T extends QueryResultRow = QueryResultRow>(
+      sql: string,
+      params: readonly unknown[] = [],
+    ) {
       const result = await client.query<T>(sql, params as unknown[]);
       if (result.rows.length > 1) {
         throw new Error(`Expected at most one row, got ${result.rows.length}: ${firstLine(sql)}`);

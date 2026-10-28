@@ -1,4 +1,11 @@
-import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  createHmac,
+  randomBytes,
+  timingSafeEqual,
+} from 'node:crypto';
 import { dbEnv } from './env.js';
 
 /**
@@ -69,7 +76,10 @@ export function encrypt(plaintext: string | Buffer): Ciphertext {
 
 export function decrypt(bytes: Buffer, keyId: string): Buffer {
   const key = keyring().byId.get(keyId);
-  if (!key) throw new Error(`No encryption key "${keyId}". It must stay in ENCRYPTION_KEYS to decrypt old rows.`);
+  if (!key)
+    throw new Error(
+      `No encryption key "${keyId}". It must stay in ENCRYPTION_KEYS to decrypt old rows.`,
+    );
   if (bytes.length < IV_BYTES + TAG_BYTES) throw new Error('Ciphertext is too short to be valid.');
   const iv = bytes.subarray(0, IV_BYTES);
   const tag = bytes.subarray(IV_BYTES, IV_BYTES + TAG_BYTES);
@@ -98,7 +108,11 @@ export function sameSecret(a: Buffer, b: Buffer): boolean {
  * cannot be reversed, so "User A7F2C1" is safe to show a free project.
  */
 export function maskTag(projectSecret: Buffer, userId: string): string {
-  return createHmac('sha256', projectSecret).update(userId, 'utf8').digest('hex').slice(0, 6).toUpperCase();
+  return createHmac('sha256', projectSecret)
+    .update(userId, 'utf8')
+    .digest('hex')
+    .slice(0, 6)
+    .toUpperCase();
 }
 
 export function newProjectMaskingSecret(): Buffer {

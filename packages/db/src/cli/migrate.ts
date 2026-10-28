@@ -10,7 +10,10 @@
  * band (docs/runbook.md) and this step is skipped.
  */
 import pg from 'pg';
+import { loadRootEnv } from '../load-env.js';
 import { runMigrations, resetDatabase } from '../migrate.js';
+
+loadRootEnv();
 
 const reset = process.argv.includes('--reset');
 const url = process.env['ADMIN_DATABASE_URL'] || process.env['DATABASE_URL'];

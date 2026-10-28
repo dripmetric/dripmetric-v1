@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { decrypt, decryptText, encrypt, lookupHash, maskTag, newProjectMaskingSecret, resetKeyringCache } from '../crypto.js';
+import {
+  decrypt,
+  decryptText,
+  encrypt,
+  lookupHash,
+  maskTag,
+  newProjectMaskingSecret,
+  resetKeyringCache,
+} from '../crypto.js';
 import { resetDbEnvCache } from '../env.js';
 import { displayKey, generateKey, parseKey } from '../keys.js';
 
@@ -19,7 +27,7 @@ describe('envelope encryption (settled decision D4)', () => {
   it('refuses a tampered ciphertext rather than returning wrong plaintext', () => {
     const { bytes, keyId } = encrypt('alice@example.com');
     const tampered = Buffer.from(bytes);
-    tampered[tampered.length - 1] ^= 0xff;
+    tampered.writeUInt8(tampered.readUInt8(tampered.length - 1) ^ 0xff, tampered.length - 1);
     expect(() => decrypt(tampered, keyId)).toThrow();
   });
 

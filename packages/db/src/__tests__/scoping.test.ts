@@ -106,7 +106,9 @@ describe('tenant scoping (CLAUDE.md invariant 1)', () => {
 
     await expect(
       withProject(a.live.id, async (db) => {
-        await db.exec(`INSERT INTO audit_log (project_id, action) VALUES ($1, 'half-done')`, [a.live.id]);
+        await db.exec(`INSERT INTO audit_log (project_id, action) VALUES ($1, 'half-done')`, [
+          a.live.id,
+        ]);
         throw new Error('something went wrong halfway');
       }),
     ).rejects.toThrow('something went wrong halfway');

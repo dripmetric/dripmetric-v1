@@ -6,9 +6,13 @@ const deadline = Date.now() + 60_000;
 process.stdout.write('waiting for postgres');
 for (;;) {
   try {
-    execFileSync('docker', ['exec', 'dripmetric-postgres', 'pg_isready', '-U', 'dripmetric', '-d', 'dripmetric'], {
-      stdio: 'ignore',
-    });
+    execFileSync(
+      'docker',
+      ['exec', 'dripmetric-postgres', 'pg_isready', '-U', 'dripmetric', '-d', 'dripmetric'],
+      {
+        stdio: 'ignore',
+      },
+    );
     console.log('\npostgres is ready');
     process.exit(0);
   } catch {

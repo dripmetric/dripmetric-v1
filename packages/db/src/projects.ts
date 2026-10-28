@@ -1,4 +1,11 @@
-import { encrypt, decrypt, generateKey, keyLookupHash, lastFour, newProjectMaskingSecret } from './index-internal.js';
+import {
+  encrypt,
+  decrypt,
+  generateKey,
+  keyLookupHash,
+  lastFour,
+  newProjectMaskingSecret,
+} from './index-internal.js';
 import { withoutProject, withProject, type ScopedDb, type UnscopedDb } from './scope.js';
 import { defaultSettings, parseSettings, type ProjectSettingsValue } from './settings.js';
 import type { KeyKind, ProjectMode } from './keys.js';

@@ -67,7 +67,9 @@ export async function runMigrations(
       result.applied.push(migration.name);
     } catch (error) {
       await client.query('ROLLBACK');
-      throw new Error(`Migration ${migration.name} failed: ${(error as Error).message}`, { cause: error });
+      throw new Error(`Migration ${migration.name} failed: ${(error as Error).message}`, {
+        cause: error,
+      });
     }
   }
   return result;

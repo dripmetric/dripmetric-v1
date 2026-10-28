@@ -92,7 +92,8 @@ export const CONTEXT_FIELDS: readonly ContextField[] = [
   },
   {
     key: 'session',
-    howCaptured: 'Client-generated id; a new session after 30 minutes idle. The number is derived on the server.',
+    howCaptured:
+      'Client-generated id; a new session after 30 minutes idle. The number is derived on the server.',
     job: 'Step timing; engagement.',
     perSession: true,
   },
@@ -105,7 +106,8 @@ export const CONTEXT_FIELDS: readonly ContextField[] = [
   },
   {
     key: 'consent',
-    howCaptured: 'The founder’s consent tool or our banner hook, plus the Global Privacy Control flag.',
+    howCaptured:
+      'The founder’s consent tool or our banner hook, plus the Global Privacy Control flag.',
     job: 'Compliance.',
     perSession: true,
   },
@@ -131,7 +133,13 @@ export const DEVICE_TYPES = ['desktop', 'mobile', 'tablet'] as const;
 export type DeviceType = (typeof DEVICE_TYPES)[number];
 
 /** The only campaign parameters we keep. Everything else in the query string is dropped. */
-export const CAMPAIGN_PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'] as const;
+export const CAMPAIGN_PARAMS = [
+  'utm_source',
+  'utm_medium',
+  'utm_campaign',
+  'utm_term',
+  'utm_content',
+] as const;
 
 /** Ad-click parameters: their presence is recorded as "paid click + network"; the id is discarded. */
 export const AD_CLICK_PARAMS = { gclid: 'google', msclkid: 'microsoft', fbclid: 'meta' } as const;

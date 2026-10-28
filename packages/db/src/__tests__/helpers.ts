@@ -1,5 +1,5 @@
 import pg from 'pg';
-import { runMigrations } from '../migrate.js';
+import { runMigrations } from '../admin.js';
 
 /**
  * Integration-test helpers. Everything runs against the local Docker Postgres from

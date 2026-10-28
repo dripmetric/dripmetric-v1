@@ -24,13 +24,16 @@
     "ci": "pnpm lint && pnpm typecheck && pnpm licenses && pnpm test"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
     "@types/node": "24.10.1",
     "eslint": "10.13.0",
+    "globals": "^17.13.0",
     "prettier": "3.9.10",
     "tsx": "4.23.15",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.1",
-    "vitest": "5.0.5"
+    "vitest": "5.0.5",
+    "yaml": "^2.9.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

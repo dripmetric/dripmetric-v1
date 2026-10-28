@@ -78,7 +78,11 @@ describe('project creation (brief sections 4 and 9)', () => {
     expect(project.settings.didntPayWindowDays).toBe(14); // settled decision 7
     expect(project.settings.consentRequired).toBe(true); // settled decision 13
     expect(project.settings.revealAllowance).toBe(0);
-    expect(project.settings.workingHours).toEqual({ startHour: 9, endHour: 18, days: [1, 2, 3, 4, 5] });
+    expect(project.settings.workingHours).toEqual({
+      startHour: 9,
+      endHour: 18,
+      days: [1, 2, 3, 4, 5],
+    });
     expect(project.settings.quietHours).toEqual({ startHour: 22, endHour: 8 });
     expect(project.settings.dailyRowsPerUserPerEvent).toBe(200);
   });

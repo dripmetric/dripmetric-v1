@@ -1,0 +1,425 @@
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { closePools, withProject } from '@dripmetric/db';
+import { MAX_BATCH_BYTES, MAX_MESSAGE_BYTES } from '@dripmetric/catalog';
+import {
+  adminClient,
+  ensureMigrated,
+  newFixture,
+  postBatch,
+  postRaw,
+  reply,
+  resetData,
+  track,
+  type Fixture,
+} from './helpers.js';
+
+/**
+ * M1 exit checks (brief section 11), one test each. Every assertion here is a line
+ * from the brief, so a failure says which promise broke.
+ */
+describe('POST /v1/batch', () => {
+  let fx: Fixture;
+
+  beforeAll(ensureMigrated);
+  beforeEach(async () => {
+    await resetData();
+    fx = await newFixture();
+  });
+  afterAll(closePools);
+
+  it('returns a per-message result for the curl example in Appendix B', async () => {
+    const response = await postBatch(
+      [
+        {
+          type: 'track',
+          messageId: '0192b3a4-5c6d-7e8f-9a0b-1c2d3e4f5a6b',
+          userId: 'user_123',
+          event: 'Checkout Started',
+          properties: { plan: 'pro', amount: 2900, currency: 'usd' },
+          timestamp: '2026-09-29T10:15:00Z',
+        },
+      ],
+      { key: fx.secretKey, receivedAt: new Date('2026-09-29T10:15:02Z') },
+    );
+
+    expect(response.status).toBe(200);
+    const body = reply(response);
+    expect(body.accepted).toBe(1);
+    expect(body.results).toEqual([
+      { messageId: '0192b3a4-5c6d-7e8f-9a0b-1c2d3e4f5a6b', status: 'ok', code: 'ok' },
+    ]);
+  });
+
+  it('changes nothing when the same batch is replayed', async () => {
+    const batch = [track('Signed Up', { messageId: 'replay-1' })];
+    const at = new Date('2026-09-29T10:15:00Z');
+
+    const first = await postBatch(batch, { key: fx.secretKey, receivedAt: at });
+    expect(reply(first).results[0]?.status).toBe('ok');
+
+    const second = await postBatch(batch, { key: fx.secretKey, receivedAt: at });
+    expect(reply(second).results[0]?.status).toBe('duplicate');
+
+    const rows = await withProject(fx.project.live.id, (db) =>
+      db.query<{ count: string }>('SELECT count(*) FROM events'),
+    );
+    expect(rows[0]?.count).toBe('1');
+  });
+
+  it('returns 200 with one error when a single message in the batch is bad', async () => {
+    const response = await postBatch(
+      [
+        track('Signed Up', { messageId: 'good-1' }),
+        // No messageId at all: a retry of this could never be deduped.
+        { type: 'track', userId: 'user_123', event: 'Activated' },
+        track('Activated', { messageId: 'good-2' }),
+      ],
+      { key: fx.secretKey },
+    );
+
+    expect(response.status).toBe(200);
+    const body = reply(response);
+    expect(body.accepted).toBe(2);
+    expect(body.results.filter((r) => r.status === 'error')).toHaveLength(1);
+    expect(body.results[1]?.code).toBe('invalid_message');
+  });
+
+  it('refuses a batch over 500 KB with 413', async () => {
+    const padding = 'x'.repeat(1024);
+    const batch = Array.from({ length: 700 }, (_, i) =>
+      track('Core Action', { messageId: `big-${i}`, properties: { padding } }),
+    );
+    const body = JSON.stringify({ batch });
+    expect(Buffer.byteLength(body)).toBeGreaterThan(MAX_BATCH_BYTES);
+
+    const response = await postRaw(body, { key: fx.secretKey });
+    expect(response.status).toBe(413);
+  });
+
+  it('errors one oversized message alone, leaving the rest of the batch alive', async () => {
+    const response = await postBatch(
+      [
+        track('Signed Up', { messageId: 'small-1' }),
+        track('Core Action', {
+          messageId: 'huge-1',
+          properties: { blob: 'x'.repeat(MAX_MESSAGE_BYTES + 1000) },
+        }),
+      ],
+      { key: fx.secretKey },
+    );
+
+    expect(response.status).toBe(200);
+    const body = reply(response);
+    expect(body.results[0]?.status).toBe('ok');
+    expect(body.results[1]?.code).toBe('message_too_large');
+    expect(body.accepted).toBe(1);
+  });
+
+  it('refuses a publishable key that tries to set stripeCustomerId', async () => {
+    const response = await postBatch(
+      [
+        {
+          type: 'identify',
+          messageId: 'id-1',
+          userId: 'user_123',
+          traits: { email: 'a@acme.com', stripeCustomerId: 'cus_forged' },
+        },
+      ],
+      { key: fx.publishableKey },
+    );
+
+    const body = reply(response);
+    expect(body.results[0]?.code).toBe('server_only_trait');
+    expect(body.results[0]?.message).toContain('secret key');
+
+    const rows = await withProject(fx.project.live.id, (db) =>
+      db.query('SELECT stripe_customer_id FROM end_users WHERE stripe_customer_id IS NOT NULL'),
+    );
+    expect(rows).toHaveLength(0);
+  });
+
+  it('accepts stripeCustomerId from a secret key', async () => {
+    const response = await postBatch(
+      [
+        {
+          type: 'identify',
+          messageId: 'id-2',
+          userId: 'user_123',
+          traits: { email: 'a@acme.com', stripeCustomerId: 'cus_real' },
+        },
+      ],
+      { key: fx.secretKey },
+    );
+
+    expect(reply(response).results[0]?.status).toBe('ok');
+    const rows = await withProject(fx.project.live.id, (db) =>
+      db.query<{ stripe_customer_id: string }>('SELECT stripe_customer_id FROM end_users'),
+    );
+    expect(rows[0]?.stripe_customer_id).toBe('cus_real');
+  });
+
+  it('refuses a billing event from a publishable key', async () => {
+    const response = await postBatch(
+      [track('Subscription Started', { messageId: 'bill-1', properties: { amount: 2900 } })],
+      { key: fx.publishableKey },
+    );
+    expect(reply(response).results[0]?.code).toBe('server_only_event');
+  });
+
+  it('tags a billing event sent with a secret key as source=billing', async () => {
+    await postBatch(
+      [
+        track('Subscription Started', {
+          messageId: 'bill-2',
+          properties: { amount: 2900, currency: 'usd' },
+        }),
+      ],
+      { key: fx.secretKey },
+    );
+
+    const rows = await withProject(fx.project.live.id, (db) =>
+      db.query<{ source: number }>('SELECT source FROM events'),
+    );
+    // SOURCES = [browser, server, segment, rudderstack, posthog, billing]
+    expect(rows[0]?.source).toBe(5);
+  });
+
+  it('refuses a publishable key from an origin that is not on the allow-list', async () => {
+    await withProject(fx.project.live.id, (db) =>
+      db.exec(
+        `UPDATE projects SET settings = settings || '{"allowedOrigins":["https://acme.com"]}'::jsonb WHERE id = $1`,
+        [fx.project.live.id],
+      ),
+    );
+
+    const refused = await postBatch([track('Signed Up')], {
+      key: fx.publishableKey,
+      origin: 'https://evil.example',
+    });
+    expect(refused.status).toBe(401);
+
+    const allowed = await postBatch([track('Signed Up')], {
+      key: fx.publishableKey,
+      origin: 'https://acme.com',
+    });
+    expect(allowed.status).toBe(200);
+  });
+
+  it('does not origin-check a secret key, because a server sends no Origin', async () => {
+    await withProject(fx.project.live.id, (db) =>
+      db.exec(
+        `UPDATE projects SET settings = settings || '{"allowedOrigins":["https://acme.com"]}'::jsonb WHERE id = $1`,
+        [fx.project.live.id],
+      ),
+    );
+    const response = await postBatch([track('Signed Up')], { key: fx.secretKey });
+    expect(response.status).toBe(200);
+  });
+
+  it('returns 429 with Retry-After once the bucket is empty', async () => {
+    const at = new Date('2026-09-29T10:00:00Z');
+    // The bucket holds 2000 tokens; three batches of 900 spend 2700 with no refill.
+    for (const i of [0, 1]) {
+      const batch = Array.from({ length: 900 }, (_, n) =>
+        track('Core Action', { messageId: `rl-${i}-${n}` }),
+      );
+      await postBatch(batch, { key: fx.secretKey, receivedAt: at });
+    }
+    const third = Array.from({ length: 900 }, (_, n) =>
+      track('Core Action', { messageId: `rl-2-${n}` }),
+    );
+    const response = await postBatch(third, { key: fx.secretKey, receivedAt: at });
+
+    expect(response.status).toBe(429);
+    expect(response.headers?.['retry-after']).toMatch(/^\d+$/);
+    expect(Number(response.headers?.['retry-after'])).toBeGreaterThan(0);
+  });
+
+  it('accepts a text/plain beacon body with the key inside it', async () => {
+    // `sendBeacon` cannot set headers, so the key travels in the body and the content
+    // type is text/plain to avoid a CORS preflight (brief section 5).
+    const response = await postRaw(
+      JSON.stringify({
+        batch: [track('Page Viewed', { messageId: 'beacon-1', anonymousId: 'anon_1' })],
+        writeKey: fx.publishableKey,
+      }),
+      { contentType: 'text/plain', noAuthHeader: true },
+    );
+
+    expect(response.status).toBe(200);
+    expect(reply(response).accepted).toBe(1);
+  });
+
+  it('accepts the key as the Basic-auth username, the way Segment’s libraries send it', async () => {
+    const response = await postBatch([track('Signed Up', { messageId: 'basic-1' })], {
+      key: fx.secretKey,
+      basic: true,
+    });
+    expect(response.status).toBe(200);
+    expect(reply(response).accepted).toBe(1);
+  });
+
+  it('refuses a missing or unknown key with 401', async () => {
+    expect((await postBatch([track('Signed Up')], {})).status).toBe(401);
+    expect(
+      (await postBatch([track('Signed Up')], { key: 'sk_live_notarealkeyatall1234' })).status,
+    ).toBe(401);
+    expect((await postBatch([track('Signed Up')], { key: 'garbage' })).status).toBe(401);
+  });
+
+  it('refuses a malformed body with 400', async () => {
+    expect((await postRaw('not json at all', { key: fx.secretKey })).status).toBe(400);
+    expect((await postRaw('{"nope":1}', { key: fx.secretKey })).status).toBe(400);
+  });
+
+  it('drops a known crawler without counting it', async () => {
+    const response = await postBatch([track('Page Viewed', { messageId: 'bot-1' })], {
+      key: fx.publishableKey,
+      userAgent: 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+    });
+    expect(reply(response).results[0]?.code).toBe('bot_filtered');
+
+    const rows = await withProject(fx.project.live.id, (db) => db.query('SELECT 1 FROM events'));
+    expect(rows).toHaveLength(0);
+  });
+
+  it('keeps the founder’s own team out of every number', async () => {
+    await withProject(fx.project.live.id, (db) =>
+      db.exec(
+        `UPDATE projects SET settings = settings || '{"internalDomains":["acme.com"]}'::jsonb WHERE id = $1`,
+        [fx.project.live.id],
+      ),
+    );
+
+    const identified = await postBatch(
+      [
+        {
+          type: 'identify',
+          messageId: 'int-1',
+          userId: 'founder_1',
+          traits: { email: 'me@acme.com' },
+        },
+      ],
+      { key: fx.secretKey },
+    );
+    expect(reply(identified).results[0]?.code).toBe('internal_filtered');
+
+    // And every later event from that person is filtered too.
+    const later = await postBatch(
+      [track('Activated', { messageId: 'int-2', userId: 'founder_1' })],
+      {
+        key: fx.secretKey,
+      },
+    );
+    expect(reply(later).results[0]?.code).toBe('internal_filtered');
+  });
+
+  it('takes the country from the platform header and never stores an IP', async () => {
+    await postBatch(
+      [
+        {
+          type: 'page',
+          messageId: 'geo-1',
+          anonymousId: 'anon_geo',
+          context: { sessionId: 'sess_geo', page: { path: '/pricing' }, ip: '203.0.113.9' },
+        },
+      ],
+      { key: fx.publishableKey, country: 'DE' },
+    );
+
+    const sessions = await withProject(fx.project.live.id, (db) =>
+      db.query<{ country: string }>('SELECT country FROM sessions'),
+    );
+    expect(sessions[0]?.country).toBe('DE');
+
+    // The IP was in the message and must appear nowhere in the database.
+    const client = await adminClient();
+    try {
+      const { rows } = await client.query<{ hits: string }>(
+        `SELECT count(*) AS hits FROM events WHERE props::text LIKE '%203.0.113.9%'`,
+      );
+      expect(rows[0]?.hits).toBe('0');
+    } finally {
+      await client.end();
+    }
+  });
+
+  it('flags a late event instead of rejecting it', async () => {
+    const happened = new Date('2026-09-29T10:00:00Z');
+    const received = new Date('2026-09-29T14:00:00Z'); // four hours later
+
+    await postBatch(
+      [track('Core Action', { messageId: 'late-1', timestamp: happened.toISOString() })],
+      { key: fx.secretKey, receivedAt: received, sentAt: received.toISOString() },
+    );
+
+    const rows = await withProject(fx.project.live.id, (db) =>
+      db.query<{ flags: number; occurred_at: Date }>('SELECT flags, occurred_at FROM events'),
+    );
+    expect(rows[0]?.flags).toBe(1); // FLAG_LATE
+    expect(rows[0]?.occurred_at.toISOString()).toBe(happened.toISOString());
+  });
+
+  it('rejects a timestamp more than 24 hours in the future', async () => {
+    const now = new Date('2026-09-29T10:00:00Z');
+    const response = await postBatch(
+      [track('Core Action', { messageId: 'future-1', timestamp: '2026-10-05T10:00:00Z' })],
+      { key: fx.secretKey, receivedAt: now, sentAt: now.toISOString() },
+    );
+    expect(reply(response).results[0]?.code).toBe('timestamp_too_far_future');
+  });
+
+  it('counts instead of storing once one person passes the daily cap', async () => {
+    await withProject(fx.project.live.id, (db) =>
+      db.exec(
+        `UPDATE projects SET settings = settings || '{"dailyRowsPerUserPerEvent":3}'::jsonb WHERE id = $1`,
+        [fx.project.live.id],
+      ),
+    );
+
+    const at = new Date('2026-09-29T10:00:00Z');
+    const batch = Array.from({ length: 5 }, (_, i) =>
+      track('Core Action', { messageId: `cap-${i}`, timestamp: at.toISOString() }),
+    );
+    const response = await postBatch(batch, {
+      key: fx.secretKey,
+      receivedAt: at,
+      sentAt: at.toISOString(),
+    });
+
+    const body = reply(response);
+    expect(body.results.filter((r) => r.status === 'ok')).toHaveLength(3);
+    expect(body.results.filter((r) => r.code === 'daily_cap_reached')).toHaveLength(2);
+
+    const counts = await withProject(fx.project.live.id, (db) =>
+      db.query<{ stored_count: number; overflow_count: number }>(
+        'SELECT stored_count, overflow_count FROM daily_event_counts',
+      ),
+    );
+    expect(counts[0]?.stored_count).toBe(3);
+    expect(counts[0]?.overflow_count).toBe(2);
+  });
+
+  it('records one tracked-user row per person per month', async () => {
+    const at = new Date('2026-09-29T10:00:00Z');
+    await postBatch(
+      [
+        track('Signed Up', { messageId: 'mau-1', timestamp: at.toISOString() }),
+        track('Activated', { messageId: 'mau-2', timestamp: at.toISOString() }),
+        track('Core Action', {
+          messageId: 'mau-3',
+          userId: 'user_456',
+          timestamp: at.toISOString(),
+        }),
+      ],
+      { key: fx.secretKey, receivedAt: at, sentAt: at.toISOString() },
+    );
+
+    const rows = await withProject(fx.project.live.id, (db) =>
+      db.query<{ month: Date; user_key: number }>(
+        'SELECT month, user_key FROM monthly_active_users',
+      ),
+    );
+    expect(rows).toHaveLength(2); // two people, one row each, not one per event
+  });
+});

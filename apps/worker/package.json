@@ -1,0 +1,25 @@
+{
+  "name": "@dripmetric/worker",
+  "version": "2.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "build": "tsc -b",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@dripmetric/catalog": "workspace:*",
+    "@dripmetric/db": "workspace:*",
+    "@dripmetric/engine": "workspace:*",
+    "pg-boss": "12.38.0"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1",
+    "pg": "8.23.1",
+    "tsx": "4.23.15",
+    "vitest": "5.0.5"
+  }
+}

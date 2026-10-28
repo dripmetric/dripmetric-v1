@@ -1,0 +1,394 @@
+openapi: 3.1.0
+info:
+  title: Dripmetric Ingest API
+  version: 2.0.0
+  description: |
+    Send events to Dripmetric from anywhere.
+
+    The message format is Segment's, on purpose: Segment's own open-source libraries
+    (Python, Ruby, PHP, Go) work by pointing their host at ours, and a founder already
+    on Segment sends the right event names unchanged. Everything else uses plain HTTP
+    against this spec.
+
+    Three rules worth knowing before you start:
+
+    * **Give every message a `messageId` you generate.** It is how a retry is told
+      from a new event, so retrying a failed request can never double-count.
+    * **Amounts are minor units plus a currency code**, like Stripe: `2900` and `usd`,
+      never `29.00`.
+    * **Send `Signed Up`, `Activated`, `Checkout Started` and billing events from your
+      server** where you can. Ad blockers and a declined consent banner cannot stop
+      those, and they are the events every number depends on.
+  license:
+    name: Proprietary
+servers:
+  - url: https://api.dripmetric.com
+    description: Production
+  - url: http://localhost:3000
+    description: Local development
+
+security:
+  - bearerAuth: []
+
+paths:
+  /v1/batch:
+    post:
+      summary: Send a batch of events
+      description: |
+        Always replies `200` with one result per message, unless the whole request is
+        malformed (`400`), unauthorised (`401`), too large (`413`) or rate-limited
+        (`429`). One bad message never costs you the rest of the batch.
+
+        The body is read as text and parsed whatever the `Content-Type` says, because
+        `navigator.sendBeacon` can only send `text/plain` and cannot set headers at
+        all. That is also why the key may travel in the body as `writeKey`.
+      operationId: sendBatch
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Batch' }
+          text/plain:
+            schema: { $ref: '#/components/schemas/Batch' }
+      responses:
+        '200':
+          description: Accepted. Check each result for its own outcome.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BatchResponse' }
+        '400':
+          description: The body is not valid JSON, or has no `batch` array.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          description: Missing, malformed, revoked, or origin-restricted key.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '413':
+          description: Over 500 KB, or over 1,000 messages.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429':
+          description: Rate-limited. Wait for `Retry-After` seconds and send it again.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying.
+              schema: { type: integer, minimum: 1 }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+      callbacks: {}
+    options:
+      summary: CORS preflight
+      operationId: batchPreflight
+      responses:
+        '204': { description: Allowed. }
+
+  /v1/import:
+    post:
+      summary: Send a batch of events (alias)
+      description: |
+        Identical to `/v1/batch`. It exists because Segment's Ruby library posts to
+        `/v1/import`, so a Ruby founder only has to change the host.
+      operationId: importBatch
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Batch' }
+      responses:
+        '200':
+          description: Accepted. Check each result for its own outcome.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BatchResponse' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        `Authorization: Bearer <key>`. A publishable key (`pk_live_…`) is write-only
+        and origin-restricted; a secret key (`sk_live_…`) is for your server and is
+        the only kind that may set `stripeCustomerId` or send billing events.
+    basicAuth:
+      type: http
+      scheme: basic
+      description: |
+        The key as the username with an empty password. This is how Segment's own
+        libraries send it.
+
+  schemas:
+    Batch:
+      type: object
+      required: [batch]
+      properties:
+        batch:
+          type: array
+          minItems: 0
+          maxItems: 1000
+          items: { $ref: '#/components/schemas/Message' }
+        sentAt:
+          type: string
+          format: date-time
+          description: |
+            When the client sent the batch, by the client's own clock. We compare it
+            with when the request arrived to correct a wrong device clock, so a phone
+            two hours slow does not scatter its events through your funnel.
+        writeKey:
+          type: string
+          description: The key, for clients that cannot set a header (`sendBeacon`).
+        context: { $ref: '#/components/schemas/Context' }
+
+    Message:
+      oneOf:
+        - $ref: '#/components/schemas/TrackMessage'
+        - $ref: '#/components/schemas/PageMessage'
+        - $ref: '#/components/schemas/IdentifyMessage'
+        - $ref: '#/components/schemas/GroupMessage'
+      discriminator:
+        propertyName: type
+        mapping:
+          track: '#/components/schemas/TrackMessage'
+          page: '#/components/schemas/PageMessage'
+          identify: '#/components/schemas/IdentifyMessage'
+          group: '#/components/schemas/GroupMessage'
+
+    MessageBase:
+      type: object
+      required: [messageId]
+      properties:
+        messageId:
+          type: string
+          maxLength: 128
+          description: |
+            Yours to generate, and unique per event. It is how a retry is told from a
+            new event. A UUID is the obvious choice.
+        timestamp:
+          type: string
+          format: date-time
+          description: When it happened. Defaults to when we received it.
+        sentAt:
+          type: string
+          format: date-time
+        userId:
+          type: string
+          maxLength: 256
+          description: Your own id for the person. Required unless `anonymousId` is set.
+        anonymousId:
+          type: string
+          maxLength: 256
+          description: |
+            An id for a visitor you do not know yet. When they later `identify`, their
+            earlier visits join their timeline; we never rewrite the old events.
+        context: { $ref: '#/components/schemas/Context' }
+
+    TrackMessage:
+      allOf:
+        - $ref: '#/components/schemas/MessageBase'
+        - type: object
+          required: [type, event]
+          properties:
+            type: { type: string, const: track }
+            event:
+              type: string
+              maxLength: 256
+              description: |
+                Use a canonical name from the catalog where one fits, and your own name
+                otherwise. Your own names wait in the Inbox until you map them, and
+                count toward nothing until you do.
+            properties:
+              $ref: '#/components/schemas/Properties'
+
+    PageMessage:
+      allOf:
+        - $ref: '#/components/schemas/MessageBase'
+        - type: object
+          required: [type]
+          properties:
+            type: { type: string, const: page }
+            name: { type: string, maxLength: 256 }
+            properties:
+              $ref: '#/components/schemas/Properties'
+
+    IdentifyMessage:
+      allOf:
+        - $ref: '#/components/schemas/MessageBase'
+        - type: object
+          required: [type]
+          properties:
+            type: { type: string, const: identify }
+            traits:
+              $ref: '#/components/schemas/Traits'
+
+    GroupMessage:
+      allOf:
+        - $ref: '#/components/schemas/MessageBase'
+        - type: object
+          required: [type, groupId]
+          properties:
+            type: { type: string, const: group }
+            groupId: { type: string, maxLength: 256 }
+            traits:
+              $ref: '#/components/schemas/Traits'
+
+    Properties:
+      type: object
+      maxProperties: 64
+      additionalProperties: true
+      description: |
+        At most 64 keys, nested at most 5 deep. Amounts are minor units plus a
+        currency code.
+      example:
+        plan: pro
+        amount: 2900
+        currency: usd
+
+    Traits:
+      type: object
+      maxProperties: 64
+      additionalProperties: true
+      description: |
+        `email` and `createdAt` are the two that unlock the most. `stripeCustomerId`
+        is accepted only from a secret key.
+      example:
+        email: sam@acme.com
+        createdAt: '2026-09-01T10:00:00Z'
+        signupMethod: google
+
+    Context:
+      type: object
+      description: |
+        Segment's `context` object. We read what we recognise and ignore the rest, so
+        an existing Segment setup needs no changes. We take the country from the
+        platform's IP header and then discard the IP; we never store a full IP address.
+      additionalProperties: true
+      properties:
+        locale: { type: string }
+        timezone: { type: string, description: An IANA zone, e.g. Europe/Berlin. }
+        userAgent: { type: string }
+        userAgentData:
+          type: object
+          description: Low-entropy client hints only. We never fingerprint.
+          properties:
+            mobile: { type: boolean }
+            platform: { type: string }
+            brands:
+              type: array
+              items:
+                type: object
+                properties:
+                  brand: { type: string }
+                  version: { type: string }
+        page:
+          type: object
+          properties:
+            path: { type: string }
+            title: { type: string }
+            url: { type: string }
+            referrer: { type: string }
+            search: { type: string }
+        campaign:
+          type: object
+          properties:
+            source: { type: string }
+            medium: { type: string }
+            name: { type: string }
+            term: { type: string }
+            content: { type: string }
+        screen:
+          type: object
+          description: Reduced to one of three buckets. Exact pixels are never stored.
+          properties:
+            width: { type: number }
+            height: { type: number }
+        library:
+          type: object
+          properties:
+            name: { type: string }
+            version: { type: string }
+        consent:
+          type: object
+          properties:
+            granted: { type: boolean }
+            globalPrivacyControl: { type: boolean }
+        sessionId:
+          type: string
+          description: Yours to generate. We derive the session number ourselves.
+        pageViewId:
+          type: string
+          description: Identifies one page view, so repeated Page Left totals update one row.
+        userIdHmac:
+          type: string
+          description: |
+            Optional. With identity verification switched on, a browser `identify`
+            must carry an HMAC of the user id made with your secret key.
+
+    BatchResponse:
+      type: object
+      required: [results, accepted]
+      properties:
+        accepted:
+          type: integer
+          description: How many messages were stored.
+        results:
+          type: array
+          items: { $ref: '#/components/schemas/MessageResult' }
+
+    MessageResult:
+      type: object
+      required: [messageId, status, code]
+      properties:
+        messageId: { type: string }
+        status:
+          type: string
+          enum: [ok, duplicate, error, filtered]
+          description: |
+            `duplicate` means we had already seen that `messageId`: your retry worked
+            and nothing was double-counted. `filtered` means we deliberately did not
+            count it — a crawler, one of your own team, or past the daily cap.
+        code:
+          type: string
+          enum:
+            - ok
+            - duplicate
+            - invalid_message
+            - unknown_type
+            - message_too_large
+            - too_many_properties
+            - properties_too_deep
+            - timestamp_too_far_future
+            - timestamp_too_old
+            - missing_identity
+            - server_only_event
+            - server_only_trait
+            - bot_filtered
+            - internal_filtered
+            - opted_out
+            - daily_cap_reached
+        message:
+          type: string
+          description: Plain language, for your debug log.
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }

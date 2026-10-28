@@ -20,8 +20,9 @@
     "typecheck": "tsc -b --pretty",
     "test": "vitest run",
     "test:watch": "vitest",
-    "licenses": "node scripts/check-licenses.mjs",
-    "ci": "pnpm lint && pnpm typecheck && pnpm licenses && pnpm test"
+    "check:names": "node scripts/check-script-names.mjs",
+    "check:licenses": "node scripts/check-licenses.mjs",
+    "verify": "pnpm check:names && pnpm lint && pnpm format:check && pnpm typecheck && pnpm check:licenses && pnpm test"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

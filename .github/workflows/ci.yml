@@ -58,9 +58,15 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # `pnpm licenses` is a pnpm BUILT-IN and silently won over a script of that
+      # name, so this step used to run pnpm's own command and never our check.
+      # scripts/check-script-names.mjs now fails the build if that can happen again.
+      - name: Script names are not shadowed by pnpm built-ins
+        run: pnpm check:names
+
       # Nothing GPL or AGPL may ship to customers (CLAUDE.md rule 8).
       - name: Licences
-        run: pnpm licenses
+        run: pnpm check:licenses
 
       - name: Tests
         run: pnpm test

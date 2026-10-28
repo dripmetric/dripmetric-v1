@@ -32,7 +32,7 @@ curl http://localhost:3000/v1/batch \
 ```bash
 pnpm dev          # Postgres, migrations, web (:3000) and worker
 pnpm test         # 111 tests: unit and integration (needs Postgres)
-pnpm ci           # everything CI runs: lint, format, typecheck, licences, tests
+pnpm verify       # everything CI runs: lint, format, typecheck, licences, tests
 pnpm db:reset     # drop, recreate and migrate
 ```
 

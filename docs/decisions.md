@@ -279,3 +279,27 @@ Worth recording because each was a silent wrong answer, not a crash.
 keys to first event to dashboard — can be walked by a script without driving a
 browser, which is how the M0 exit checks are shown to be true. All three are gated on
 `RESEND_API_KEY` being unset, so they cannot exist in production, where it is set.
+
+### 2026-10-28 · `pnpm licenses` and `pnpm ci` were shadowed by pnpm built-ins
+
+CI failed on the licence step with `ERR_PNPM_LICENCES_NO_SUBCOMMAND`. The cause: `pnpm
+licenses` is a **pnpm built-in command**, and a built-in always wins over a package
+script of the same name, silently. So that CI step ran pnpm's own `licenses` command,
+which needs a subcommand, and the licence check never ran at all. `pnpm ci` was
+shadowed too (`ERR_PNPM_CI_NOT_IMPLEMENTED`), so the command documented in CLAUDE.md
+and the README had never worked either.
+
+Renamed to `check:licenses` and `verify`. A colon cannot appear in a pnpm command, so
+colon-prefixed script names can never collide — that is now the convention.
+
+`scripts/check-script-names.mjs` makes it impossible to repeat: it parses the command
+list out of `pnpm help -a` and fails if any script name collides with one, allowing
+only `test` and `start`, which pnpm implements by running the script of that name. It
+runs as the first step of `pnpm verify` and as its own CI step. Proven in both
+directions: re-adding a `licenses` script makes it exit 1 and name the offender.
+
+**The process lesson, now rule 4 in CLAUDE.md:** I had reported "CI green" after
+running the moving parts by hand (`node scripts/check-licenses.mjs`, `npx vitest`,
+`npx eslint`) without ever running `pnpm verify` or `pnpm licenses` themselves. Those
+are the commands CI runs and the ones a founder would type, so they are the ones that
+have to be run. `pnpm verify` and every individual CI step are now confirmed green.

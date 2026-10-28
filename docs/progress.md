@@ -43,7 +43,7 @@ pg-boss wired up.
 
 **→ STOPPED. First report sent 2026-10-28. Waiting for "continue".**
 
-111 tests, 11 files. `pnpm ci` green (lint, format, typecheck, licences, tests) plus `pnpm build`.
+111 tests, 11 files. `pnpm verify` green (script names, lint, format, typecheck, licences, tests) plus `pnpm build`.
 
 ## M2 · Simulator and test harness — `[ ]`
 

@@ -17,14 +17,16 @@ Paid adds _who_, _why_ and _what to do_. Stripe, nudges and recovery are later l
    Commit at least once per milestone.
 3. **Dev only.** Local Postgres in Docker. No production credentials. `.env` is ignored,
    `.env.example` is committed. Tests mock Anthropic, Resend, Slack and Discord.
-4. **Done means proven.** Exit checks pass, CI green, commands shown.
+4. **Done means proven.** Exit checks pass, CI green, commands shown. Prove a command
+   by running THAT command, not its moving parts: `pnpm verify`, not the steps inside it.
 5. **Settled is settled.** `docs/decisions.md` §"Settled product decisions" is closed.
 6. **Ask only for product calls** (what is free, prices, promise-changing wording, anything
    that costs money). Everything else: pick a default, record it, carry on.
 7. **Plain language for founders.** Short sentences, the founder's own event names, every
    number can show how it is computed, simulated data is always labelled.
 8. **Licences.** Nothing GPL/AGPL ships to customers (SDK, web app). MIT/Apache-2.0/BSD
-   preferred. `pnpm licenses` enforces it in CI.
+   preferred. `pnpm check:licenses` enforces it in CI. Script names use a colon so a
+   pnpm built-in can never shadow them; `pnpm check:names` enforces that.
 9. **Time is a parameter.** Every engine function and sweep takes `now`. No hidden clock
    reads inside `packages/engine`. Enforced by lint rule + review.
 10. **Derived state is rebuildable.** Step state, scores, leaks and summaries must be
@@ -41,8 +43,8 @@ pnpm db:migrate              # apply plain-SQL migrations
 pnpm db:reset                # drop, recreate, migrate
 pnpm dev                     # web (:3000) + worker, with Postgres already up
 pnpm test                    # vitest (unit + integration; needs pnpm db:up)
-pnpm lint / pnpm typecheck / pnpm licenses
-pnpm ci                      # everything CI runs
+pnpm lint / pnpm typecheck / pnpm check:licenses
+pnpm verify                  # everything CI runs. NOT `pnpm ci`: that is a pnpm built-in
 ```
 
 ## Repo map

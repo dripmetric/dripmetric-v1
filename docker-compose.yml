@@ -1,0 +1,26 @@
+# Dev only. No production credentials live here (CLAUDE.md rule 3).
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dripmetric-postgres
+    environment:
+      POSTGRES_USER: dripmetric
+      POSTGRES_PASSWORD: dripmetric
+      POSTGRES_DB: dripmetric
+    ports:
+      - '54329:5432'
+    volumes:
+      - dripmetric-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U dripmetric -d dripmetric']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    command:
+      # Settled decision D2: plain Postgres features only, so nothing here is Supabase-specific.
+      - postgres
+      - '-c'
+      - 'log_min_duration_statement=500'
+
+volumes:
+  dripmetric-pgdata:

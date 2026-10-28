@@ -119,3 +119,54 @@ Settled decision D2 says plain-SQL migrations. A library would add a dependency 
 table format for something that is `ls`, `sort`, `BEGIN`, run, record. `packages/db/migrations/NNNN_name.sql`
 run in filename order inside one transaction each, recorded in `schema_migrations`.
 Migrations are forward-only; a mistake is corrected by a new migration.
+
+### 2026-10-28 · The app connects as a non-owner role, so RLS is real
+
+Row-level security does not apply to a table's owner, so a "deny by default" policy is
+decoration if the app connects as the owner. Migration 0001 creates `dripmetric_app`
+(not superuser, no BYPASSRLS), grants it DML, and every tenant table is
+`ENABLE` + `FORCE ROW LEVEL SECURITY` with a policy keyed on
+`current_setting('app.project_id')`. `.env` therefore carries two URLs: `DATABASE_URL`
+(the app role, runtime) and `ADMIN_DATABASE_URL` (the owner, used only by
+`pnpm db:migrate`). A test asserts the role is neither superuser nor BYPASSRLS, and
+another asserts a raw connection with no scope set sees zero rows.
+
+### 2026-10-28 · `withProject` opens a transaction; `withoutProject` is the only way out
+
+`SET LOCAL` lasts only for a transaction, and the ingest pipeline has to write the
+event, the session and the step state together anyway (brief section 5, step 8), so a
+transaction per scope costs nothing we were not already paying. `@dripmetric/db`
+exports no bare `query` and no pool, so the only way to reach tenant data is inside a
+`withProject()` callback. Genuinely cross-project work (creating a project, founder
+login, resolving an API key, worker sweeps) goes through `withoutProject(reason, …)`
+with a reason from a fixed list — a named, reviewable escape hatch rather than an
+accident.
+
+### 2026-10-28 · Dev-only password for the app role, set by the migrate CLI
+
+A password in a committed migration would be a credential in git. Instead migration
+0001 creates the role `NOLOGIN`, and the migrate CLI grants it a login password
+**only when `NODE_ENV !== 'production'`**, so a fresh clone works with the committed
+`.env.example` and production sets its own password out of band (to go in
+`docs/runbook.md` at M13).
+
+### 2026-10-28 · Tests clean up with DELETE, not TRUNCATE
+
+`TRUNCATE` takes an ACCESS EXCLUSIVE lock on every listed table at once and deadlocked
+against the connection pools other test files still held. The tables hold a handful of
+rows during a test, so ordered `DELETE`s cost nothing and take far weaker locks.
+Vitest also runs test files sequentially (`fileParallelism: false`): they share one
+local Postgres and one between-test cleanup, so two files at once delete each other's
+fixtures.
+
+### 2026-10-28 · Two catalog gaps the count test caught
+
+Writing the Appendix A count test found two real problems, both now fixed.
+(1) Eight events had a one-word job ("Risk."), which is not enough for the coverage
+checklist to explain itself to a founder; each now says what the signal is for.
+(2) `Checkout Abandoned` was not marked server-only. A publishable key must never be
+able to inject a leak-bearing event, and Stripe's `checkout.session.expired` is its
+fallback source, so it is server-only like the other 20. That makes 21 billing events,
+which reconciles brief section 2 ("billing adds 21") with Appendix A section H
+("Revenue: 18 events"): 18 in section H plus `Checkout Payment Declined`,
+`Payment Method Added` and `Checkout Abandoned` in section G.

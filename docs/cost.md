@@ -61,15 +61,38 @@ project per day.
 
 ## Ingest throughput
 
-`pnpm load --key sk_… --seconds 5 --budget 2000`
+`pnpm load --key sk_… --seconds 30 --budget 2000`
 
-**391 events/second sustained for one project**, p95 540ms for a 100-event batch,
-about 33.8 million events a day.
+**200 events/second sustained for one project** — about **17.3 million events a day**.
+That is the project's token-bucket refill rate (`DEFAULT_RATE_LIMIT_PER_SECOND` in
+`packages/catalog/src/limits.ts`), and it is the number to plan with.
 
-The ceiling is the **per-project rate limit**, not the pipeline: at concurrency 4,
-568 of 581 requests were rejected with 429. That is the right answer for one founder's
-traffic and the wrong one for the system as a whole — measuring the pipeline needs
-several projects' keys in parallel, which is a later exercise and is noted as one.
+A peak of **391 events/second** was measured at concurrency 2, p95 540ms for a
+100-event batch. **That peak is not a rate.** The bucket holds a 2,000-token burst
+reservoir and refills at 200/s, so it can absorb 10 seconds of silence and spend it
+all at once. The levels in that run were 4 seconds long, so the figure includes the
+reservoir draining — which is also why the next level up saw 568 of 581 requests
+refused: the reservoir was already spent.
+
+| Level | Spent | Bucket after | 429s |
+| ----- | ----- | ------------ | ---- |
+| 1     | 1,400 | ~600         | 0    |
+| 2     | 1,700 | empty        | 0    |
+| 4     | 1,300 | empty        | 568  |
+
+The first report called 391/s "sustained" and extrapolated 33.8M events/day from it,
+which was out by 2x. **Zero 429s on a level does not mean the limiter was not the
+constraint** — a short level is refused nothing and the level after it pays. `pnpm load`
+now reports peak and sustained separately, derives the day figure from the sustained
+one, and refuses to call anything steady state unless the levels ran at least three
+times the reservoir window.
+
+**The pipeline's own ceiling is still unmeasured.** The rate limiter stops the ramp
+first, which is correct behaviour for one founder's traffic and useless for sizing the
+system. What concurrency 1 does tell us: p50 282ms for a 100-event batch, so one
+connection moves ~355 events/second **when tokens are available**. Finding the real
+pipeline ceiling needs the per-project limit raised, or several projects' keys driven
+in parallel. That is a named later exercise, not a measurement we have.
 
 A batch costs about **38 SQL statements across 5 transactions**, so ingest is
 round-trip bound rather than CPU bound. The practical consequence: latency between

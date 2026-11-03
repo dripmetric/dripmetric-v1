@@ -37,6 +37,24 @@ const MAX_CONCURRENCY = Number(flag('max', '32'));
  */
 const P95_BUDGET_MS = Number(flag('budget', '500'));
 
+/*
+ * The project's token bucket, mirrored from `packages/catalog/src/limits.ts`.
+ *
+ * The test has to know these to report an honest number. A bucket holds `BURST`
+ * tokens and refills at `PER_SECOND`, so a level shorter than BURST/PER_SECOND
+ * seconds can spend the whole reservoir and never see a single 429 — and the
+ * events/second it prints is then the reservoir draining, not a rate anything can
+ * hold. With the defaults that window is 10 seconds, and a 4-second level can draw
+ * 700 events/second without being refused once.
+ *
+ * This is not hypothetical: the first report said "391 events/second sustained" and
+ * "about 33.8 million events a day" off a 4-second level with zero 429s. The real
+ * sustained figure was the configured 200/s, and the day figure was out by 2x.
+ */
+const BURST = Number(flag('burst', '2000'));
+const PER_SECOND = Number(flag('per-second', '200'));
+const RESERVOIR_SECONDS = BURST / PER_SECOND;
+
 if (!KEY) {
   console.error(
     'Pass --key sk_live_… or set LOAD_TEST_SECRET_KEY.\n' +
@@ -190,11 +208,31 @@ const best = ceiling ?? results[results.length - 1];
  */
 const kind = rateLimitHit !== null ? 'rate-limit' : ceiling === null ? 'floor' : 'latency';
 
+/*
+ * Peak and sustained are different numbers and only one of them can be planned with.
+ *
+ * `peak` is what the ramp measured. `sustained` is what the project's bucket will
+ * actually pass over an hour, which is the refill rate — no reservoir, however big,
+ * raises it. Reporting the smaller of the two as the planning number is the whole
+ * point; the day figure comes from that one, never from the peak.
+ */
+const peakPerSecond = best.eventsPerSecond;
+const sustainedPerSecond = Math.min(peakPerSecond, PER_SECOND);
+const measuredSteadyState = SECONDS >= 3 * RESERVOIR_SECONDS;
+
 console.log(
   `\nTHE CEILING\n` +
-    `  ${best.eventsPerSecond.toLocaleString()} events/second sustained at concurrency ` +
+    `  peak ${peakPerSecond.toLocaleString()} events/second over ${SECONDS}s at concurrency ` +
     `${best.concurrency}, p95 ${best.p95}ms.\n` +
-    `  That is about ${(best.eventsPerSecond * 86_400).toLocaleString()} events a day.\n` +
+    `  sustained ${sustainedPerSecond.toLocaleString()} events/second — about ` +
+    `${(sustainedPerSecond * 86_400).toLocaleString()} events a day.\n` +
+    (measuredSteadyState
+      ? ''
+      : `  The peak is NOT a rate: each level ran ${SECONDS}s against a ` +
+        `${BURST}-token reservoir that\n` +
+        `  lasts ${RESERVOIR_SECONDS}s, so it includes the reservoir draining. Pass ` +
+        `--seconds ${Math.ceil(3 * RESERVOIR_SECONDS)} or more\n` +
+        `  to measure a rate the bucket can actually hold.\n`) +
     (kind === 'rate-limit'
       ? `  This is the RATE LIMIT, not the pipeline's capacity. One project's bucket is\n` +
         `  what stopped it, which is the right answer for one founder's traffic and the\n` +
@@ -212,6 +250,9 @@ console.log(
     `    both, so treat this as the shape of the curve rather than the absolute.\n` +
     `  - 429s are the rate limiter doing its job, not a failure. If the table above\n` +
     `    is mostly 429s, raise the project's limit before reading anything into it.\n` +
+    `  - ZERO 429s does not mean the limiter was not the constraint. A short level\n` +
+    `    spends the ${BURST}-token reservoir and is refused nothing; the level AFTER it\n` +
+    `    pays for that. Read the ladder, not one row.\n` +
     `  - Events per second counts accepted events, so duplicates and filtered bots\n` +
     `    are excluded — which is the number that matters for storage.\n`,
 );
@@ -228,11 +269,17 @@ const report = {
   batchSize: BATCH,
   secondsPerLevel: SECONDS,
   p95BudgetMs: P95_BUDGET_MS,
+  rateLimit: { burst: BURST, perSecond: PER_SECOND, reservoirSeconds: RESERVOIR_SECONDS },
   ceiling: {
-    eventsPerSecond: best.eventsPerSecond,
+    // What the ramp measured, over `secondsPerLevel`. Includes reservoir drain unless
+    // `measuredSteadyState` is true, so it is a peak and not a rate.
+    peakEventsPerSecond: peakPerSecond,
+    // The number to plan with: the bucket's refill rate caps everything above it.
+    eventsPerSecond: sustainedPerSecond,
+    measuredSteadyState,
     concurrency: best.concurrency,
     p95Ms: best.p95,
-    eventsPerDay: best.eventsPerSecond * 86_400,
+    eventsPerDay: sustainedPerSecond * 86_400,
     // What stopped the ramp: 'rate-limit', 'latency', or 'floor' (nothing did).
     limitedBy: kind,
     budgetCrossed: ceiling !== null,

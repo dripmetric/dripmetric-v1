@@ -371,9 +371,11 @@ CI; a runbook, a README, SDK docs and a measured size and cost report.
       case is within margin of the absent case, and `shadowStats().attempted` is **0**,
       which is the real proof: the request path never opens a shadow connection at
       all. It queues message hashes and returns.
-- [x] the load-test report names the ceiling — **391 events/second for one project**,
-      p95 540ms, ~33.8M events/day, and it names what stopped it: the per-project
+- [x] the load-test report names the ceiling — **200 events/second sustained for one
+      project**, ~17.3M events/day, and it names what stopped it: the per-project
       **rate limit**, not the pipeline. `docs/load-test.json` holds the ladder.
+      A peak of 391/s at p95 540ms was measured but is **not** a rate: see the
+      correction below.
 - [x] every drill has a written result in `docs/runbook.md` — `reconcile`, `restore`
       and `kill-shadow` all run and append a dated entry. Appended, never rewritten,
       because the history is the value.
@@ -395,3 +397,48 @@ app-to-database latency is the biggest deployment decision.
 `setErrorReporter`) writing structured JSON, not the Sentry SDK. Attaching Sentry is
 three lines at startup and `docs/publishing.md` has them; this way a deployment with no
 error service still has an error record, and forty files do not import a vendor.
+
+---
+
+## Correction · the load test measured a reservoir, not a rate
+
+Found on 3 November 2026, while writing `docs/system-design.md`, because the scaling
+plan needed the throughput number and it did not survive arithmetic.
+
+The M13 exit check reported **391 events/second sustained** and **~33.8M events/day**.
+Both were wrong. A project's token bucket holds a 2,000-token burst and refills at
+200/s, so it absorbs 10 seconds of silence and can spend it all at once. The load
+test ran **4-second levels**, so the figure it printed was the reservoir draining.
+The sustained rate is the refill rate: **200/s, ~17.3M events/day**. The day figure
+was out by 2x.
+
+What made it invisible is the part worth keeping: the script already refused to
+believe a level that was mostly 429s — a defect it had caught once before. But levels
+1 and 2 saw **zero** 429s, because the reservoir was paying. The guard asked "was I
+refused?" when the question is "was I refused _yet_?". The bucket went empty during
+level 2 and level 3 took the whole bill: 568 of 581 requests refused.
+
+| Level | Spent | Bucket after | 429s |
+| ----- | ----- | ------------ | ---- |
+| 1     | 1,400 | ~600         | 0    |
+| 2     | 1,700 | empty        | 0    |
+| 4     | 1,300 | empty        | 568  |
+
+Fixed in `scripts/load-test.mjs`: it knows the bucket's shape, reports peak and
+sustained as separate numbers, derives the day figure from the sustained one, and
+will not call anything steady state unless the levels ran at least three times the
+reservoir window. `docs/cost.md` carries the corrected figures.
+
+**The pipeline's own ceiling remains unmeasured** — the limiter stops the ramp first.
+Concurrency 1 gives the one honest pipeline number: p50 282ms per 100-event batch,
+so ~355 events/second per connection while tokens last. Measuring the pipeline needs
+the per-project limit raised or several keys driven at once, and is still a named
+later exercise.
+
+**The general lesson, for the diary:** a rate limiter with a burst allowance makes
+every short load test optimistic, and silence before the test makes it more so. If
+the measurement window is shorter than `burst / refill_rate`, you are measuring the
+reservoir. Any bucket-shaped thing has this property — API quotas, disk burst credits,
+cloud CPU credits, network burst. The tell is a clean early level followed by a
+catastrophic later one, which reads like a cliff in the system and is really a bill
+arriving.

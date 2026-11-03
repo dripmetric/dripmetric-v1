@@ -81,6 +81,8 @@ of the same name. `pnpm check:names` fails the build if that can ever happen aga
 ## Documentation
 
 - **`docs/publishing.md` — how to take this live: every key, where it goes, in order**
+- `docs/system-design.md` — how the system is built and why, and the staged plan
+  for scaling event handling as volume grows
 - `docs/cost.md` — measured SDK size, storage per event and the ingest ceiling
 - `docs/runbook.md` — what to do when something breaks, and the drill log
 - `docs/openapi.yaml` — the ingest API, also served at `/v1/openapi.json`

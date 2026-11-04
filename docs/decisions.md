@@ -303,3 +303,268 @@ running the moving parts by hand (`node scripts/check-licenses.mjs`, `npx vitest
 `npx eslint`) without ever running `pnpm verify` or `pnpm licenses` themselves. Those
 are the commands CI runs and the ones a founder would type, so they are the ones that
 have to be run. `pnpm verify` and every individual CI step are now confirmed green.
+
+---
+
+## M2 — Simulator
+
+### 2026-10-28 · The simulator records truth as it generates, not afterwards
+
+`packages/sim` plays synthetic people through three dummy products and writes down
+what will happen to each one **at the moment the decision is made**, not by inferring
+it from the events later. That is the whole difference between a simulator you can
+score an engine against and a pile of plausible-looking data: "what share of stalled
+users did leak detection catch?" is only answerable because something independent
+recorded that the stall was deliberate.
+
+Deterministic by seed (mulberry32, no `Math.random` anywhere) and on a virtual clock,
+so a 30-day journey generates in milliseconds and a 49-hour stall is a number rather
+than a wait. A person's stream is seeded from the run seed **and their index**, so
+adding users does not reshuffle the ones already there — otherwise growing a run would
+invalidate every number measured from a smaller one.
+
+Seven personas: the brief's four (converter, staller, intent-then-leaves,
+payer-gone-quiet) plus a tourist on a disposable address, a crawler and the founder's
+own team. The last three exist to prove the filters work rather than to be measured.
+
+### 2026-10-28 · The products send the founder's OWN event names
+
+Ledgerly sends `Invoice Sent`, Loomwork sends `Board Created`, Hookrelay sends
+`Webhook Delivered` — never `Core Action`. A test asserts the canonical name is
+_absent_. A product whose names were already canonical would never exercise the event
+dictionary or the Inbox, which is the thing most likely to be subtly wrong
+(brief section 7).
+
+### 2026-10-28 · Four real bugs the simulator found in M1's pipeline
+
+This is the return on building it, so each is recorded with what it would have cost.
+
+1. **Within-batch duplicates reported `ok` twice for one stored row.** Postgres's
+   `ON CONFLICT DO NOTHING` inserts the first of two identical keys in a statement
+   and skips the second silently, so `RETURNING` listed the hash once while both
+   pending rows matched it. The stored count was right; the per-message result lied,
+   and a client retrying inside one batch would never learn its retry was collapsed.
+   M1's exit check missed it because it replayed a batch as a _second request_.
+
+2. **The request user-agent beat the per-message one, so no crawler was ever
+   dropped.** `isBot(project.userAgent ?? message.context?.userAgent)` — and Node's
+   fetch sends `user-agent: node`, which is non-null, so the message's own context
+   was never consulted. This was not a simulator artefact: every server-side batch,
+   and every Segment, RudderStack or PostHog feed, carries one HTTP user-agent (the
+   forwarding server's) and a per-message context describing the real visitor. In a
+   300-person run, not one of the 12 crawlers was filtered. The precedence is now
+   stated once, in `visitorUserAgent`, and both call sites use it.
+
+3. **Internal users kept events that arrived before their `identify`.** A step event
+   and the identify shared a millisecond and the messageId tiebreak put the event
+   first, so it was stored before we knew the address was the founder's own.
+   `markInternal` now deletes what is already stored — events, step state, daily
+   counters, tracked-user rows — and drops rows queued earlier in the same batch.
+   "The founder's own team is out of every number" is now true rather than nearly
+   true, instead of relying on every future query remembering to filter on
+   `internal`.
+
+4. **Only the dozen mappable meanings were recognised as canonical.** So
+   `Onboarding Step Viewed`, `Email Verified` and `Trial Started` all landed in the
+   Inbox as unmapped, and step **entry** was lost for every step without a URL rule.
+   The score showed 67 of 126 known stalls. The dozen meanings are what a founder may
+   map their _own_ names onto; they were never meant to limit what we recognise when
+   a catalog name is sent verbatim ("named right at the source", brief section 7).
+   Checking the whole catalog took it to 126 of 126.
+
+A fifth was a crash rather than a silent wrong answer: `applyStepUpdates` sent one
+multi-row `INSERT … ON CONFLICT DO UPDATE` whose own rows collided, which Postgres
+refuses outright ("cannot affect row a second time"). A batch routinely carries two
+updates for one person and step, because entering a step and completing it are two
+events — 1,065 of 6,458 messages failed with a 500 the moment a funnel existed to
+match against. `mergeStepUpdates` now collapses a batch to one row per (person, step)
+with the same semantics the SQL had.
+
+### 2026-10-28 · The simulator configures the funnel, because otherwise nothing is visible
+
+`configureProject` applies the funnel, URL rules and the core-action mapping a founder
+confirms at setup. Step state only exists for steps that are declared, so a run
+against an unconfigured project records no stall at all — the score read 0 of 126
+until this existed. The real setup flow is M5; this is the same data applied directly,
+so M6 to M8 can be verified before that flow exists.
+
+### 2026-10-28 · Scoring runs in CI, not just in the CLI
+
+All three products score 100% on filtered / tracked / paid / stalls-visible /
+intent-signals-present, and still do with duplicates, late events and clock skew
+injected together — a fault is a tracking problem, not a user problem, so it must not
+cost a single known person. The per-engine shares the brief asks for ("what share of
+stalled users did leak detection catch") need the engines themselves and arrive with
+M7 and M8; what is scored now is whether ingest put the right people and events in
+the database at all, which is the floor those later scores stand on.
+
+### 2026-10-28 · `visits` counts distinct sessions within a batch only
+
+Counting a step's visits across batches needs the session recorded per
+(person, step), which is M6's job. Until then the merge counts distinct sessions in
+the batch, so a visitor returning in a later batch is **under**counted rather than
+over-counted. Noted because an undercount is the safer direction but still wrong.
+
+---
+
+## M3 — Browser SDK
+
+### 2026-10-28 · The SDK does not import the catalog; a test keeps it honest
+
+The catalog carries Zod schemas and 76 event definitions. Importing it into a bundle
+with a 5 KB gzipped budget is not possible, so the twelve names the SDK sends are
+string literals in `packages/sdk/src/shared/types.ts`. That trade needs a guard: a
+typo in one of those literals would reach a founder's dashboard as an event that can
+never be mapped, sitting in their Inbox forever looking like one of their own. So the
+catalog is a **devDependency** of the SDK, used by one test that reads those literals
+out of the source and asserts each is a real catalog name. `files: ["dist"]` keeps it
+out of the tarball; `npm pack --dry-run` confirms 25 files, all `dist`, README,
+LICENSE and package.json.
+
+### 2026-10-28 · `PAGE_LEFT` is its own constant, because objects do not tree-shake
+
+esbuild cannot tree-shake an object's properties, so importing `AUTO_EVENTS` for the
+one name the core sends pulled all twelve strings into the bundle. The core now
+imports `PAGE_LEFT` on its own and the object stays for the lazy chunk. Worth ~90
+bytes gzipped, which mattered.
+
+### 2026-10-28 · The lazy chunk is its own entry point, not an esbuild split chunk
+
+`splitting: true` hoisted the shared constants into a chunk that `index.js` imports
+**statically**, so the core actually cost `index.js` plus that chunk — 5,422 B against
+a 5,120 B budget — while the size report measured only `index.js` at 5,009 and passed.
+The budget was being enforced against a number that was not the download size.
+
+The lazy module is now marked external in the core build and built as its own
+self-contained entry. It duplicates a few hundred bytes of constants and makes the
+core exactly what a browser downloads for `import 'dripmetric/browser'`. The build
+also refuses to measure a core that contains any static import, so this cannot come
+back quietly.
+
+Final: **core 5,018 B gzipped** (budget 5,120), lazy chunk 1,556 B, script-tag build
+6,488 B, server 1,091 B.
+
+### 2026-10-28 · Slow Page moved to the lazy chunk, where the brief had it all along
+
+Reporting load speed from the core was wrong twice over: brief Appendix A makes
+Slow Page a **key-pages-only** event alongside forms and clicks, and putting the
+Performance API in the core is what pushed the bundle 33 bytes over budget. The
+budget check is what surfaced the misreading.
+
+### 2026-10-28 · A stale `.tsbuildinfo` silently skipped the declaration emit
+
+`tsc -p tsconfig.build.json` printed nothing, emitted nothing and exited 0. The
+incremental build info outlived `rm -rf dist`, so tsc believed its output was current
+— and the package would have shipped with `exports.types` pointing at files that did
+not exist. A declaration-only emit takes under a second, so `incremental` is off.
+
+### 2026-10-28 · Interaction capture retries when settings arrive
+
+Playwright found this one. Settings (which pages are key pages) are fetched
+asynchronously, and `init()` sends the first page view immediately, so `isKeyPage()`
+was always false the first time it was asked. On the landing page — often the only
+page in a session — forms, clicks and speed capture never started at all. The settings
+response now re-attempts the load.
+
+### 2026-10-28 · The transport will not start a second send while one is in flight
+
+A retry loop runs for seconds, and the 2-second flush timer fired inside it and queued
+another attempt behind the first. Wasted work, and the cause of a flaky test. There is
+now a `sending` guard, and `schedule()` does not set a timer while a send is running.
+
+### 2026-10-28 · The retry tests use fake timers
+
+Even with that guard the retry test stayed flaky: it counts attempts, and the backoff
+is real time (500 ms then 1 s, both jittered) racing a real 2-second timer. It saw
+three requests alone and four in the suite. `vi.useFakeTimers()` plus
+`runAllTimersAsync()` removes the race and takes seconds off the suite. Transports made
+by a test are also disposed in `afterEach`, because `fetch` is resolved at call time:
+a stale transport's retry loop lands on the _current_ test's mock.
+
+### 2026-10-28 · The id fallback does not build a real UUID
+
+`crypto.randomUUID` needs a secure context, so a founder testing on plain http does
+not get it. The fallback only has to be unique — the server dedupes on the id and
+never parses it — so hand-building a v4 UUID from `getRandomValues` was ~200 bytes of
+a 5 KB budget spent on a shape nothing reads.
+
+---
+
+## M4 — Server SDK
+
+### 2026-10-28 · One `flushAfterResponse` helper serves Vercel and Next
+
+Verified today rather than recalled, because the brief flags these names as moving:
+`@vercel/functions` 3.10.4 exports `waitUntil: (promise: Promise<unknown>) => void`,
+and Next.js 16.4.3 exports `after<T>(task: Promise<T> | (() => T | Promise<T>))` from
+`next/server`. **Both accept a promise**, so one helper works for either:
+`flushAfterResponse(dm, waitUntil)` or `flushAfterResponse(dm, after)`.
+
+Neither package is a dependency. The founder already has whichever they use, and a
+zero-dependency library should not reach for either — a dynamic import of an optional
+peer is exactly the kind of thing that breaks in someone else's bundler. With no
+scheduler the flush is left running, which is correct on a long-running server, and a
+scheduler that throws (both platforms reject a call outside a request scope) is
+caught, because the flush is already in flight and nothing is lost.
+
+### 2026-10-28 · `deleteUser` awaits, unlike every other call
+
+Every other method returns immediately — that is the point of the queue. A deletion
+request is different: the caller needs an answer they can act on, usually because
+someone asked them to erase a person. It returns `{ deleted }`, treats an unknown user
+as already gone (404 → `deleted: false`) so a retry is safe, and throws on anything
+else.
+
+The endpoint was built here rather than waiting for M11, because an SDK method that
+404s is worse than no method. It deletes events, step state, counters, tracked-user
+rows, anonymous links, account memberships, sessions and the person, children before
+parents, and writes an audit row. **Daily summaries are deliberately untouched**: they
+hold counts, not personal data, and deleting them would silently rewrite the founder's
+own history. M11 adds the audit-log view and the retention job around it.
+
+### 2026-10-28 · A publishable key is refused by the constructor
+
+`new Dripmetric({ secretKey: 'pk_…' })` throws immediately. With a publishable key
+every server-only trait and billing event would be refused one at a time,
+server-side, with no obvious cause — a slow mystery instead of a fast error.
+`signUserId` refuses one too, for a sharper reason: a publishable key is public, so
+anyone could forge the signature and identity verification would be theatre.
+
+### 2026-10-28 · Fake timers do not mix with a real HTTP server
+
+The browser transport's retry test uses fake timers and is deterministic. The
+server's equivalent could not: `vi.runAllTimersAsync()` decides there are no timers
+left while a real round trip is still in flight, so the next backoff is never queued
+and the loop ends an attempt early — two requests where three were due. That test
+uses real time (250 ms then 500 ms, about a second total) and is honest about it.
+
+### 2026-10-28 · The example app is the exit check, not a demo
+
+`examples/next-app` sends `Signed Up`, `Activated` and `Checkout Started` from server
+routes with `flushAfterResponse(dm, after)`, and identifies from the browser. Run
+against a live local API with a real secret key, all three arrive with
+`source = server`, their canonical names mapped, and the email stored encrypted with
+type `work`. It also shows the two things easiest to get wrong: one module-level
+client (a per-request instance would hold a queue discarded before it ever flushes),
+and `init` inside an effect so it only ever runs in the browser.
+
+### 2026-10-28 · CI needed a Playwright browser; the dev container had one for free
+
+The e2e tests passed locally and failed on every GitHub runner with "Executable
+doesn't exist at ~/.cache/ms-playwright/…". The dev container ships Chromium and
+points Playwright at it with `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers` and
+`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`. A CI runner has neither, so Playwright looks in
+its default cache and finds nothing.
+
+CI now caches `~/.cache/ms-playwright` and runs
+`playwright install --with-deps chromium` before the e2e step. Chromium only — it is
+all `playwright.config.ts` launches. The cache key is the lockfile hash, so bumping
+Playwright invalidates it on its own rather than silently reusing a browser the new
+version cannot drive.
+
+**The lesson, which is not about Playwright:** I had written the config around a
+convenience of _this_ container and never asked whether the runner shared it. Anything
+the dev environment provides for free — a pre-installed browser, a running Docker
+daemon, a populated `.env` — is a thing CI has to be told about explicitly. I cannot
+verify this particular fix locally either, because installing a second browser here
+would not be found by the pinned Playwright, so the CI run is the proof.

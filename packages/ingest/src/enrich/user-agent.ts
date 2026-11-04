@@ -58,6 +58,25 @@ export function isBot(userAgent: string | undefined): boolean {
   return BOT_PATTERNS.some((p) => p.test(userAgent));
 }
 
+/**
+ * Whose user agent describes the VISITOR.
+ *
+ * The message's own `context.userAgent` wins over the request header, and the
+ * difference is not cosmetic. A browser sending its own events supplies the same
+ * string in both places. But a server-side batch, or a Segment or RudderStack feed,
+ * carries ONE HTTP user agent — the forwarding server's — and a per-message context
+ * describing each real visitor. Preferring the header there meant every forwarded
+ * batch evaded the bot filter, because the header was some server's and never
+ * matched a crawler pattern. The simulator caught it: Node's fetch sends
+ * `user-agent: node`, so not one crawler in a 300-person run was dropped.
+ */
+export function visitorUserAgent(
+  messageUserAgent: string | undefined,
+  requestUserAgent: string | undefined,
+): string | undefined {
+  return messageUserAgent ?? requestUserAgent;
+}
+
 // Order matters: a browser's string often also matches a more generic one, so the
 // more specific engine has to be tried first.
 const BROWSERS: readonly [name: string, pattern: RegExp][] = [

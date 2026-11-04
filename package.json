@@ -14,6 +14,7 @@
     "db:down": "docker compose down",
     "db:migrate": "pnpm --filter @dripmetric/db migrate",
     "db:reset": "pnpm --filter @dripmetric/db reset",
+    "sim": "pnpm --filter @dripmetric/sim sim",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -22,7 +23,11 @@
     "test:watch": "vitest",
     "check:names": "node scripts/check-script-names.mjs",
     "check:licenses": "node scripts/check-licenses.mjs",
-    "verify": "pnpm check:names && pnpm lint && pnpm format:check && pnpm typecheck && pnpm check:licenses && pnpm test"
+    "verify": "pnpm check:names && pnpm lint && pnpm format:check && pnpm typecheck && pnpm check:licenses && pnpm test",
+    "ready": "pnpm format && pnpm verify",
+    "sdk:build": "pnpm --filter dripmetric build",
+    "sdk:size": "pnpm --filter dripmetric size",
+    "test:e2e": "pnpm --filter dripmetric test:e2e"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

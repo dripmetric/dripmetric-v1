@@ -140,6 +140,45 @@ export function splitTraits(traits: Record<string, unknown>): TraitWrite {
   return { email, nameTraits, otherTraits };
 }
 
+/**
+ * Marks a person as the founder's own team and removes what we already stored for
+ * them.
+ *
+ * The cleanup is not tidiness. An `identify` can arrive AFTER an event from the same
+ * person — the simulator found a case where a step event and the identify shared a
+ * millisecond and the id tiebreak put the event first — so by the time we learn the
+ * address is internal, rows may exist. Leaving them means any query that forgets to
+ * filter on `internal` counts the founder's own team. Deleting them makes
+ * "internal users leave no trace" true rather than nearly true.
+ *
+ * It is a handful of rows, once per internal person, inside the transaction that
+ * sets the flag.
+ */
+export async function markInternal(db: ScopedDb, userKey: number): Promise<number> {
+  await db.exec('UPDATE end_users SET internal = true WHERE project_id = $1 AND user_key = $2', [
+    db.projectId,
+    userKey,
+  ]);
+
+  // Derived state first, then the events themselves.
+  await db.exec('DELETE FROM user_step_state WHERE project_id = $1 AND user_key = $2', [
+    db.projectId,
+    userKey,
+  ]);
+  await db.exec('DELETE FROM daily_event_counts WHERE project_id = $1 AND user_key = $2', [
+    db.projectId,
+    userKey,
+  ]);
+  await db.exec('DELETE FROM monthly_active_users WHERE project_id = $1 AND user_key = $2', [
+    db.projectId,
+    userKey,
+  ]);
+  return db.exec('DELETE FROM events WHERE project_id = $1 AND user_key = $2', [
+    db.projectId,
+    userKey,
+  ]);
+}
+
 export interface ApplyTraitsOptions {
   /** Server-only traits are dropped from a publishable key (brief section 5). */
   allowServerOnly: boolean;

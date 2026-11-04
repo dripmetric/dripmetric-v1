@@ -73,3 +73,28 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # The SDK build measures the gzipped core and FAILS over 5 KB
+      # (brief section 6: "CI enforces the size budgets").
+      - name: SDK size budget
+        run: pnpm sdk:build
+
+      # The dev container has Chromium pre-installed and points Playwright at it
+      # with PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers. A CI runner has neither, so
+      # it has to download one — the e2e tests passed locally and failed here for
+      # exactly that reason. Chromium only: it is all playwright.config.ts uses.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          # Keyed on the lockfile, so bumping Playwright invalidates it by itself
+          # rather than silently reusing a browser the new version cannot run.
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter dripmetric exec playwright install --with-deps chromium
+
+      # Consent, SPA route changes, beacons and "stays responsive with the network
+      # blocked" can only be proven in a real browser.
+      - name: Browser SDK tests
+        run: pnpm test:e2e

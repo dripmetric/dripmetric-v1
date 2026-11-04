@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OG image template</title>
+    <!-- Source for public/og.png (1200×630). Rendered by tools/render-images.mjs. -->
+    <link rel="stylesheet" href="../src/app/globals.css" />
+    <style>
+      /* In the app next/font provides these; this file loads the same files directly. */
+      @font-face {
+        font-family: 'Newsreader';
+        src: url('../src/app/fonts/newsreader-latin-wght-normal.woff2') format('woff2');
+        font-weight: 200 800;
+      }
+      @font-face {
+        font-family: 'Schibsted Grotesk';
+        src: url('../src/app/fonts/schibsted-grotesk-latin-wght-normal.woff2') format('woff2');
+        font-weight: 400 900;
+      }
+      @font-face {
+        font-family: 'JetBrains Mono';
+        src: url('../src/app/fonts/jetbrains-mono-latin-wght-normal.woff2') format('woff2');
+        font-weight: 100 800;
+      }
+      :root {
+        --font-display-face: 'Newsreader';
+        --font-sans-face: 'Schibsted Grotesk';
+        --font-mono-face: 'JetBrains Mono';
+      }
+    </style>
+    <style>
+      html,
+      body {
+        margin: 0;
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: #f6f3ec;
+      }
+      .og {
+        position: relative;
+        width: 1200px;
+        height: 630px;
+        padding: 64px 72px;
+        display: grid;
+        grid-template-columns: 1.2fr 0.9fr;
+        gap: 48px;
+        align-items: center;
+        isolation: isolate;
+      }
+      .og::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background-image:
+          linear-gradient(to right, rgb(26 23 20 / 6%) 1px, transparent 1px),
+          linear-gradient(to bottom, rgb(26 23 20 / 6%) 1px, transparent 1px);
+        background-size: 48px 48px;
+        mask-image: radial-gradient(ellipse 85% 85% at 75% 30%, #000 25%, transparent 80%);
+      }
+      .og .brand__mark {
+        width: 44px;
+        height: 44px;
+      }
+      .og .brand__name {
+        font-size: 30px;
+      }
+      .og h1 {
+        font-family: var(--font-display);
+        font-weight: 480;
+        font-size: 64px;
+        line-height: 1.02;
+        letter-spacing: -0.028em;
+        margin: 34px 0 22px;
+        color: #1a1714;
+      }
+      .og h1 span {
+        color: #a8291f;
+      }
+      .og .eyebrow {
+        font-size: 15px;
+      }
+      .og .alert-card {
+        width: 100%;
+        animation: none;
+        font-size: 16px;
+      }
+      .og .alert-card__fields dt {
+        font-size: 11px;
+      }
+      .og .alert-card__fields dd {
+        font-size: 14px;
+      }
+      .og .sample-label {
+        font-size: 11px;
+        margin-top: 12px;
+        text-align: right;
+      }
+      .og .url {
+        position: absolute;
+        left: 72px;
+        bottom: 40px;
+        font-family: var(--font-mono);
+        font-size: 16px;
+        color: #655e54;
+        letter-spacing: 0.02em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="og">
+      <div>
+        <span class="brand">
+          <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
+            <rect width="32" height="32" rx="7.5" class="mark-bg" />
+            <rect x="5.5" y="6.5" width="21" height="4.2" rx="2.1" class="mark-bar" />
+            <rect x="5.5" y="13.9" width="13.2" height="4.2" rx="2.1" class="mark-bar" />
+            <rect x="5.5" y="21.3" width="7.2" height="4.2" rx="2.1" class="mark-bar" />
+            <path
+              d="M23.2 13.6c0 0-4.2 5-4.2 8.4a4.2 4.2 0 0 0 8.4 0c0-3.4-4.2-8.4-4.2-8.4z"
+              class="mark-drop"
+            />
+          </svg>
+          <span class="brand__name">Dripmetric</span>
+        </span>
+        <h1>Find the revenue leaking out of your <span>signup funnel.</span></h1>
+        <p class="eyebrow">
+          <span class="eyebrow__dot"></span>Revenue-leak detection for self-serve software
+        </p>
+      </div>
+      <div>
+        <div class="card alert-card">
+          <div class="alert-card__head">
+            <span class="alert-card__from">Dripmetric</span>
+            <span class="tag">App</span>
+            <span class="alert-card__channel">#revenue-leaks</span>
+          </div>
+          <p class="alert-card__title">
+            <span class="dot dot--warn"></span>Someone with buying intent went quiet
+          </p>
+          <p class="alert-card__says">
+            They looked ready to buy — 75 out of 100 — and have not been back for 7 days.
+          </p>
+          <dl class="alert-card__fields">
+            <div>
+              <dt>Who (masked)</dt>
+              <dd class="mono">User A7F2C1</dd>
+            </div>
+            <div>
+              <dt>Buying intent</dt>
+              <dd>75 of 100 · high</dd>
+            </div>
+            <div>
+              <dt>Plan</dt>
+              <dd>Pro</dd>
+            </div>
+            <div>
+              <dt>At stake</dt>
+              <dd class="at-stake">$49.00 at your list price</dd>
+            </div>
+          </dl>
+        </div>
+        <p class="sample-label">Sample alert · simulated data</p>
+      </div>
+      <p class="url">dripmetric.com</p>
+    </div>
+  </body>
+</html>

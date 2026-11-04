@@ -29,7 +29,25 @@ export {
 export type { Ciphertext } from './crypto.js';
 
 export * from './projects.js';
-
+export * from './dictionary.js';
+export * from './facts.js';
+export * from './coverage.js';
+export * from './changes.js';
+export * from './funnel-reads.js';
+export * from './serialize.js';
+export * from './reveals.js';
+export * from './people.js';
+export * from './dashboard-reads.js';
+export * from './integrations.js';
+export * from './alerts.js';
 // Migrations, the schema reset and the `.env` loader live in @dripmetric/db/admin.
 // They touch the filesystem and the schema, so the request path must not be able to
 // reach them, and keeping them out of here means the web bundle cannot pull them in.
+export * from './health-reads.js';
+export * from './sources.js';
+export * from './signup-guards.js';
+export * from './audit-signup.js';
+export * from './audit-flow.js';
+export * from './shadow.js';
+export { shadowConfigured, shadowDbPool, SHADOW_TIMEOUT_MS } from './pool.js';
+export * from './report-error.js';

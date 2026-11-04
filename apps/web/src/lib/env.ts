@@ -13,6 +13,28 @@ const WebEnvSchema = z.object({
   EMAIL_FROM: z.string().default('Dripmetric <hello@dripmetric.com>'),
   /** M13 guard (settled decision 1): no live project without confirmed backups. */
   BACKUPS_CONFIRMED: z.string().optional(),
+  /**
+   * Mapping suggestions (brief §7: "a real call behind an env var, a mock in
+   * tests"). Absent means the Inbox works by hand, which it must anyway.
+   */
+  ANTHROPIC_API_KEY: z.string().optional(),
+  /** Brief §7: "keep the model id, price and prompt in config." */
+  ANTHROPIC_MODEL: z.string().default('claude-haiku-5-5'),
+
+  /*
+   * Slack and Discord OAuth (brief §9, M10: "against mocks").
+   *
+   * The base URL is configurable so dev and tests point at `/dev/oauth/<kind>` in
+   * this same app while production points at the real endpoints. The flow itself is
+   * identical either way — same state nonce, same single-use check, same code
+   * exchange — so what the mock exercises is the real code path.
+   */
+  SLACK_OAUTH_BASE: z.string().default('/dev/oauth/slack'),
+  DISCORD_OAUTH_BASE: z.string().default('/dev/oauth/discord'),
+  SLACK_CLIENT_ID: z.string().optional(),
+  SLACK_CLIENT_SECRET: z.string().optional(),
+  DISCORD_CLIENT_ID: z.string().optional(),
+  DISCORD_CLIENT_SECRET: z.string().optional(),
 });
 
 let cached: z.infer<typeof WebEnvSchema> | undefined;

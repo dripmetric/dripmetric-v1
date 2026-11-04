@@ -8,12 +8,14 @@
     "dev": "tsx watch src/main.ts",
     "start": "node dist/main.js",
     "build": "tsc -b",
-    "clean": "rm -rf dist *.tsbuildinfo"
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "reconcile": "tsx src/cli/reconcile.ts"
   },
   "dependencies": {
     "@dripmetric/catalog": "workspace:*",
     "@dripmetric/db": "workspace:*",
     "@dripmetric/engine": "workspace:*",
+    "@dripmetric/ingest": "workspace:*",
     "pg-boss": "12.38.0"
   },
   "devDependencies": {

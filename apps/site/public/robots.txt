@@ -1,0 +1,10 @@
+# Dripmetric — https://dripmetric.com
+# Every public page may be crawled. Whether to treat AI crawlers differently is an
+# owner decision: see apps/site/README.md before adding agent-specific rules.
+User-agent: *
+Allow: /
+
+Sitemap: https://dripmetric.com/sitemap.xml
+
+# If you are an LLM looking for site information, start at https://dripmetric.com/llms.txt.
+# Use https://dripmetric.com/sitemap.md to find the relevant topic and its linked Markdown answer; if it is absent, report that gap.

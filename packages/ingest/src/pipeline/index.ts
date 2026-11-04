@@ -1,5 +1,6 @@
 import {
   CATALOG_EVENTS_BY_NAME,
+  isCanonicalEventName,
   SERVER_ONLY_EVENT_NAMES,
   SERVER_ONLY_TRAITS,
   type MessageInput,
@@ -11,7 +12,15 @@ import type { PreparedMessage } from '../types.js';
 import { isBot, visitorUserAgent } from '../enrich/user-agent.js';
 import { emailDomain, looksLikeEmail } from '../enrich/email.js';
 import { normalisePath } from '../enrich/paths.js';
-import { newNameCache, resolveNameId, resolvePathId, type NameCache } from './names.js';
+import {
+  countName,
+  flushNameCounts,
+  newNameCache,
+  resolveNameId,
+  resolvePathId,
+  type NameCache,
+  type NameCounts,
+} from './names.js';
 import {
   addAccountMember,
   applyTraits,
@@ -22,7 +31,13 @@ import {
   resolveUserKey,
   type ResolvedUser,
 } from './identity.js';
-import { ensureSession, latestBrowserSession } from './sessions.js';
+import {
+  addToSession,
+  ensureSession,
+  flushSessionTotals,
+  latestBrowserSession,
+  type SessionTotalsMap,
+} from './sessions.js';
 import {
   readDailyCounts,
   recordMonthlyActive,
@@ -87,12 +102,16 @@ interface PendingEvent {
 
 export interface PipelineState {
   names: NameCache;
+  /** How many times each name appeared in this batch; flushed once at the end. */
+  nameCounts: NameCounts;
   paths: Map<string, number>;
   users: Map<string, ResolvedUser>;
   anons: Map<string, number>;
   sessions: Map<string, number>;
   /** `${userKey}:${month}` — a person is recorded once per month, not once per event. */
   monthlyActive: Set<string>;
+  /** Per session: its last event, page views and active seconds, flushed once. */
+  sessionTotals: SessionTotalsMap;
   /**
    * `${day}:${userKey}:${nameId}` — `base` is what the database already held and
    * `batch` is what this batch added, INCLUDING the rows that went over the cap.
@@ -108,10 +127,12 @@ export interface PipelineState {
 export function newPipelineState(): PipelineState {
   return {
     names: newNameCache(),
+    nameCounts: new Map(),
     paths: new Map(),
     users: new Map(),
     anons: new Map(),
     sessions: new Map(),
+    sessionTotals: new Map(),
     monthlyActive: new Set(),
     arrivedToday: new Map(),
     funnel: null,
@@ -256,7 +277,10 @@ export async function prepareForWrite(
   }
 
   // --- Step 7: map the event name through the dictionary -----------------------
-  const rawName = message.type === 'track' ? message.event : 'Page Viewed';
+  const rawName =
+    message.type === 'track'
+      ? message.event
+      : pageEventName(message.type === 'page' ? message.name : undefined);
 
   // Billing events travel through this same API until the Stripe connector exists
   // (brief section 5), so they are tagged `billing` by name rather than by path.
@@ -264,12 +288,31 @@ export async function prepareForWrite(
     CATALOG_EVENTS_BY_NAME.get(rawName)?.arrival === 'billing' ? 'billing' : project.source;
 
   const name = await resolveNameId(db, state.names, rawName, effectiveSource, prepared.occurredAt);
+  // Counted per occurrence, not per distinct name: resolveNameId is cached.
+  countName(state.nameCounts, name.id);
 
   // --- The page path -----------------------------------------------------------
   const resolvedPath = await resolvePath(db, message, state, prepared.occurredAt);
 
   const props =
     message.type === 'track' || message.type === 'page' ? (message.properties ?? null) : null;
+
+  /*
+   * The session's running totals (brief §4).
+   *
+   * Counted from what ARRIVED, before the daily cap below, for the same reason the
+   * daily counters are: a session that went over the cap still had those page views,
+   * and a session whose last event was capped still ended when it ended.
+   */
+  if (sessionId !== null) {
+    addToSession(state.sessionTotals, sessionId, prepared.occurredAt, {
+      pageView: rawName === 'Page Viewed',
+      activeSeconds:
+        rawName === 'Page Left' && typeof props?.['activeSeconds'] === 'number'
+          ? props['activeSeconds']
+          : 0,
+    });
+  }
 
   // --- The daily cap (brief section 4) -----------------------------------------
   if (userKey !== null) {
@@ -421,6 +464,9 @@ async function writeCounters(
   state: PipelineState,
   project: ProjectContext,
 ): Promise<void> {
+  await flushNameCounts(db, state.nameCounts);
+  await flushSessionTotals(db, state.sessionTotals);
+
   await recordMonthlyActive(
     db,
     [...state.monthlyActive].map((entry) => {
@@ -445,6 +491,29 @@ async function writeCounters(
 
 function markMonthlyActive(state: PipelineState, userKey: number, at: Date): void {
   state.monthlyActive.add(`${userKey}|${at.toISOString().slice(0, 7)}-01`);
+}
+
+/**
+ * What a `page` message is called.
+ *
+ * Our own browser SDK sends a page LEAVE as `{type: 'page', name: 'Page Left'}` with
+ * the running totals attached (brief §6), and this function is what reads the name.
+ * Before it existed every page message was stored as `Page Viewed`, so:
+ *
+ *  - no `Page Left` was ever recorded from the SDK, which made step timing's active
+ *    seconds and the pricing attention time unreachable, and left
+ *    `updatePageLeftTotals` dead in practice — a repeat page leave was dropped as a
+ *    duplicate (its messageId is deterministic) instead of raising the totals;
+ *  - and every page view was counted twice, once for the view and once for the leave.
+ *
+ * Segment's `page` call uses `name` for the PAGE's name ("Pricing"), not an event
+ * name, so only a name that is actually in our catalog is treated as an event. A
+ * Segment page named "Pricing" stays a `Page Viewed` with its name in the properties,
+ * which is what a Segment user expects (settled decision 11).
+ */
+function pageEventName(name: string | undefined): string {
+  if (name !== undefined && isCanonicalEventName(name)) return name;
+  return 'Page Viewed';
 }
 
 function isInternal(email: string, project: ProjectContext): boolean {

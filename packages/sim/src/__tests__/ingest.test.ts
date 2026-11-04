@@ -1,14 +1,13 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import pg from 'pg';
-import { closePools, createProject, withProject, type CreatedProject } from '@dripmetric/db';
-import { loadRootEnv, runMigrations } from '@dripmetric/db/admin';
-import { handleBatch } from '@dripmetric/ingest';
+import { closePools, confirmMapping, createProject, inbox, withProject } from '@dripmetric/db';
+import type { AskOptions, AskResult } from '@dripmetric/engine';
+import { queueRecompute, recomputeProject, runSuggestions } from '@dripmetric/ingest';
 import { runSimulation } from '../run.js';
 import { configureProject } from '../setup.js';
 import { scoreIngest, share } from '../score.js';
 import { product } from '../products/index.js';
-import { deliveredAt } from '../faults.js';
-import type { SimMessage } from '../types.js';
+import { ensureMigrated, resetData } from './db.js';
+import { keysOf, sendRun } from './send.js';
 
 /**
  * M2 exit checks that need real ingest:
@@ -21,117 +20,7 @@ import type { SimMessage } from '../types.js';
  * adapter over `handleBatch`.
  */
 
-let migrated = false;
-
-async function ensureMigrated(): Promise<void> {
-  if (migrated) return;
-  loadRootEnv();
-  const client = new pg.Client({ connectionString: process.env['ADMIN_DATABASE_URL'] });
-  await client.connect();
-  try {
-    await runMigrations(client);
-    await client.query(`ALTER ROLE dripmetric_app LOGIN PASSWORD 'dripmetric_app'`);
-  } finally {
-    await client.end();
-  }
-  migrated = true;
-}
-
-async function resetData(): Promise<void> {
-  const client = new pg.Client({ connectionString: process.env['ADMIN_DATABASE_URL'] });
-  await client.connect();
-  try {
-    await client.query("SET lock_timeout = '10s'");
-    for (const table of [
-      'events',
-      'user_step_state',
-      'daily_event_counts',
-      'monthly_active_users',
-      'rate_buckets',
-      'anonymous_links',
-      'anonymous_visitors',
-      'account_members',
-      'sessions',
-      'funnel_steps',
-      'funnels',
-      'url_rules',
-      'paths',
-      'event_names',
-      'audit_log',
-      'api_keys',
-      'project_members',
-      'magic_link_tokens',
-      'founder_sessions',
-      'founder_users',
-    ]) {
-      await client.query(`DELETE FROM ${table}`);
-    }
-    await client.query('UPDATE end_users SET account_id = NULL');
-    await client.query('DELETE FROM accounts');
-    await client.query('DELETE FROM end_users');
-    await client.query("DELETE FROM projects WHERE mode = 'test'");
-    await client.query('DELETE FROM projects');
-  } finally {
-    await client.end();
-  }
-}
-
 /** Sends a run through the pipeline the way the HTTP loader does. */
-async function send(
-  messages: readonly SimMessage[],
-  keys: { publishable: string; secret: string },
-): Promise<{ ok: number; duplicate: number; filtered: number; errors: Record<string, number> }> {
-  const tally = { ok: 0, duplicate: 0, filtered: 0, errors: {} as Record<string, number> };
-
-  // Consecutive runs sharing a key, exactly as load.ts groups them: an identify()
-  // has to arrive before the events that depend on its traits.
-  let group: SimMessage[] = [];
-  let serverSide = messages[0]?.serverSide ?? false;
-
-  const flush = async () => {
-    if (group.length === 0) return;
-    const receivedAt = group.reduce(
-      (latest, m) => (deliveredAt(m) > latest ? deliveredAt(m) : latest),
-      new Date(0),
-    );
-    const response = await handleBatch({
-      body: JSON.stringify({
-        batch: group.map((m) => m.message),
-        sentAt: receivedAt.toISOString(),
-      }),
-      headers: {
-        authorization: `Bearer ${serverSide ? keys.secret : keys.publishable}`,
-        'content-type': 'application/json',
-      },
-      receivedAt,
-    });
-    const body = response.body as { results?: { status: string; code: string }[] };
-    for (const item of body.results ?? []) {
-      if (item.status === 'ok') tally.ok += 1;
-      else if (item.status === 'duplicate') tally.duplicate += 1;
-      else if (item.status === 'filtered') tally.filtered += 1;
-      else tally.errors[item.code] = (tally.errors[item.code] ?? 0) + 1;
-    }
-    group = [];
-  };
-
-  for (const message of messages) {
-    if (message.serverSide !== serverSide || group.length >= 200) {
-      await flush();
-      serverSide = message.serverSide;
-    }
-    group.push(message);
-  }
-  await flush();
-  return tally;
-}
-
-function keysOf(project: CreatedProject): { publishable: string; secret: string } {
-  const publishable = project.keys.find((k) => k.kind === 'publishable' && k.mode === 'live');
-  const secret = project.keys.find((k) => k.kind === 'secret' && k.mode === 'live');
-  if (!publishable || !secret) throw new Error('createProject did not return both live keys.');
-  return { publishable: publishable.token, secret: secret.token };
-}
 
 describe('a simulator run through real ingest', () => {
   beforeAll(ensureMigrated, 60_000);
@@ -145,7 +34,7 @@ describe('a simulator run through real ingest', () => {
     });
     const run = runSimulation({ product: 'selfserve', users: 60, seed: 1 });
 
-    const tally = await send(run.messages, keysOf(project));
+    const tally = await sendRun(run.messages, keysOf(project), { userAgent: null });
 
     expect(tally.errors).toEqual({});
     expect(tally.ok).toBeGreaterThan(0);
@@ -180,7 +69,7 @@ describe('a simulator run through real ingest', () => {
   it('injected duplicates do not change counts', async () => {
     const cleanProject = await createProject({ name: 'Sim clean' });
     const clean = runSimulation({ product: 'selfserve', users: 50, seed: 1 });
-    const cleanTally = await send(clean.messages, keysOf(cleanProject));
+    const cleanTally = await sendRun(clean.messages, keysOf(cleanProject), { userAgent: null });
     const cleanRows = await withProject(cleanProject.live.id, (db) =>
       db.query<{ count: string }>('SELECT count(*) FROM events'),
     );
@@ -192,7 +81,7 @@ describe('a simulator run through real ingest', () => {
       seed: 1,
       faults: ['duplicates'],
     });
-    const faultyTally = await send(faulty.messages, keysOf(faultyProject));
+    const faultyTally = await sendRun(faulty.messages, keysOf(faultyProject), { userAgent: null });
     const faultyRows = await withProject(faultyProject.live.id, (db) =>
       db.query<{ count: string }>('SELECT count(*) FROM events'),
     );
@@ -214,7 +103,7 @@ describe('a simulator run through real ingest', () => {
       faults: ['late-events'],
     });
 
-    const tally = await send(run.messages, keysOf(project));
+    const tally = await sendRun(run.messages, keysOf(project), { userAgent: null });
     expect(tally.errors).toEqual({});
 
     const rows = await withProject(project.live.id, (db) =>
@@ -258,8 +147,8 @@ describe('a simulator run through real ingest', () => {
       });
     }
 
-    await send(ordered.messages, keysOf(orderedProject));
-    await send(late.messages, keysOf(lateProject));
+    await sendRun(ordered.messages, keysOf(orderedProject), { userAgent: null });
+    await sendRun(late.messages, keysOf(lateProject), { userAgent: null });
 
     const stateOf = (id: number) =>
       withProject(id, (db) =>
@@ -284,7 +173,7 @@ describe('a simulator run through real ingest', () => {
     const project = await createProject({ name: 'Sim skewed' });
     const run = runSimulation({ product: 'selfserve', users: 40, seed: 1, faults: ['clock-skew'] });
 
-    await send(run.messages, keysOf(project));
+    await sendRun(run.messages, keysOf(project), { userAgent: null });
 
     const rows = await withProject(project.live.id, (db) =>
       db.query<{ count: string }>(
@@ -298,6 +187,102 @@ describe('a simulator run through real ingest', () => {
     expect(Number(rows[0]!.count)).toBe(0);
   }, 120_000);
 
+  /*
+   * M5 exit check (brief §11): "with simulator data that uses renamed events, the
+   * Inbox lists the unmapped names."
+   *
+   * The `renamed-event` fault is a deploy that renames a core action partway through
+   * the run. The old name keeps its mapping; the new one must land in the Inbox and
+   * count toward nothing until the founder maps it (settled decision 10). The
+   * mapping must then rebuild the history that arrived under the new name.
+   */
+  it('puts a renamed event in the Inbox, and mapping it rebuilds the history', async () => {
+    const project = await createProject({ name: 'Sim renamed' });
+    const definition = product('selfserve');
+    const renamedTo = `${definition.coreActionName.toLowerCase().replace(/ /g, '_')}_v2`;
+
+    const run = runSimulation({
+      product: 'selfserve',
+      users: 80,
+      seed: 1,
+      faults: ['renamed-event'],
+    });
+    expect(run.faultLog.map((f) => f.fault)).toContain('renamed-event');
+
+    // A funnel step on the core action, so the cost of the rename is visible.
+    await withProject(project.live.id, async (db) => {
+      const funnel = await db.one<{ id: number }>(
+        `INSERT INTO funnels (project_id, name) VALUES ($1, 'Onboarding') RETURNING id`,
+        [db.projectId],
+      );
+      await db.exec(
+        `INSERT INTO funnel_steps (project_id, funnel_id, position, label, event_name, importance)
+         VALUES ($1, $2, 1, $3, $4, 'key')`,
+        [db.projectId, funnel.id, definition.coreActionName, definition.coreActionName],
+      );
+    });
+
+    const tally = await sendRun(run.messages, keysOf(project), { userAgent: null });
+    expect(tally.errors).toEqual({});
+
+    // The Inbox lists the founder's new name, with the events behind it.
+    const waiting = await withProject(project.live.id, inbox);
+    const renamed = waiting.find((entry) => entry.rawName === renamedTo);
+    expect(
+      renamed,
+      `"${renamedTo}" is not in the Inbox: ${waiting.map((e) => e.rawName).join(', ')}`,
+    ).toBeDefined();
+    expect(renamed!.status).toBe('unmapped');
+    expect(renamed!.canonical).toBeNull();
+    expect(renamed!.eventCount).toBeGreaterThan(0);
+
+    // It counts toward nothing: the step state knows only the events sent under the
+    // original name.
+    const before = await withProject(project.live.id, (db) =>
+      db.query<{ count: string }>('SELECT count(*) FROM user_step_state'),
+    );
+
+    // The mock AI proposes a mapping, the founder confirms it, history is rebuilt.
+    const ask = async ({ system, user }: AskOptions): Promise<AskResult> => {
+      // The prompt is built from shape-only facts, so nothing identifying is in it.
+      expect(`${system}\n${user}`).toContain(renamedTo);
+      return {
+        text: JSON.stringify({
+          mappings: [
+            {
+              raw_name: renamedTo,
+              canonical: 'Core Action',
+              confidence: 'high',
+              reason: 'Same words as the event that stopped arriving.',
+            },
+          ],
+        }),
+        inputTokens: 1,
+        outputTokens: 1,
+      };
+    };
+
+    const now = new Date(run.truthFile.endedAt);
+    const suggested = await withProject(project.live.id, (db) =>
+      runSuggestions(db, null, now, ask),
+    );
+    expect(suggested.stored).toBe(1);
+
+    const changed = await withProject(project.live.id, (db) =>
+      confirmMapping(db, renamedTo, definition.coreActionName, null, now),
+    );
+    expect(changed).toBe(true);
+    await withProject(project.live.id, (db) => queueRecompute(db, 'mapping'));
+    await recomputeProject(project.live.id, now);
+
+    const after = await withProject(project.live.id, (db) =>
+      db.query<{ count: string }>('SELECT count(*) FROM user_step_state'),
+    );
+    // More people have reached the step than before the mapping existed, which is
+    // the whole point: the events were always there, we just could not read them.
+    expect(Number(after[0]!.count)).toBeGreaterThan(Number(before[0]!.count));
+  }, 180_000);
+
   it('absorbs a burst without error, capping it rather than storing it all', async () => {
     const project = await createProject({
       name: 'Sim burst',
@@ -306,7 +291,7 @@ describe('a simulator run through real ingest', () => {
     });
     const run = runSimulation({ product: 'selfserve', users: 30, seed: 1, faults: ['burst'] });
 
-    const tally = await send(run.messages, keysOf(project));
+    const tally = await sendRun(run.messages, keysOf(project), { userAgent: null });
 
     // The burst is absorbed: no errors, and the overflow is counted, not stored.
     expect(tally.errors).toEqual({});
@@ -355,7 +340,7 @@ describe('scoring a run against the truth file', () => {
       await withProject(project.live.id, (db) => configureProject(db, definition));
 
       const run = runSimulation({ product: key, users: 150, seed: 11 });
-      await send(run.messages, keysOf(project));
+      await sendRun(run.messages, keysOf(project), { userAgent: null });
 
       const score = await withProject(project.live.id, (db) => scoreIngest(db, run.truthFile));
 
@@ -394,7 +379,7 @@ describe('scoring a run against the truth file', () => {
       seed: 13,
       faults: ['duplicates', 'late-events', 'clock-skew'],
     });
-    await send(run.messages, keysOf(project));
+    await sendRun(run.messages, keysOf(project), { userAgent: null });
 
     const score = await withProject(project.live.id, (db) => scoreIngest(db, run.truthFile));
 

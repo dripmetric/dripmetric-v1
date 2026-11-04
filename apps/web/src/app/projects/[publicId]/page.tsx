@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import {
   displayKey,
@@ -41,6 +42,13 @@ export default async function ProjectPage({ params }: { params: Promise<{ public
       <p className="lede">
         On the {view.plan.planCode === 'free' ? 'free' : view.plan.planCode} plan. We keep{' '}
         {retentionDays} days of raw events; daily summaries are kept for good.
+      </p>
+
+      <p>
+        <Link href={`/projects/${publicId}/dashboard`}>Dashboard</Link> ·{' '}
+        <Link href={`/projects/${publicId}/setup`}>Set up your product</Link> ·{' '}
+        <Link href={`/projects/${publicId}/inbox`}>Inbox</Link> ·{' '}
+        <Link href={`/projects/${publicId}/settings`}>Settings</Link>
       </p>
 
       <h2>Your keys</h2>

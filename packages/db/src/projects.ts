@@ -85,6 +85,16 @@ export interface CreateProjectOptions {
   /** The founder who owns it. Absent for an email-only instant project until claimed. */
   ownerUserId?: string;
   claimExpiresAt?: Date;
+  /**
+   * Whether the owner has PROVED they own that email.
+   *
+   * Defaults to true when there is an owner, which is right for a founder who is
+   * already signed in. The free audit passes false: the project is theirs to use
+   * immediately, but "claimed" means they clicked the magic link — and an unclaimed
+   * project is what M11's sweep stops at 14 days and deletes at 30, so an abandoned
+   * audit cleans itself up instead of living forever.
+   */
+  claimed?: boolean;
 }
 
 /**
@@ -104,7 +114,7 @@ export async function createProject(options: CreateProjectOptions): Promise<Crea
       liveProjectId: null,
       settings,
       claimExpiresAt: options.claimExpiresAt ?? null,
-      claimedAt: options.ownerUserId ? new Date() : null,
+      claimedAt: options.ownerUserId && options.claimed !== false ? new Date() : null,
     });
 
     const test = await insertProject(db, {
@@ -299,4 +309,55 @@ export async function updateSettings(
     [db.projectId, actorUserId, JSON.stringify({ changed: Object.keys(patch) })],
   );
   return after;
+}
+
+/**
+ * Every live project with an active funnel, for the worker's funnel sweep (M6).
+ *
+ * A project with no funnel has nothing to aggregate, and a project in test mode has
+ * numbers nobody reads. Runs outside any one project, through the named escape hatch.
+ */
+export async function projectsWithFunnels(): Promise<number[]> {
+  return withoutProject(
+    'worker-sweep',
+    async (db) => {
+      const rows = await db.query<{ id: number }>(
+        `SELECT DISTINCT p.id
+           FROM projects p
+           JOIN funnels f ON f.project_id = p.id AND f.is_active
+          WHERE p.deleted_at IS NULL
+          ORDER BY p.id`,
+      );
+      return rows.map((row) => row.id);
+    },
+    { worker: true },
+  );
+}
+
+/**
+ * Every live project, for the sweeps that are not about the funnel (M10).
+ *
+ * `projectsWithFunnels` is right for the funnel and leak sweeps — without a
+ * confirmed funnel there is no step state to aggregate. It is wrong for alerts and
+ * for the weekly report: the report's own headline is "N users with buying intent
+ * didn't pay", which needs no funnel at all, and a founder who has wired events but
+ * not yet confirmed their steps is exactly the founder most worth emailing.
+ *
+ * Test-mode projects are excluded. A founder's sandbox should never send them mail.
+ */
+export async function activeProjects(): Promise<number[]> {
+  return withoutProject(
+    'worker-sweep',
+    async (db) => {
+      const rows = await db.query<{ id: number }>(
+        `SELECT p.id
+           FROM projects p
+          WHERE p.deleted_at IS NULL
+            AND p.mode = 'live'
+          ORDER BY p.id`,
+      );
+      return rows.map((row) => row.id);
+    },
+    { worker: true },
+  );
 }

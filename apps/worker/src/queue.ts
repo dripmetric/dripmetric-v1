@@ -144,16 +144,58 @@ export async function startQueue(): Promise<Queue> {
 export const QUEUES = {
   /** Every 5 minutes: the leak sweeps (M8). */
   sweepLeaks: 'sweep-leaks',
+  /** Hourly: the funnel's hourly aggregates and thresholds (M6). */
+  funnelHourly: 'funnel-hourly',
+  /** Hourly, fanning out: which projects have a funnel to aggregate (M6). */
+  funnelSweep: 'funnel-sweep',
+  /** Nightly, fanning out: the same, for the daily pass (M6). */
+  dailySummariesSweep: 'daily-summaries-sweep',
   /** Hourly: the step-completion collapse test (M8). */
   checkCollapse: 'check-collapse',
+  /** Every 5 minutes, fanning out: which projects to sweep for leaks (M8). */
+  leakSweepFanOut: 'leak-sweep-fan-out',
+  /** Hourly, fanning out: the same, for the collapse test (M8). */
+  collapseFanOut: 'collapse-fan-out',
   /** Nightly: summaries first, then the retention deletes (M11). */
   dailySummaries: 'daily-summaries',
   /** Monday morning in the founder's timezone: the weekly leak report (M10). */
   weeklyReport: 'weekly-report',
   /** After a mapping or funnel change: rebuild derived state (M5). */
   recompute: 'recompute',
+  /** Every minute: find the projects with a recompute waiting and fan out (M5). */
+  recomputeSweep: 'recompute-sweep',
   /** After ingest: refresh one user's intent score (M7). */
   recomputeIntent: 'recompute-intent',
+  /** Every 5 minutes: decide and deliver this project's alerts (M10). */
+  dispatchAlerts: 'dispatch-alerts',
+  /** Every 5 minutes, fanning out: which projects to dispatch for (M10). */
+  alertFanOut: 'alert-fan-out',
+  /**
+   * HOURLY, fanning out, for both reports (M10).
+   *
+   * Hourly rather than weekly because "Monday morning in the founder's timezone"
+   * cannot be one cron: the job asks each project whether it is Monday 08:00 THERE
+   * yet, and `report_runs` makes the answer idempotent.
+   */
+  reportFanOut: 'report-fan-out',
+  /** The weekly leak report for one project, if it is due there (M10). */
+  weeklyReportFor: 'weekly-report-for',
+  /** The daily digest for one project, if it is due there (M10). */
+  dailyDigestFor: 'daily-digest-for',
+  /** Hourly: watch the tracking itself (M11). */
+  trackingHealth: 'tracking-health',
+  /** Hourly, fanning out: which projects to check (M11). */
+  trackingHealthFanOut: 'tracking-health-fan-out',
+  /** Nightly: summaries first, then delete raw events past the window (M11). */
+  retention: 'retention',
+  /** Nightly, fanning out: the same (M11). */
+  retentionFanOut: 'retention-fan-out',
+  /** Nightly: stop ingesting for unclaimed projects at 14 days, delete at 30 (M11). */
+  unclaimedSweep: 'unclaimed-sweep',
+  /** After ingest: copy a batch to the shadow copy (settled decision 1, M13). */
+  shadowCopy: 'shadow-copy',
+  /** Daily: compare the shadow against the primary (M13). */
+  reconcileShadow: 'reconcile-shadow',
 } as const;
 
 /**
@@ -166,4 +208,50 @@ export const QUEUES = {
 export const QUEUE_POLICIES: Partial<Record<string, QueuePolicy>> = {
   [QUEUES.recomputeIntent]: 'short',
   [QUEUES.recompute]: 'short',
+  // One sweep queued at a time: a second would find the same projects.
+  [QUEUES.recomputeSweep]: 'short',
+  [QUEUES.funnelSweep]: 'short',
+  [QUEUES.dailySummariesSweep]: 'short',
+  // One pending sweep per project: a second would find the same leaks.
+  [QUEUES.sweepLeaks]: 'short',
+  [QUEUES.checkCollapse]: 'short',
+  [QUEUES.leakSweepFanOut]: 'short',
+  [QUEUES.collapseFanOut]: 'short',
+  // One pending aggregate per project: two would recompute the same rows.
+  [QUEUES.funnelHourly]: 'short',
+  [QUEUES.dailySummaries]: 'short',
+  /*
+   * The alert queues are `short` for a reason that matters more than efficiency.
+   *
+   * Two dispatch jobs for one project running at once would both read the same
+   * "sent today" count and both think they had room, so the 10-a-day cap could be
+   * exceeded. The unique index on `alerts` stops a duplicate alert; nothing but this
+   * stops a duplicate COUNT.
+   */
+  [QUEUES.dispatchAlerts]: 'short',
+  [QUEUES.alertFanOut]: 'short',
+  [QUEUES.reportFanOut]: 'short',
+  [QUEUES.weeklyReportFor]: 'short',
+  [QUEUES.dailyDigestFor]: 'short',
+  [QUEUES.trackingHealth]: 'short',
+  [QUEUES.trackingHealthFanOut]: 'short',
+  /*
+   * Retention is `short` for a reason worth stating: two passes for one project at
+   * once would both pick the oldest remaining day and issue overlapping DELETEs.
+   * `retention_runs`' unique key already makes the second a no-op, but not before it
+   * has written a summary and started deleting.
+   */
+  [QUEUES.retention]: 'short',
+  [QUEUES.retentionFanOut]: 'short',
+  [QUEUES.unclaimedSweep]: 'short',
+  /*
+   * `standard`, not `short` — the one queue where collapsing jobs would lose data.
+   *
+   * Every other queue recomputes something, so two jobs for one project reach the
+   * same answer and dropping one is free. A shadow-copy job carries a specific list
+   * of message hashes, and collapsing two means one batch is never copied, which the
+   * nightly reconciliation would then report as a gap. Correctly.
+   */
+  [QUEUES.shadowCopy]: 'standard',
+  [QUEUES.reconcileShadow]: 'short',
 };

@@ -96,6 +96,12 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # The landing page (apps/site), checked on its prerendered HTML: title, canonical,
+      # one <h1>, JSON-LD prices that match the visible pricing, links and anchors that
+      # resolve, a sitemap that matches the pages, and Markdown copies in sync.
+      - name: Landing page checks
+        run: pnpm site:check --require-build
+
       # The SDK build measures the gzipped core and FAILS over 5 KB
       # (brief section 6: "CI enforces the size budgets").
       - name: SDK size budget

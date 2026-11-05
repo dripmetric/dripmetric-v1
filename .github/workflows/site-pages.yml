@@ -1,0 +1,74 @@
+name: Landing page → GitHub Pages
+
+# Publishes apps/site (dripmetric.com) as a static export.
+#
+# Nothing is published until the repository variable SITE_PAGES_ENABLED is "true"
+# (Settings → Secrets and variables → Actions → Variables). Until then every run only
+# builds the export, so a change that breaks it still shows up as a failed check.
+# Setup steps: apps/site/README.md, "Deploy on GitHub Pages".
+on:
+  push:
+    branches: [v2-observe]
+    paths:
+      - 'apps/site/**'
+      - '.github/workflows/site-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time; never cancel one that is already publishing.
+concurrency:
+  group: site-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Gives the base path GitHub will serve the site under: empty once the custom
+      # domain is set, "/<repository>" on the <user>.github.io address before that.
+      - name: Read the Pages settings
+        id: pages
+        if: vars.SITE_PAGES_ENABLED == 'true'
+        uses: actions/configure-pages@v5
+
+      - name: Static export
+        run: pnpm site:export
+        env:
+          SITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          NEXT_PUBLIC_WAITLIST_ENDPOINT: ${{ vars.NEXT_PUBLIC_WAITLIST_ENDPOINT }}
+          NEXT_PUBLIC_FOUNDING_SEAT_URL: ${{ vars.NEXT_PUBLIC_FOUNDING_SEAT_URL }}
+
+      - name: Upload the site
+        if: vars.SITE_PAGES_ENABLED == 'true'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: apps/site/out
+
+  deploy:
+    needs: build
+    if: vars.SITE_PAGES_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish
+        id: deployment
+        uses: actions/deploy-pages@v4

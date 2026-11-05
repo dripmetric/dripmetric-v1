@@ -37,6 +37,7 @@
     "site:dev": "pnpm --filter @dripmetric/site dev",
     "site:build": "pnpm --filter @dripmetric/site build",
     "site:start": "pnpm --filter @dripmetric/site start",
+    "site:export": "node apps/site/tools/export.mjs",
     "site:check": "node apps/site/tools/check.mjs",
     "site:markdown": "node apps/site/tools/build-markdown.mjs",
     "site:images": "node apps/site/tools/render-images.mjs"

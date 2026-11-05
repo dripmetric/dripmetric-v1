@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Brand } from '@/components/ui/brand';
 import { SITE } from '@/content/site';
+import { withBase } from '@/lib/paths';
 
 export function SiteFooter({ full = true }: { full?: boolean }) {
   return (
@@ -18,19 +19,19 @@ export function SiteFooter({ full = true }: { full?: boolean }) {
             <p className="site-footer__h">Product</p>
             <ul>
               <li>
-                <a href="/#how-it-works">How it works</a>
+                <a href={withBase('/#how-it-works')}>How it works</a>
               </li>
               <li>
-                <a href="/#leaks">The nine leaks</a>
+                <a href={withBase('/#leaks')}>The nine leaks</a>
               </li>
               <li>
-                <a href="/#intent">Buying intent</a>
+                <a href={withBase('/#intent')}>Buying intent</a>
               </li>
               <li>
-                <a href="/#pricing">Pricing</a>
+                <a href={withBase('/#pricing')}>Pricing</a>
               </li>
               <li>
-                <a href="/#faq">FAQ</a>
+                <a href={withBase('/#faq')}>FAQ</a>
               </li>
             </ul>
           </nav>
@@ -51,10 +52,10 @@ export function SiteFooter({ full = true }: { full?: boolean }) {
             <p className="site-footer__h">For AI assistants</p>
             <ul>
               <li>
-                <a href="/llms.txt">llms.txt</a>
+                <a href={withBase('/llms.txt')}>llms.txt</a>
               </li>
               <li>
-                <a href="/index.md">This page in Markdown</a>
+                <a href={withBase('/index.md')}>This page in Markdown</a>
               </li>
             </ul>
           </nav>

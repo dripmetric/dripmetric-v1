@@ -115,6 +115,31 @@ describe('security headers', () => {
     expect(scriptSrc).toContain("'strict-dynamic'");
   });
 
+  it('allows eval in development only, because the dev server compiles with it', () => {
+    /*
+     * Next's dev server hot-reloads through eval(), so the production CSP logs
+     * `eval() is not supported in this environment` on every dev page load. The
+     * branch silences that. It is asserted here rather than trusted because the
+     * failure direction that matters is the other one: `unsafe-eval` reaching
+     * production would undo most of what this policy is for, and no screenshot
+     * test would notice, since CI screenshots a production build where the dev
+     * branch is not taken.
+     */
+    const scriptSrcIn = (nodeEnv: string): string => {
+      vi.stubEnv('NODE_ENV', nodeEnv);
+      try {
+        const csp = headersFor('/projects/abc/dashboard').get('content-security-policy') ?? '';
+        return csp.split('; ').find((part) => part.startsWith('script-src')) ?? '';
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    };
+
+    expect(scriptSrcIn('development')).toContain("'unsafe-eval'");
+    expect(scriptSrcIn('production')).not.toContain("'unsafe-eval'");
+    expect(scriptSrcIn('test')).not.toContain("'unsafe-eval'");
+  });
+
   it('gives every request a different nonce', () => {
     // A reused nonce is barely better than `unsafe-inline`: anything that can read
     // one page can then inject a script that passes on the next.

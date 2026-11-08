@@ -2240,6 +2240,317 @@ strong {
   gap: 6px;
 }
 
+/* ---------- Guide pages (content/pages/*.md) ---------- */
+.article {
+  padding-block: var(--space-xl) var(--space-3xl);
+}
+.article__wrap {
+  max-width: 1120px;
+}
+.crumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: var(--step--1);
+  color: var(--muted);
+}
+.crumbs li + li::before {
+  content: '/';
+  margin-right: 6px;
+  color: var(--rule-strong);
+}
+.crumbs a {
+  color: var(--ink-2);
+}
+.article__head {
+  max-width: 48rem;
+  margin-block: var(--space-m) var(--space-l);
+}
+.article__title {
+  font-family: var(--font-display);
+  font-weight: 480;
+  font-size: var(--step-4);
+  line-height: 1.08;
+  letter-spacing: -0.024em;
+  text-wrap: balance;
+  margin-block: var(--space-2xs) var(--space-s);
+}
+.article__meta {
+  font-size: var(--step--1);
+  color: var(--muted);
+}
+.article__meta a {
+  color: var(--ink-2);
+}
+.article__layout {
+  display: grid;
+  /* minmax(0, …): a wide table or code line scrolls inside its own box instead of
+     widening the column — and the page — past the phone's screen. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-l);
+}
+@media (min-width: 1000px) {
+  .article__layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: var(--space-2xl);
+  }
+}
+.article__body {
+  min-width: 0;
+  max-width: 48rem;
+}
+.toc {
+  align-self: start;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-m);
+  background: var(--card);
+  padding: var(--space-s);
+  font-size: var(--step--1);
+}
+@media (min-width: 1000px) {
+  .toc {
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+    max-height: calc(100vh - var(--header-h) - 48px);
+    overflow-y: auto;
+    border: 0;
+    background: none;
+    padding: 0;
+  }
+}
+.toc__title {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: var(--space-2xs);
+}
+.toc ol {
+  display: grid;
+  gap: 2px;
+}
+.toc a {
+  display: block;
+  padding: 5px 0 5px 10px;
+  border-left: 2px solid var(--rule);
+  color: var(--ink-2);
+  text-decoration: none;
+  line-height: 1.35;
+}
+.toc a:hover {
+  color: var(--ink);
+  border-left-color: var(--leak);
+}
+
+/* The rendered Markdown */
+.prose > * + * {
+  margin-top: var(--space-s);
+}
+.prose > p:first-child {
+  font-size: var(--step-1);
+  line-height: 1.5;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+.prose h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--step-3);
+  line-height: 1.12;
+  letter-spacing: -0.018em;
+  margin-top: var(--space-2xl);
+  text-wrap: balance;
+}
+.prose h3 {
+  font-size: var(--step-1);
+  font-weight: 650;
+  line-height: 1.3;
+  margin-top: var(--space-l);
+}
+.prose h2 + *,
+.prose h3 + * {
+  margin-top: var(--space-xs);
+}
+.prose p,
+.prose li {
+  color: var(--ink-2);
+}
+.prose strong {
+  color: var(--ink);
+}
+.prose a {
+  color: var(--ink);
+  text-decoration-color: color-mix(in srgb, var(--ink) 40%, transparent);
+}
+.prose a:hover {
+  text-decoration-color: var(--leak);
+}
+.prose ul {
+  list-style: disc;
+  padding-left: 1.25em;
+}
+.prose ol {
+  list-style: decimal;
+  padding-left: 1.4em;
+}
+.prose li + li {
+  margin-top: 6px;
+}
+.prose li::marker {
+  color: var(--muted);
+}
+.prose :not(pre) > code {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+.prose blockquote {
+  margin-inline: 0;
+  border-left: 3px solid var(--leak);
+  background: var(--paper-2);
+  border-radius: 0 var(--radius-s) var(--radius-s) 0;
+  padding: var(--space-xs) var(--space-s);
+}
+.prose blockquote p {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  color: var(--ink);
+}
+.prose pre {
+  margin-block: var(--space-s) 0;
+  background: var(--band-card);
+  border: 1px solid var(--band-rule);
+  border-radius: var(--radius-m);
+  padding: 14px 18px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: #e9e3d7;
+  tab-size: 2;
+}
+.prose pre code {
+  font-size: inherit;
+  white-space: pre;
+}
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-m);
+  background: var(--card);
+}
+.prose table {
+  width: 100%;
+  min-width: 34rem;
+  border-collapse: collapse;
+  font-size: var(--step--1);
+  line-height: 1.45;
+}
+.prose th,
+.prose td {
+  text-align: left;
+  vertical-align: top;
+  padding: 10px 14px;
+  border-top: 1px solid var(--rule);
+}
+.prose thead th {
+  border-top: 0;
+  background: var(--paper-2);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.prose td {
+  color: var(--ink-2);
+}
+.prose td:first-child {
+  color: var(--ink);
+  font-weight: 560;
+}
+
+.article-cta {
+  margin-top: var(--space-2xl);
+  padding: var(--space-l);
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--leak);
+  border-radius: var(--radius-l);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+}
+.article-cta__title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--step-2);
+  line-height: 1.15;
+  text-wrap: balance;
+}
+.article-cta p {
+  margin-top: var(--space-2xs);
+  color: var(--ink-2);
+}
+.article-cta__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: var(--space-s);
+}
+.related {
+  margin-top: var(--space-xl);
+}
+.related__title {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: var(--space-xs);
+}
+.related ul {
+  display: grid;
+  gap: var(--space-xs);
+}
+@media (min-width: 760px) {
+  .related ul {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.related a {
+  display: grid;
+  gap: 6px;
+  height: 100%;
+  padding: var(--space-s);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-m);
+  background: var(--card);
+  text-decoration: none;
+}
+.related a:hover {
+  border-color: var(--rule-strong);
+  box-shadow: var(--shadow-sm);
+}
+.related__name {
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.related__about {
+  font-size: var(--step--1);
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+/* "Read the full rules" links under home sections */
+.more-link {
+  display: inline-block;
+  margin-top: var(--space-s);
+  font-weight: 560;
+}
+
 /* ---------- Print ---------- */
 @media print {
   .site-header,

@@ -10,12 +10,19 @@
  *  - sitemap.xml lists exactly the published pages in content/inventory.json;
  *  - robots.txt points at the sitemap and does not block the site;
  *  - every link in llms.txt resolves to a page or a public file;
- *  - images have the dimensions their tags declare.
+ *  - images have the dimensions their tags declare;
+ *  - legacy redirects (content/redirects.json) never shadow a page and go to https;
+ *  - the guide pages still say what the code does: every leak rule
+ *    (packages/engine/src/leaks/types.ts), every intent rule and its points
+ *    (packages/engine/src/intent/points.ts) and every catalog event
+ *    (packages/catalog/src/events.ts) appears in content/pages.
  *
  * Rendered checks (on the prerendered HTML from `pnpm site:build`):
- *  - each page has its language, title, description, canonical and exactly one <h1>;
+ *  - every page in content/inventory.json was built, with its language, title,
+ *    description (70–160 characters), canonical and exactly one <h1>;
  *  - the canonical matches content/inventory.json;
- *  - JSON-LD parses and every offer price in it is visible on the page;
+ *  - JSON-LD parses, every offer price in it is visible on the page, and every FAQPage
+ *    question is visible on the page;
  *  - every internal link and #anchor resolves; the 404 page is noindex.
  */
 import { readFile, stat } from 'node:fs/promises';
@@ -24,6 +31,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const SITE = fileURLToPath(new URL('../', import.meta.url));
+const REPO = join(SITE, '../..');
 const PUBLIC = join(SITE, 'public');
 const BUILT = join(SITE, '.next/server/app');
 const requireBuild = process.argv.includes('--require-build');
@@ -81,6 +89,44 @@ for (const m of llms.matchAll(/\]\((https:\/\/[^)\s]+)\)/g)) {
   }
 }
 
+const { redirects } = JSON.parse(await readFile(join(SITE, 'content/redirects.json'), 'utf8'));
+for (const { source, destination } of redirects) {
+  if (await resolves(source)) fail(`redirect ${source} shadows a real page or file`);
+  if (!destination.startsWith('https://')) fail(`redirect ${source} must go to an https URL`);
+}
+
+// The guide pages restate rules that live in code. Compare them, so a changed threshold
+// fails here instead of leaving a page that quotes the old number.
+const normalise = (text) => text.replace(/[’‘]/g, "'").replace(/\s+/g, ' ');
+const contentPage = async (file) =>
+  normalise(await readFile(join(SITE, 'content/pages', file), 'utf8'));
+const codeFile = (file) => readFile(join(REPO, file), 'utf8');
+const quotedValues = (source, key) =>
+  [...source.matchAll(new RegExp(`\\b${key}: '([^']*)'`, 'g'))].map((m) => normalise(m[1]));
+
+const leaksPage = await contentPage('leaks.md');
+for (const rule of quotedValues(await codeFile('packages/engine/src/leaks/types.ts'), 'rule')) {
+  if (!leaksPage.includes(rule)) fail(`content/pages/leaks.md no longer states the rule "${rule}"`);
+}
+const intentPage = await contentPage('buying-intent.md');
+const points = await codeFile('packages/engine/src/intent/points.ts');
+for (const m of points.matchAll(/\bpoints: (-?\d+),\s*rule: '([^']*)'/g)) {
+  const value = Number(m[1]);
+  const label = value < 0 ? `−${Math.abs(value)}` : `+${value}`;
+  const rule = normalise(m[2]);
+  if (!intentPage.includes(rule)) fail(`content/pages/buying-intent.md no longer states "${rule}"`);
+  if (!intentPage.includes(label)) fail(`content/pages/buying-intent.md has no ${label} signal`);
+}
+const docsPage = await contentPage('docs.md');
+const events = quotedValues(await codeFile('packages/catalog/src/events.ts'), 'name');
+for (const name of events) {
+  if (!docsPage.includes(`| ${name} |`))
+    fail(`content/pages/docs.md is missing the event "${name}"`);
+}
+if (!docsPage.includes(`Dripmetric reads ${events.length} canonical events`)) {
+  fail(`content/pages/docs.md must say the catalog has ${events.length} events`);
+}
+
 const png = async (file) => {
   const buffer = await readFile(join(PUBLIC, file));
   return [buffer.readUInt32BE(16), buffer.readUInt32BE(20)];
@@ -116,11 +162,15 @@ const textOf = (html) =>
     .replace(/\s+/g, ' ');
 const ids = (html) => new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
 
+const fileFor = (url) => {
+  const path = new URL(url).pathname.replace(/^\/|\/$/g, '');
+  return path === '' ? 'index.html' : `${path}.html`;
+};
 const builtPages = [
-  { file: 'index.html', id: 'home' },
-  { file: 'privacy.html', id: 'privacy' },
-  { file: '_not-found.html', id: null },
+  ...published.map((p) => ({ file: fileFor(p.url), id: p.id, path: new URL(p.url).pathname })),
+  { file: '_not-found.html', id: null, path: null },
 ];
+const fileByPath = new Map(builtPages.filter((p) => p.path).map((p) => [p.path, p.file]));
 const html = {};
 for (const page of builtPages) {
   const path = join(BUILT, page.file);
@@ -151,6 +201,7 @@ if (Object.keys(html).length === 0) {
       if (!same) fail(`${where}: canonical ${canonical} ≠ inventory ${expected}`);
       const description = doc.match(/<meta name="description" content="([^"]+)"/)?.[1] ?? '';
       if (description.length < 70) fail(`${where}: meta description missing or thin`);
+      if (description.length > 160) fail(`${where}: meta description over 160 characters`);
       if (!/<meta property="og:image" content="https:\/\/dripmetric\.com\/og\.png"/.test(doc)) {
         fail(`${where}: og:image must be the absolute og.png URL`);
       }
@@ -169,10 +220,18 @@ if (Object.keys(html).length === 0) {
         continue;
       }
       const visible = textOf(doc);
+      const straight = normalise(visible);
       for (const node of data['@graph'] || [data]) {
         for (const offer of node.offers || []) {
           const price = `$${Number(offer.price).toLocaleString('en-US')}`;
           if (!visible.includes(price)) fail(`${where}: JSON-LD offer ${price} is not on the page`);
+        }
+        if (node['@type'] === 'FAQPage') {
+          for (const question of node.mainEntity || []) {
+            if (!straight.includes(normalise(question.name))) {
+              fail(`${where}: FAQPage question "${question.name}" is not visible on the page`);
+            }
+          }
         }
       }
     }
@@ -183,7 +242,7 @@ if (Object.keys(html).length === 0) {
       const [path, hash] = ref.split('#');
       if (path && !(await resolves(path))) fail(`${where}: ${ref} resolves to nothing`);
       if (hash) {
-        const target = !path ? doc : path === '/' ? html['index.html'] : html['privacy.html'];
+        const target = !path ? doc : html[fileByPath.get(path.replace(/(.)\/$/, '$1')) ?? ''];
         if (target && !ids(target).has(hash)) fail(`${where}: ${ref} has no #${hash} target`);
       }
     }

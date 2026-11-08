@@ -6,5 +6,5 @@ pnpm-lock.yaml
 docs/screens
 # Static site: the Markdown bodies and their generated copies are hashed byte-for-byte
 # by apps/site/tools/build-markdown.mjs, so a formatter must not rewrite them.
-apps/site/content/*.md
+apps/site/content/**/*.md
 apps/site/public/**/*.md

@@ -1,5 +1,6 @@
 import { SectionHead } from '@/components/ui/section-head';
 import { LEAK_GROUPS } from '@/content/site';
+import { withBase } from '@/lib/paths';
 
 /** 05 · The nine leaks as one ruled ledger — the engine's own rule text, grouped by need. */
 export function Leaks() {
@@ -42,6 +43,9 @@ export function Leaks() {
           Apart from the two leaks that are about paying customers, no leak ever fires about someone
           who has already paid.
         </p>
+        <a className="more-link" href={withBase('/leaks')}>
+          Every rule in full — thresholds, the data each needs, and what to do about it →
+        </a>
       </div>
     </section>
   );

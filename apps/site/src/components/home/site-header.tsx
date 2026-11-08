@@ -13,13 +13,13 @@ export function SiteHeader({ nav = true }: { nav?: boolean }) {
                 <a href={withBase('/#how-it-works')}>How it works</a>
               </li>
               <li>
-                <a href={withBase('/#leaks')}>The nine leaks</a>
-              </li>
-              <li className="site-nav__pricing">
-                <a href={withBase('/#pricing')}>Pricing</a>
+                <a href={withBase('/leaks')}>The nine leaks</a>
               </li>
               <li>
-                <a href={withBase('/#faq')}>FAQ</a>
+                <a href={withBase('/docs')}>Docs</a>
+              </li>
+              <li className="site-nav__pricing">
+                <a href={withBase('/pricing')}>Pricing</a>
               </li>
             </ul>
           </nav>

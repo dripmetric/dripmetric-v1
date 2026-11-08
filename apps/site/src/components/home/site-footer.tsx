@@ -22,16 +22,32 @@ export function SiteFooter({ full = true }: { full?: boolean }) {
                 <a href={withBase('/#how-it-works')}>How it works</a>
               </li>
               <li>
-                <a href={withBase('/#leaks')}>The nine leaks</a>
+                <a href={withBase('/leaks')}>The nine leaks</a>
               </li>
               <li>
-                <a href={withBase('/#intent')}>Buying intent</a>
+                <a href={withBase('/buying-intent')}>Buying-intent score</a>
               </li>
               <li>
-                <a href={withBase('/#pricing')}>Pricing</a>
+                <a href={withBase('/pricing')}>Pricing</a>
+              </li>
+              <li>
+                <a href={withBase('/docs')}>Docs</a>
               </li>
               <li>
                 <a href={withBase('/#faq')}>FAQ</a>
+              </li>
+            </ul>
+          </nav>
+          <nav aria-label="Guides">
+            <p className="site-footer__h">Guides</p>
+            <ul>
+              <li>
+                <a href={withBase('/guides/trial-to-paid-conversion')}>
+                  Trial-to-paid conversion benchmarks
+                </a>
+              </li>
+              <li>
+                <a href={withBase('/compare/posthog')}>Dripmetric vs PostHog</a>
               </li>
             </ul>
           </nav>
@@ -46,16 +62,11 @@ export function SiteFooter({ full = true }: { full?: boolean }) {
                   Privacy
                 </Link>
               </li>
-            </ul>
-          </nav>
-          <nav aria-label="For AI assistants">
-            <p className="site-footer__h">For AI assistants</p>
-            <ul>
               <li>
                 <a href={withBase('/llms.txt')}>llms.txt</a>
               </li>
               <li>
-                <a href={withBase('/index.md')}>This page in Markdown</a>
+                <a href={withBase('/sitemap.md')}>Site in Markdown</a>
               </li>
             </ul>
           </nav>
@@ -65,7 +76,7 @@ export function SiteFooter({ full = true }: { full?: boolean }) {
         <div className="site-footer__base">
           <p>© 2026 Dripmetric</p>
           {full ? (
-            <p>Every sample on this page uses simulated data, and says so.</p>
+            <p>Every sample on this site uses simulated data, and says so.</p>
           ) : (
             <p>
               <Link prefetch={false} href="/">

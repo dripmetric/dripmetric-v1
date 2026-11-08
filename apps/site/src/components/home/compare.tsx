@@ -1,5 +1,6 @@
 import { SectionHead } from '@/components/ui/section-head';
 import { COMPARISON } from '@/content/site';
+import { withBase } from '@/lib/paths';
 
 /** 10 · Where it fits — neutral, dated category descriptions; no claims about rivals. */
 export function Compare() {
@@ -41,6 +42,9 @@ export function Compare() {
         <p className="footnote">
           Category descriptions as of November 2026. Product names are trademarks of their owners.
         </p>
+        <a className="more-link" href={withBase('/compare/posthog')}>
+          Dripmetric vs PostHog, side by side →
+        </a>
       </div>
     </section>
   );

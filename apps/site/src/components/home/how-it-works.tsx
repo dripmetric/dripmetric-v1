@@ -1,6 +1,7 @@
 import { CodeTabs, type CodeSample } from '@/components/code-tabs';
 import { SectionHead } from '@/components/ui/section-head';
 import { STACKS } from '@/content/site';
+import { withBase } from '@/lib/paths';
 
 const K = ({ children }: { children: string }) => <span className="tok-k">{children}</span>;
 const S = ({ children }: { children: string }) => <span className="tok-s">{children}</span>;
@@ -143,6 +144,9 @@ export function HowItWorks() {
             at our host. Anything else can use plain HTTPS.
           </li>
         </ul>
+        <a className="more-link" href={withBase('/docs')}>
+          Read the install guide — paid events from any billing provider, and all 76 events →
+        </a>
       </div>
     </section>
   );

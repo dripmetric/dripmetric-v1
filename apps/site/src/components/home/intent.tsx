@@ -1,5 +1,6 @@
 import { SectionHead } from '@/components/ui/section-head';
 import { INTENT_SIGNALS, SAMPLE_SCORE } from '@/content/site';
+import { withBase } from '@/lib/paths';
 
 /** 06 · The buying-intent score (packages/engine/src/intent/points.ts) and masking. */
 export function Intent() {
@@ -63,7 +64,8 @@ export function Intent() {
               </table>
               <p className="note">
                 Bands: 30+ is warm, 60+ is high intent. Points are suggestions you approve — never
-                re-weighted automatically.
+                re-weighted automatically.{' '}
+                <a href={withBase('/buying-intent')}>How the score works, in full →</a>
               </p>
             </details>
 

@@ -1,4 +1,6 @@
-import type { ReactNode } from 'react';
+import { isValidElement, type ReactNode } from 'react';
+import type { FaqItem } from '@/lib/markdown';
+import { withBase } from '@/lib/paths';
 
 interface Qa {
   id: string;
@@ -19,7 +21,16 @@ const FAQ: Qa[] = [
   {
     id: 'faq-leak',
     q: 'What counts as a revenue leak?',
-    a: 'A revenue leak is a point in the customer journey where someone who was likely to pay stops, without an error, a complaint or an event that says so. Dripmetric tracks nine of them as named rules: onboarding stall, step completion collapse, pricing quick exit, cancelled or payment failed, last-moment drop, high-intent user went quiet, trial ended unpaid, payer going quiet, and limit reached with no upgrade.',
+    a: (
+      <>
+        A revenue leak is a point in the customer journey where someone who was likely to pay stops,
+        without an error, a complaint or an event that says so. Dripmetric tracks nine of them as
+        named rules: onboarding stall, step completion collapse, pricing quick exit, cancelled or
+        payment failed, last-moment drop, high-intent user went quiet, trial ended unpaid, payer
+        going quiet, and limit reached with no upgrade.{' '}
+        <a href={withBase('/leaks')}>Every rule, in full</a>.
+      </>
+    ),
   },
   {
     id: 'faq-stripe',
@@ -45,7 +56,7 @@ const FAQ: Qa[] = [
         was in beta as of November 2026. Dripmetric is narrower on purpose: nine leak rules, a
         transparent intent score and masked alerts, ready on day one, over one schema of product and
         payment events. Many teams keep their analytics tool for exploration and use Dripmetric for
-        the money questions.
+        the money questions. <a href={withBase('/compare/posthog')}>Dripmetric vs PostHog</a>.
       </>
     ),
   },
@@ -76,7 +87,16 @@ const FAQ: Qa[] = [
   {
     id: 'faq-intent',
     q: 'How is the buying-intent score calculated?',
-    a: 'It adds points for transparent signals, from 0 to 100: starting checkout +30, reaching activation +25, hitting a plan limit or paywall +20, asking to talk to someone +20, inviting a teammate +15, reading pricing +10 (and +10 more for weighing the plans), and smaller signals, with −20 for a throwaway email address. The score halves every quiet week. 30 and above is warm; 60 and above is high intent. Every point on screen names the rule that produced it.',
+    a: (
+      <>
+        It adds points for transparent signals, from 0 to 100: starting checkout +30, reaching
+        activation +25, hitting a plan limit or paywall +20, asking to talk to someone +20, inviting
+        a teammate +15, reading pricing +10 (and +10 more for weighing the plans), and smaller
+        signals, with −20 for a throwaway email address. The score halves every quiet week. 30 and
+        above is warm; 60 and above is high intent. Every point on screen names the rule that
+        produced it. <a href={withBase('/buying-intent')}>The full points table</a>.
+      </>
+    ),
   },
   {
     id: 'faq-speed',
@@ -97,13 +117,31 @@ const FAQ: Qa[] = [
         covers Next.js App Router, Node/Express, Django, Flask, Rails, Laravel, Go net/http and
         plain HTTP. Python, Ruby, PHP and Go can use Segment’s open-source libraries pointed at
         Dripmetric’s host, any language can call the HTTPS API, and Segment, RudderStack or PostHog
-        can forward events with no code.
+        can forward events with no code. <a href={withBase('/docs')}>The install guide</a>.
       </>
     ),
   },
 ];
 
-/** 13 · Frequently asked questions — visible HTML only (FAQ rich results are gone). */
+/** The visible text of an answer, for the FAQPage JSON-LD: same words, no markup. */
+function textOf(node: ReactNode): string {
+  if (node === null || node === undefined || typeof node === 'boolean') return '';
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(textOf).join('');
+  if (isValidElement(node)) return textOf((node.props as { children?: ReactNode }).children);
+  return '';
+}
+
+/** The questions and answers exactly as shown, for structured data. */
+export const HOME_FAQ: FaqItem[] = FAQ.map((item) => ({
+  question: item.q,
+  answer: textOf(item.a).replace(/\s+/g, ' ').trim(),
+}));
+
+/**
+ * 13 · Frequently asked questions. Google no longer shows FAQ rich results (May 2026);
+ * the FAQPage JSON-LD is built from HOME_FAQ, so it can only describe what is visible.
+ */
 export function Faq() {
   return (
     <section className="section" id="faq" aria-labelledby="faq-title">

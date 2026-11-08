@@ -1,4 +1,6 @@
 import type { NextConfig } from 'next';
+import inventory from './content/inventory.json';
+import legacy from './content/redirects.json';
 
 /**
  * Content-Security-Policy for dripmetric.com.
@@ -67,14 +69,13 @@ const securityHeaders = async () => {
         { key: 'Cache-Control', value: 'public, max-age=3600' },
       ],
     },
-    {
-      source: '/index.md',
-      headers: [{ key: 'Link', value: '<https://dripmetric.com/>; rel="canonical"' }],
-    },
-    {
-      source: '/privacy.md',
-      headers: [{ key: 'Link', value: '<https://dripmetric.com/privacy>; rel="canonical"' }],
-    },
+    // Every page's Markdown copy names its HTML page as canonical (content/inventory.json).
+    ...inventory.pages
+      .filter((page) => page.disposition === 'publish' && page.md_path)
+      .map((page) => ({
+        source: `/${page.md_path}`,
+        headers: [{ key: 'Link', value: `<${page.url}>; rel="canonical"` }],
+      })),
     {
       source: '/llms.txt',
       headers: [
@@ -85,12 +86,24 @@ const securityHeaders = async () => {
   ];
 };
 
+/**
+ * v1 of Dripmetric (a different product) served a few URLs on this domain that v2 has no
+ * page for. Permanent redirects keep their links and bookmarks working; the list lives in
+ * content/redirects.json so the static export and the checks read the same one.
+ */
+const legacyRedirects = async () =>
+  legacy.redirects.map(({ source, destination }) => ({ source, destination, permanent: true }));
+
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   ...(basePath ? { basePath } : {}),
   env: { NEXT_PUBLIC_BASE_PATH: basePath },
-  ...(staticExport ? { output: 'export' as const } : { headers: securityHeaders }),
+  // Static hosts can send neither headers nor redirects; tools/export.mjs writes redirect
+  // stubs instead.
+  ...(staticExport
+    ? { output: 'export' as const }
+    : { headers: securityHeaders, redirects: legacyRedirects }),
 };
 
 export default config;

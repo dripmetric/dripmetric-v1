@@ -28,7 +28,7 @@ export const SITE = {
   /** Read at build time. Empty = "Claim a founding seat" goes to the sign-up form. */
   foundingSeatUrl: process.env.NEXT_PUBLIC_FOUNDING_SEAT_URL ?? '',
   /** The date every page on the site was last reviewed against the Ground Truth. */
-  updated: '2026-11-04',
+  updated: '2026-11-08',
 } as const;
 
 /** Measured on the shipping code — Ground Truth appendix, "Measured". */

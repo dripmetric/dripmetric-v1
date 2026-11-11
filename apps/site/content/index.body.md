@@ -42,6 +42,8 @@ Every leak is a plain-language rule with a visible default. Each fires at most o
 | Payer going quiet | A paying customer’s active days halved or worse against their own 4-week baseline, two weeks running. | Paid event | Instant masked alert. |
 | Limit reached, no upgrade | They hit a limit of their plan and did not upgrade within 7 days. | Paid event | Instant masked alert. |
 
+Every rule in full — thresholds, the data each needs, how often it runs and what to do about it: [The nine revenue leaks in a self-serve SaaS funnel](https://dripmetric.com/leaks) ([Markdown](https://dripmetric.com/leaks.md)).
+
 ## How it works
 
 The promise every feature is held to: a real drop-off number in under 10 minutes, from product events alone.
@@ -99,9 +101,11 @@ curl https://api.dripmetric.com/v1/batch \
 - Already on Segment, RudderStack or PostHog? Forward events with no code — signature-verified, with a deny-by-default field allow-list.
 - Python, Ruby, PHP or Go? Segment’s open-source libraries work pointed at Dripmetric’s host. Anything else can use plain HTTPS.
 
+The full install guide — browser and server SDKs, consent, paid events from Stripe, Paddle or Lemon Squeezy, and all 76 events: [Install Dripmetric](https://dripmetric.com/docs) ([Markdown](https://dripmetric.com/docs.md)).
+
 ## Buying-intent score
 
-Every tracked user gets a 0–100 buying-intent score: the self-serve version of a product-qualified lead score. It is built from rules, not a black box. Every point names the signal that earned it, and the score halves every quiet week. 30 and above is warm; 60 and above is high intent. Points are suggestions you approve — never re-weighted automatically.
+Every tracked user gets a 0–100 buying-intent score: the self-serve version of a product-qualified lead score. It is built from rules, not a black box. Every point names the signal that earned it, and the score halves every quiet week. 30 and above is warm; 60 and above is high intent. Points are suggestions you approve — never re-weighted automatically. The full points table, bands, decay and calibration: [How the buying-intent score works](https://dripmetric.com/buying-intent) ([Markdown](https://dripmetric.com/buying-intent.md)).
 
 | Signal | Points |
 | --- | --- |
@@ -174,7 +178,7 @@ Most small teams stitch this together from tools that each see half the story. D
 | In-app onboarding | Tours, checklists and prompts inside your app | Appcues, Userpilot, Chameleon | Adds no UI to your product; measures whether onboarding converts |
 | Churn and payment recovery | Retrying failed cards, dunning, cancel flows | Churnkey, Churn Buster, Baremetrics Recover | Watches the whole path before a card ever fails, too |
 
-How is Dripmetric different from PostHog, Mixpanel or Amplitude? Those are general-purpose product analytics platforms: you explore any event data and build the funnels, queries and alerts you need. PostHog can also hold revenue next to product events — [its revenue analytics](https://posthog.com/docs/revenue-analytics/start-here) was in beta as of November 2026. Dripmetric is narrower on purpose: nine leak rules, a transparent intent score and masked alerts, ready on day one, over one schema of product and payment events. Many teams keep their analytics tool for exploration and use Dripmetric for the money questions.
+How is Dripmetric different from PostHog, Mixpanel or Amplitude? Those are general-purpose product analytics platforms: you explore any event data and build the funnels, queries and alerts you need. PostHog can also hold revenue next to product events — [its revenue analytics](https://posthog.com/docs/revenue-analytics/start-here) was in beta as of November 2026. Dripmetric is narrower on purpose: nine leak rules, a transparent intent score and masked alerts, ready on day one, over one schema of product and payment events. Many teams keep their analytics tool for exploration and use Dripmetric for the money questions. Side by side: [Dripmetric vs PostHog](https://dripmetric.com/compare/posthog) ([Markdown](https://dripmetric.com/compare/posthog.md)).
 
 How is it different from churn-recovery tools like Churnkey or Baremetrics Recover? Recovery tools act after a card fails: retries, dunning emails, cancel flows. Dripmetric watches the whole path before that — onboarding, buying intent, checkout and trials — and puts failed payments on the same timeline. It does not retry cards or send emails itself.
 
@@ -205,6 +209,8 @@ Prices in US dollars.
 - **Founding seat — $390 a year, locked for life. First 25 founders only.** Starter’s yearly launch price, locked for life instead of for 12 months: a full year of Starter, a 45-minute guided setup call, and money back within 30 days of launch.
 - **Funnel teardown — $299 (list $349).** A written teardown of one onboarding funnel, delivered in 48 hours and credited toward a setup.
 - **Concierge setup — $499 (list $599).** A fixed-scope, done-for-you setup on a paid plan. A few slots a month.
+
+Plans, what masked means and billing questions: [Dripmetric pricing](https://dripmetric.com/pricing) ([Markdown](https://dripmetric.com/pricing.md)).
 
 ## Frequently asked questions
 
@@ -251,6 +257,15 @@ Measured on the shipping code, November 2026:
 - It never connects to a billing provider; payment events arrive only because you send them.
 - It never contacts your users: no drip campaigns, recovery emails or in-app prompts.
 - It does not retry cards or run dunning.
+
+## Guides and reference
+
+- [The nine revenue leaks in a self-serve SaaS funnel](https://dripmetric.com/leaks) — every rule, threshold and fix ([Markdown](https://dripmetric.com/leaks.md)).
+- [How the buying-intent score works](https://dripmetric.com/buying-intent) — the 0–100 PQL score in full ([Markdown](https://dripmetric.com/buying-intent.md)).
+- [Install Dripmetric](https://dripmetric.com/docs) — quickstart, paid events and the event catalog ([Markdown](https://dripmetric.com/docs.md)).
+- [Dripmetric pricing](https://dripmetric.com/pricing) ([Markdown](https://dripmetric.com/pricing.md)).
+- [Trial-to-paid conversion rate: 2026 benchmarks, formula and where trials leak](https://dripmetric.com/guides/trial-to-paid-conversion) ([Markdown](https://dripmetric.com/guides/trial-to-paid-conversion.md)).
+- [Dripmetric vs PostHog](https://dripmetric.com/compare/posthog) ([Markdown](https://dripmetric.com/compare/posthog.md)).
 
 ## Contact
 

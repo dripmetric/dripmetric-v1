@@ -33,9 +33,20 @@ export const config = {
  * screens are styled with inline `style` attributes, which is what React renders.
  */
 function cspFor(nonce: string): string {
+  /*
+   * Development needs `unsafe-eval`; production must never have it.
+   *
+   * Next's dev server compiles and hot-reloads through eval(). Serving the
+   * production CSP in dev blocks it, React never hydrates, and every streamed
+   * module renders as nothing — a blank dashboard with two console errors and no
+   * failing test, because CI screenshots a production build where this branch is
+   * not taken. `pnpm dev` is the first thing a new contributor runs, so the dev
+   * build being silently broken costs more than the branch does.
+   */
+  const evalForDev = process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : '';
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${evalForDev}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data:",
     "font-src 'self'",

@@ -7,7 +7,7 @@ import { OPEN_GRAPH } from '@/lib/metadata';
 export const metadata: Metadata = {
   title: { absolute: 'Privacy on dripmetric.com — Dripmetric' },
   description:
-    'What dripmetric.com collects: no cookies, no analytics and no third-party scripts. If you join the waitlist, your email address is used only to let you in and share launch news.',
+    'dripmetric.com sets no cookies and runs no analytics or third-party scripts. A waitlist email address is used only to let you in and share launch news.',
   alternates: {
     canonical: SITE.privacyUrl,
     types: { 'text/markdown': `${SITE.origin}/privacy.md` },

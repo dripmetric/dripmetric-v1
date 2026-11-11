@@ -13,5 +13,9 @@ Use that document's cited sources and canonical page; if the requested informati
 
 ## Topics
 
+- [comparisons](https://dripmetric.com/llm/topics/comparisons.md): All public comparisons documents in this inventory.
+- [docs](https://dripmetric.com/llm/topics/docs.md): All public docs documents in this inventory.
+- [guides](https://dripmetric.com/llm/topics/guides.md): All public guides documents in this inventory.
 - [policies](https://dripmetric.com/llm/topics/policies.md): All public policies documents in this inventory.
+- [pricing](https://dripmetric.com/llm/topics/pricing.md): All public pricing documents in this inventory.
 - [product](https://dripmetric.com/llm/topics/product.md): All public product documents in this inventory.

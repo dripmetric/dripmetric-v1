@@ -1,4 +1,5 @@
 import { Brand } from '@/components/ui/brand';
+import { withBase } from '@/lib/paths';
 
 export function SiteHeader({ nav = true }: { nav?: boolean }) {
   return (
@@ -9,23 +10,23 @@ export function SiteHeader({ nav = true }: { nav?: boolean }) {
           <nav className="site-nav" aria-label="Main">
             <ul>
               <li>
-                <a href="/#how-it-works">How it works</a>
+                <a href={withBase('/#how-it-works')}>How it works</a>
               </li>
               <li>
-                <a href="/#leaks">The nine leaks</a>
+                <a href={withBase('/leaks')}>The nine leaks</a>
+              </li>
+              <li>
+                <a href={withBase('/docs')}>Docs</a>
               </li>
               <li className="site-nav__pricing">
-                <a href="/#pricing">Pricing</a>
-              </li>
-              <li>
-                <a href="/#faq">FAQ</a>
+                <a href={withBase('/pricing')}>Pricing</a>
               </li>
             </ul>
           </nav>
         ) : null}
         <a
           className={nav ? 'btn btn--primary btn--sm' : 'btn btn--primary btn--sm site-header__cta'}
-          href="/#get-access"
+          href={withBase('/#get-access')}
         >
           Get early access
         </a>

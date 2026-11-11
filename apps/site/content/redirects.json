@@ -1,0 +1,25 @@
+{
+  "note": "Paths the v1 site (the drip-email product) served on dripmetric.com that have no v2 page. Each is a permanent (308) redirect in next.config.ts, and a meta-refresh stub in the static export. /docs, /pricing and /privacy are not here: v2 has pages at those same URLs. Destinations on app.dripmetric.com only work once the founder app is deployed there — see LAUNCH.md.",
+  "redirects": [
+    {
+      "source": "/login",
+      "destination": "https://app.dripmetric.com/login",
+      "reason": "v1 sign-in. The product now lives on app.dripmetric.com."
+    },
+    {
+      "source": "/signup",
+      "destination": "https://app.dripmetric.com/login",
+      "reason": "v1 sign-up. Sign-in on app.dripmetric.com creates the account."
+    },
+    {
+      "source": "/dashboard",
+      "destination": "https://app.dripmetric.com/login",
+      "reason": "v1 dashboard. The founder app's projects are behind sign-in."
+    },
+    {
+      "source": "/terms",
+      "destination": "https://app.dripmetric.com/legal/terms",
+      "reason": "v1 terms URL (linked from the v1 footer). Product terms live in the founder app."
+    }
+  ]
+}

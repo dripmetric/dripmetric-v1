@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { RevealOnScroll } from '@/components/reveal-on-scroll';
 import { SITE } from '@/content/site';
 import { OPEN_GRAPH } from '@/lib/metadata';
+import { withBase } from '@/lib/paths';
 import './globals.css';
 
 /*
@@ -41,12 +42,12 @@ export const metadata: Metadata = {
   applicationName: SITE.name,
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: '32x32' },
-      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: withBase('/favicon.ico'), sizes: '32x32' },
+      { url: withBase('/favicon.svg'), type: 'image/svg+xml' },
     ],
-    apple: '/apple-touch-icon.png',
+    apple: withBase('/apple-touch-icon.png'),
   },
-  manifest: '/site.webmanifest',
+  manifest: withBase('/site.webmanifest'),
   openGraph: OPEN_GRAPH,
   twitter: { card: 'summary_large_image' },
 };

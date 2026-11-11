@@ -1823,3 +1823,32 @@ the module checks were.
 
 It had always been a race and had simply been winning it. Waiting for the LAST
 module's heading is the fix: if that is visible, everything above it has been revealed.
+
+### 2026-11-08 · The landing page takes over a domain that already has a product on it
+
+dripmetric.com serves v1 — a different product, a drip-email tool — from another Vercel
+project, with `/docs`, `/pricing`, `/login`, `/privacy` and `/terms` indexed under it and a
+307 from the apex to `www`. Deploying `apps/site` there is a site migration, not a launch,
+so three things are decided in code rather than left to the day:
+
+- **The apex is canonical.** Every v2 URL — canonicals, sitemap, JSON-LD, llms.txt — is
+  `https://dripmetric.com/…`. Flipping v1's `www` primary (and making it a 308) is a
+  dashboard setting listed in `apps/site/LAUNCH.md`; changing every artefact to `www`
+  would have been the larger and less reversible change.
+- **v1 URLs keep working.** `/docs` and `/pricing` are real v2 pages at the same URLs, so
+  their history carries over. `/login`, `/signup` and `/dashboard` go to the founder app's
+  sign-in and `/terms` to its terms, as 308s from `next.config.ts`, read from
+  `apps/site/content/redirects.json` so the static export (meta-refresh stubs) and the
+  checks use the same list.
+- **The guide pages are written once.** Each is a Markdown file in `apps/site/content/pages`
+  that is both the prerendered HTML and the Markdown copy for AI clients; `site:check`
+  compares the leak rules, intent points and event names they quote with the engine and
+  catalog source, so a changed threshold fails the build instead of leaving a page that
+  quotes the old one.
+
+FAQPage JSON-LD is now emitted where questions are visible, built from the same text as
+the HTML. Google stopped showing FAQ rich results on 7 May 2026, so this earns nothing
+there; it is kept because it is accurate and costs nothing. The IndexNow key is committed
+in `apps/site/public/`: the protocol requires it to be public, and it only proves who may
+submit URLs for the host. Submissions are an owner action (`pnpm site:indexnow --submit`),
+never a CI step.

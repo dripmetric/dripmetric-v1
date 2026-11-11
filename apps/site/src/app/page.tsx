@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Compare } from '@/components/home/compare';
 import { Dashboard } from '@/components/home/dashboard';
-import { Faq } from '@/components/home/faq';
+import { Faq, HOME_FAQ } from '@/components/home/faq';
 import { FinalCta } from '@/components/home/final-cta';
 import { Hero } from '@/components/home/hero';
 import { HowItWorks } from '@/components/home/how-it-works';
@@ -21,8 +21,9 @@ import { OPEN_GRAPH } from '@/lib/metadata';
 import { homeStructuredData, jsonLd } from '@/lib/structured-data';
 
 const TITLE = 'Dripmetric — Revenue-leak detection for self-serve SaaS';
+// Under 160 characters, so the free plan and "no billing integration" survive truncation.
 const DESCRIPTION =
-  'Dripmetric finds where signups stall, who looked ready to buy and went quiet, and what it costs you — from product and payment events on one stream. Free plan; no billing integration needed.';
+  'Dripmetric finds where signups stall, who looked ready to buy and went quiet, and what it costs you. Free plan; no billing integration needed.';
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -49,7 +50,7 @@ export default function HomePage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLd(homeStructuredData()) }}
+        dangerouslySetInnerHTML={{ __html: jsonLd(homeStructuredData(HOME_FAQ)) }}
       />
       <SiteHeader />
       <main id="main">

@@ -10,7 +10,10 @@ import globals from 'globals';
  *  - packages/ingest must stay framework-agnostic (brief section 4).
  */
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/.next/**', '**/coverage/**', '**/node_modules/**'] },
+  {
+    // Build output: `out/` is the landing page's static export (`pnpm site:export`).
+    ignores: ['**/dist/**', '**/.next/**', '**/out/**', '**/coverage/**', '**/node_modules/**'],
+  },
   js.configs.recommended,
   {
     // Everything here runs on Node: the scripts, the worker, the ingest pipeline.

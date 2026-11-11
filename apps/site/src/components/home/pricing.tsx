@@ -1,6 +1,7 @@
 import { FoundingSeatLink } from '@/components/founding-seat-link';
 import { SectionHead } from '@/components/ui/section-head';
 import { ADDONS, PLANS, SITE } from '@/content/site';
+import { withBase } from '@/lib/paths';
 
 /** 12 · Pricing, from the same PLANS data the JSON-LD offers are built from. */
 export function Pricing() {
@@ -68,7 +69,10 @@ export function Pricing() {
             </p>
           ))}
         </div>
-        <p className="footnote footnote--center">Prices in US dollars.</p>
+        <p className="footnote footnote--center">
+          Prices in US dollars.{' '}
+          <a href={withBase('/pricing')}>Full pricing and billing questions →</a>
+        </p>
       </div>
     </section>
   );

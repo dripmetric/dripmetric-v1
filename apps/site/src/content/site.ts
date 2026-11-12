@@ -3,10 +3,9 @@
  *
  * One source for everything that appears in more than one place — the page, the
  * JSON-LD and the checks — so they cannot drift apart. Every product fact here comes
- * from the Ground Truth (v2, 3 Nov 2026) and is checked against the code on
- * `v2-observe`; the file that proves each group is named beside it. When the product
- * changes, change it here, then update content/index.body.md and run
- * `pnpm site:markdown`.
+ * from the Ground Truth (v2, 3 Nov 2026) and is checked against the code; the file that
+ * proves each group is named beside it. When the product changes, change it here, then
+ * update content/index.body.md and run `pnpm site:markdown`.
  */
 import inventory from '../../content/inventory.json';
 
@@ -25,312 +24,170 @@ export const SITE = {
   contactEmail: 'hello@dripmetric.com',
   /** Read at build time. Empty = the form opens a pre-filled email instead. */
   waitlistEndpoint: process.env.NEXT_PUBLIC_WAITLIST_ENDPOINT ?? '',
-  /** Read at build time. Empty = "Claim a founding seat" goes to the sign-up form. */
+  /** Read at build time. Empty = "Claim a founding seat" goes to the waitlist form. */
   foundingSeatUrl: process.env.NEXT_PUBLIC_FOUNDING_SEAT_URL ?? '',
   /** The date every page on the site was last reviewed against the Ground Truth. */
-  updated: '2026-11-08',
+  updated: '2026-11-11',
 } as const;
 
+/**
+ * One sentence that says what Dripmetric is. The hero, the footer, the JSON-LD and
+ * llms.txt all start from it, because an answer engine describes a product the way
+ * the product most consistently describes itself (apps/site/LAUNCH.md §4).
+ */
+export const DEFINITION = 'Dripmetric is a revenue-leak detector for self-serve SaaS.';
+
+/** The one action on the site, worded the same everywhere it appears. */
+export const CTA_LABEL = 'Join the waitlist';
+
 /** Measured on the shipping code — Ground Truth appendix, "Measured". */
-export const MEASURED = [
-  { value: '5,018 B', label: 'Browser SDK core, gzipped. The build fails past 5,120.' },
-  { value: '76', label: 'Canonical events, from Signed Up to Payment Failed' },
-  { value: '9', label: 'Leak rules, each one written so you can read it' },
-  { value: '8', label: 'Stacks with a ready-made install snippet' },
-  { value: '0', label: 'Billing integrations you need to set up' },
+export const FACTS = [
+  { value: '9', label: 'leak rules, each one written so you can read it' },
+  { value: '5 KB', label: 'browser SDK: 5,018 bytes gzipped. The build fails past 5,120.' },
+  { value: '76', label: 'canonical events, from Signed Up to Payment Failed' },
+  { value: '0', label: 'billing integrations to set up' },
 ] as const;
 
 export interface Leak {
+  /** The anchor on /leaks, which explains the rule in full. */
   id: string;
   name: string;
   /** The rule text from packages/engine/src/leaks/types.ts, unchanged. */
   rule: string;
-  how: string;
 }
-export interface LeakGroup {
+export interface LeakStage {
   id: string;
   title: string;
-  badge: string;
-  paid: boolean;
-  leaks: Leak[];
+  /** The one rule printed in full on the home page. */
+  featured: Leak;
+  /** The stage's other leaks, named and linked. */
+  also: Leak[];
 }
 
-/** packages/engine/src/leaks/types.ts — rules, requirements and alerting, verbatim. */
-export const LEAK_GROUPS: LeakGroup[] = [
+/**
+ * The nine leaks, by where in the journey they happen.
+ *
+ * packages/engine/src/leaks/types.ts holds the rules; `pnpm site:check` fails if one of
+ * them stops matching the text here. Four need product events only (onboarding stall,
+ * step completion collapse, pricing quick exit, cancelled or payment failed); the other
+ * five switch on with one paid event.
+ */
+export const LEAK_STAGES: LeakStage[] = [
   {
-    id: 'product',
-    title: 'Run on product events alone',
-    badge: 'Product events',
-    paid: false,
-    leaks: [
-      {
-        id: 'onboarding-stall',
-        name: 'Onboarding stall',
-        rule: 'Someone entered a step and made no progress for longer than the step allows — 24 hours by default, or the step’s own slowest tenth once 20 people have finished it.',
-        how: 'Counted per step on your dashboard and in the weekly report.',
-      },
+    id: 'activate',
+    title: 'Before they activate',
+    featured: {
+      id: 'onboarding-stall',
+      name: 'Onboarding stall',
+      rule: 'Someone entered a step and made no progress for longer than the step allows — 24 hours by default, or the step’s own slowest tenth once 20 people have finished it.',
+    },
+    also: [
       {
         id: 'step-collapse',
         name: 'Step completion collapse',
         rule: 'A step’s completions in the last 24 hours fell so far below its own 14-day rate that chance does not explain it.',
-        how: 'Instant alert. It is about a step, not a person, so nothing is masked.',
       },
+    ],
+  },
+  {
+    id: 'pay',
+    title: 'Before they pay',
+    featured: {
+      id: 'high-intent-quiet',
+      name: 'High-intent user went quiet',
+      rule: 'Someone reached 60 or more on buying intent, then went 7 days without doing anything, and never paid.',
+    },
+    also: [
       {
         id: 'pricing-quick-exit',
         name: 'Pricing quick exit',
         rule: 'Someone opened your pricing page for the first time, glanced at it and left.',
-        how: 'Shown as a rate by source, device and country.',
       },
-    ],
-  },
-  {
-    id: 'event',
-    title: 'Fires on its own event',
-    badge: 'The event itself',
-    paid: false,
-    leaks: [
-      {
-        id: 'cancelled-or-failed',
-        name: 'Cancelled or payment failed',
-        rule: 'They cancelled, or a payment failed.',
-        how: 'Fires whatever sends the event. Counted in your weekly report.',
-      },
-    ],
-  },
-  {
-    id: 'paid',
-    title: 'Switch on with one paid event',
-    badge: 'Paid event',
-    paid: true,
-    leaks: [
       {
         id: 'last-moment-drop',
         name: 'Last-moment drop',
         rule: 'Someone started checkout and no payment arrived within 2 hours. A trial-only checkout does not count.',
-        how: 'Instant masked alert.',
-      },
-      {
-        id: 'high-intent-quiet',
-        name: 'High-intent user went quiet',
-        rule: 'Someone reached 60 or more on buying intent, then went 7 days without doing anything, and never paid.',
-        how: 'Instant masked alert.',
       },
       {
         id: 'trial-ended-unpaid',
         name: 'Trial ended unpaid',
         rule: 'Their trial end date passed and no payment arrived.',
-        how: 'Instant masked alert. Also needs your trial end dates.',
-      },
-      {
-        id: 'payer-going-quiet',
-        name: 'Payer going quiet',
-        rule: 'A paying customer’s active days halved or worse against their own 4-week baseline, two weeks running.',
-        how: 'Instant masked alert.',
       },
       {
         id: 'limit-reached',
         name: 'Limit reached, no upgrade',
         rule: 'They hit a limit of their plan and did not upgrade within 7 days.',
-        how: 'Instant masked alert.',
+      },
+    ],
+  },
+  {
+    id: 'stay',
+    title: 'After they pay',
+    featured: {
+      id: 'payer-going-quiet',
+      name: 'Payer going quiet',
+      rule: 'A paying customer’s active days halved or worse against their own 4-week baseline, two weeks running.',
+    },
+    also: [
+      {
+        id: 'cancelled-or-failed',
+        name: 'Cancelled or payment failed',
+        rule: 'They cancelled, or a payment failed.',
       },
     ],
   },
 ];
 
-/** packages/engine/src/intent/points.ts — every signal and its points. */
-export const INTENT_SIGNALS = [
-  { signal: 'Started checkout (not a card-up-front trial)', points: '+30' },
-  { signal: 'Reached activation', points: '+25' },
-  { signal: 'Hit a plan limit or a paywall prompt', points: '+20' },
-  { signal: 'Asked to talk to someone', points: '+20' },
-  { signal: 'Invited a teammate', points: '+15' },
-  { signal: 'Added a card before the trial ended', points: '+15' },
-  { signal: 'Read the pricing page', points: '+10' },
-  { signal: 'Weighed the plans', points: '+10' },
-  { signal: 'Connected an integration or imported data', points: '+10' },
-  { signal: 'Did the core action 3+ times in their first 14 days', points: '+10' },
-  { signal: 'Active on 3 or more of the last 7 days', points: '+10' },
-  { signal: 'Activated faster than your median', points: '+10' },
-  { signal: 'Looks like a buyer (fit signals)', points: '+5 each, up to +10' },
-  { signal: 'Signed up with a throwaway address', points: '−20' },
-] as const;
-
-/** The sample person in the hero alert and the score card. Simulated, and labelled so. */
-export const SAMPLE_SCORE = [
-  { points: '+25', why: 'Reached activation' },
-  { points: '+20', why: 'Hit a limit of their plan' },
-  { points: '+10', why: 'Read the pricing page' },
-  { points: '+10', why: 'Weighed the plans — second visit, annual toggle' },
-  { points: '+10', why: 'Used the core feature 3+ times in their first 14 days' },
-] as const;
-
 export interface Plan {
-  id: string;
+  id: 'free' | 'starter' | 'founding';
   name: string;
   /** Whole US dollars, for display and for the JSON-LD offer. */
   price: number;
   per: string;
-  listPrice?: number;
-  pitch: string;
-  includes: string[];
-  cta: 'access' | 'founding';
-  flag?: string;
   /** How the JSON-LD prices it. */
   billing: 'free' | 'MON' | 'ANN';
+  /** Shown on the home page. The founding seat is offered on /pricing only. */
+  onHome: boolean;
+  /** One sentence: what this plan answers. */
+  includes: string;
 }
 
-/** Ground Truth "Pricing & packaging" (28 Oct 2026 decision). */
+/**
+ * Ground Truth "Pricing & packaging" (28 Oct 2026 decision). The full table, list
+ * prices and add-ons are on /pricing (content/pages/pricing.md).
+ */
 export const PLANS: Plan[] = [
   {
     id: 'free',
     name: 'Free',
     price: 0,
     per: 'forever',
-    pitch: 'Where and how much revenue leaks.',
-    includes: [
-      'Full funnel and step timing',
-      'Buying-intent score',
-      'All nine leaks, masked',
-      'Instant masked alerts to Slack or Discord, plus an in-app feed',
-      'Weekly leak report',
-      'Tracking health and before-and-after proof',
-      'Segment splits',
-      '90 days of raw events; daily summaries kept forever',
-    ],
-    cta: 'access',
     billing: 'free',
+    onHome: true,
+    includes:
+      'The full funnel and step timing, the buying-intent score, all nine leaks, masked alerts to Slack or Discord, and a weekly leak report.',
   },
   {
     id: 'starter',
     name: 'Starter',
     price: 39,
-    per: 'a month',
-    listPrice: 49,
-    pitch:
-      'Or $390 a year (list $490). Launch price held for 12 months for anyone who starts by 30 June 2027.',
-    // Only what is built: reveal_identity and why_signals are wired in the code. The
-    // "timeline" and "suggested action per leak" entitlements exist as flags with no UI
-    // yet, so they are not promised here.
-    includes: [
-      'Everything in Free',
-      'The name, email and id behind every masked tag',
-      'The signals behind each score',
-      '13 months of raw events',
-    ],
-    cta: 'access',
+    per: 'a month at launch',
     billing: 'MON',
+    onHome: true,
+    // Only what is built: reveal_identity and why_signals are wired in the code.
+    includes:
+      'Everything in Free, plus the name, email and id behind every masked tag, and the signals behind each score.',
   },
   {
     id: 'founding',
     name: 'Founding seat',
     price: 390,
     per: 'a year, locked for life',
-    pitch: 'Starter’s yearly launch price, locked for life instead of for 12 months.',
-    includes: [
-      'A full year of Starter',
-      'A 45-minute guided setup call',
-      'Money back within 30 days of launch',
-    ],
-    cta: 'founding',
-    flag: 'Pre-launch · first 25 founders',
     billing: 'ANN',
+    onHome: false,
+    includes: 'A full year of Starter for the first 25 founders, with a guided setup call.',
   },
 ];
 
-/** Starter's yearly option, shown in its pitch and offered in the JSON-LD. */
-export const STARTER_YEARLY = { price: 390, listPrice: 490 } as const;
-
-export const ADDONS = [
-  {
-    name: 'Funnel teardown',
-    price: 299,
-    listPrice: 349,
-    what: 'a written teardown of one onboarding funnel, delivered in 48 hours and credited toward a setup.',
-  },
-  {
-    name: 'Concierge setup',
-    price: 499,
-    listPrice: 599,
-    what: 'a fixed-scope, done-for-you setup on a paid plan. A few slots a month.',
-  },
-] as const;
-
-/** apps/web dashboard modules, in the founder's words. */
-export const MODULES = [
-  {
-    title: 'Where you are losing people',
-    body: 'Each leak: open now, new this week, and what it’s worth at your price.',
-  },
-  {
-    title: 'Your funnel',
-    body: 'Every step: reached, finished, dropped, typical time, stuck right now.',
-  },
-  {
-    title: 'Who looks ready to buy',
-    body: 'People at high intent, and how many of them haven’t paid.',
-  },
-  { title: 'Checkout', body: 'Started, abandoned — and last-moment drops still worth chasing.' },
-  { title: 'Do they come back', body: 'How many return after signing up.' },
-  { title: 'Paying customers going quiet', body: 'Payers whose usage is falling, and since when.' },
-  {
-    title: 'Is the tracking healthy',
-    body: 'Missing events, shape drift, double-sends and late arrivals — so “tracking broke” never looks like “your users vanished”.',
-  },
-  { title: 'Did your changes work', body: 'Mark a change; see before and after.' },
-] as const;
-
-/** Category comparison. Neutral "built for" wording only — dated, see the footnote. */
-export const COMPARISON = [
-  {
-    category: 'Product analytics',
-    builtFor: 'Exploring any event data — you build the funnels, queries and alerts',
-    examples: 'PostHog, Mixpanel, Amplitude',
-    approach:
-      'Nine leak rules and an intent score ready on day one, over product and payment events',
-  },
-  {
-    category: 'Lifecycle email',
-    builtFor: 'Sending behavioural email journeys',
-    examples: 'Customer.io, Loops, Encharge',
-    approach: 'Sends nothing to your users; shows you where and who first',
-  },
-  {
-    category: 'In-app onboarding',
-    builtFor: 'Tours, checklists and prompts inside your app',
-    examples: 'Appcues, Userpilot, Chameleon',
-    approach: 'Adds no UI to your product; measures whether onboarding converts',
-  },
-  {
-    category: 'Churn and payment recovery',
-    builtFor: 'Retrying failed cards, dunning, cancel flows',
-    examples: 'Churnkey, Churn Buster, Baremetrics Recover',
-    approach: 'Watches the whole path before a card ever fails, too',
-  },
-] as const;
-
-export const CAPABILITIES = [
-  ['Funnel, step timing, cohorts, segment splits', 'Full', '—'],
-  ['Buying-intent score, every band', 'Full', '—'],
-  ['Onboarding stall, step collapse, pricing quick exit', 'Full', '—'],
-  ['Tracking health, before-and-after proof', 'Full', '—'],
-  ['Cancelled or payment failed', 'Fires on the event, whatever sends it', '—'],
-  ['Dashboard modules', '5 of 8', 'All 8'],
-  [
-    'Last-moment drop, high-intent quiet, payer going quiet, limit reached',
-    '—',
-    'With a declared paid event',
-  ],
-  ['Trial ended unpaid', '—', 'Paid event + trial dates'],
-  ['A dollar figure on every leak', '—', 'Your list price'],
-] as const;
-
-export const STACKS = [
-  'Next.js App Router',
-  'Node/Express',
-  'Django',
-  'Flask',
-  'Rails',
-  'Laravel',
-  'Go net/http',
-  'Plain HTTP',
-] as const;
+/** Starter's yearly option, shown beside its monthly price and offered in the JSON-LD. */
+export const STARTER_YEARLY = { price: 390 } as const;

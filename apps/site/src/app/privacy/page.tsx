@@ -27,7 +27,7 @@ export default function PrivacyPage() {
       <SiteHeader nav={false} />
       <main id="main" className="page">
         <div className="wrap">
-          <p className="kicker">Last updated 4 November 2026</p>
+          <p className="label">Last updated 4 November 2026</p>
           <h1>Privacy on dripmetric.com</h1>
           <p>
             This notice covers this website only — not the Dripmetric product. It is written in

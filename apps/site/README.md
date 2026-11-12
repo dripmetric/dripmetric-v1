@@ -14,14 +14,15 @@ apps/site/
   src/app/              layout (fonts, shared metadata) · page.tsx (home) · privacy/ · not-found
                         leaks/ · buying-intent/ · docs/ · pricing/ · guides/… · compare/…
     globals.css         the design system: tokens, light + dark themes, every component
-    fonts/              Newsreader, Schibsted Grotesk, JetBrains Mono (SIL OFL, licences beside)
+    fonts/              Geist and Geist Mono (SIL OFL 1.1, licences beside them)
   src/content/site.ts   the facts: leak rules, intent points, plans, modules, comparison — one
                         source for the home page AND the JSON-LD, each group naming the code it
                         is checked against
   src/content/pages.ts  the guide pages: search title, description, schema type, related pages
-  src/components/home/  one server component per home section
-  src/components/       article-page (the guide layout) and the interactive parts: code tabs,
-                        calculator, sign-up form, founding-seat link, mobile bar, scroll reveal
+  src/components/home/  one server component per home section: hero, facts, leaks,
+                        how-it-works, plans, faq, final-cta, header, footer
+  src/components/       article-page (the guide layout) and the two client parts:
+                        the waitlist form and the sticky phone bar
   src/lib/              structured data (JSON-LD), Markdown rendering, shared Open Graph
   public/               robots.txt · sitemap.xml · og.png · icons · site.webmanifest
                         IndexNow key · llms.txt · sitemap.md · llm/topics/ · *.md (generated)
@@ -31,6 +32,18 @@ apps/site/
   next.config.ts        security headers, v1 redirects, Markdown/llms.txt content types
   LAUNCH.md             everything outside the repo: domain switch, search engines, listings
 ```
+
+## One page, one job
+
+The home page exists to do one thing: get a work email onto the waitlist. It answers, in
+order, what this is, whether it is for you, why to believe it, what it costs and what to do
+next — in seven sections, and nothing else. Depth lives on the pages below, each of which
+owns one topic and is linked from the section that raises it.
+
+`pnpm site:check` holds the home page to a budget (8 sections, 1,400 words of rendered
+HTML). That is what stops it growing back one reasonable addition at a time: the version
+it replaced had reached 14 sections and ~2,600 visible words. When something new has to be
+said, say it on the page that owns the topic and link to it.
 
 ## The pages, and what each one is for
 
@@ -73,10 +86,28 @@ pnpm site:build && pnpm site:start
 Both are environment variables, read at build time (see `.env.example`; copy it to
 `.env.local` to try them locally):
 
-| Variable                        | What to put there                                                                                                                                                               | If you leave it empty                                                                                 |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_WAITLIST_ENDPOINT` | An HTTPS endpoint that accepts a form `POST` with an `email` field — Formspree, Loops, Buttondown, Tally, Basin, your own API. Fields sent: `email`, `source`, `founding_seat`. | "Get early access" opens the visitor's email app with a pre-filled message to `hello@dripmetric.com`. |
-| `NEXT_PUBLIC_FOUNDING_SEAT_URL` | The payment link for founding seats.                                                                                                                                            | "Claim a founding seat" scrolls to the sign-up form and ticks the founding-seat box.                  |
+| Variable                        | What to put there                                                                                                                                                               | If you leave it empty                                                                                  |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_WAITLIST_ENDPOINT` | An HTTPS endpoint that accepts a form `POST` with an `email` field — Formspree, Loops, Buttondown, Tally, Basin, your own API. Fields sent: `email`, `source`, `founding_seat`. | "Join the waitlist" opens the visitor's email app with a pre-filled message to `hello@dripmetric.com`. |
+| `NEXT_PUBLIC_FOUNDING_SEAT_URL` | The payment link for founding seats, used by the button on `/pricing`.                                                                                                          | "Claim a founding seat" goes to the waitlist form, which records the request and says so.              |
+
+## The design system
+
+`src/app/globals.css` is the whole of it: tokens first, then components in page order.
+
+- **Colour has three jobs.** Ink carries the text. One water-teal is the brand _and_ the
+  action, so what you can press and the flow through the funnel look like one thing. Coral
+  is reserved for the leak — the drop in the mark, the people who stopped, the money at
+  stake — and appears nowhere else, so the leak is always what you see first. Every text
+  pair passes WCAG 2.2 AA in both themes, and the hatched "lost" bar in the funnel reads as
+  missing without relying on colour.
+- **Two faces, 52 KB**: Geist for everything a person reads, Geist Mono for code and for
+  figures inside the product samples. Both are self-hosted (the product promises the IP is
+  never stored, so the site does not hand visitors' IPs to a font CDN).
+- **Dark mode is a real theme**, not an inversion: its own surfaces, a brighter teal that
+  can carry text on near-black, and every pair re-checked.
+- No JavaScript is needed to read the page. The only two client components are the waitlist
+  form and the sticky phone bar.
 
 ## Deploy (Vercel, like the founder app) — the production choice
 
@@ -186,14 +217,18 @@ Google Search.
 - **Facts live in `src/content/site.ts`**, copied from the Ground Truth and checked against
   the code; each group names its source file. The page and the JSON-LD both read it, so a
   price or a rule cannot differ between them.
-- **Every sample is labelled simulated** — the alert, the funnel, the score, the report.
+- **Every sample is labelled simulated** — the funnel, the alert and the revealed person.
+  The funnel and the alert on the home page are the product's own: the alert's title and
+  fields come from `packages/engine/src/alerts/payload.ts`, its sentence from
+  `packages/engine/src/leaks/rules.ts` and its rule from `packages/engine/src/leaks/types.ts`.
 - **Edit the page, then the Markdown copy.** `content/index.body.md` restates the home page
   for AI clients. When a fact changes, change it there too, then run `pnpm site:markdown`.
   The guide pages have no second copy: edit `content/pages/*.md` and run the same command.
-- **The guide pages are checked against the code.** `pnpm site:check` fails if a leak rule
-  in `packages/engine/src/leaks/types.ts`, an intent rule or its points in
+- **The pages are checked against the code.** `pnpm site:check` fails if a leak rule in
+  `packages/engine/src/leaks/types.ts`, an intent rule or its points in
   `packages/engine/src/intent/points.ts`, or an event in `packages/catalog/src/events.ts`
-  no longer appears on the page that explains it.
+  no longer appears on the page that explains it — and the leak rules are checked against
+  `src/content/site.ts` too, because the home page quotes three of them in full.
 - **Facts about other companies are dated.** The PostHog comparison and the benchmark guide
   say when they were checked and link their sources. Re-check them every three months.
 - **New page:** add `content/pages/<slug>.md`, a row in `content/inventory.json`, an entry in

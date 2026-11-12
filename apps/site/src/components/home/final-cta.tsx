@@ -1,30 +1,36 @@
+import Link from 'next/link';
 import { SignupForm } from '@/components/signup-form';
-import { SITE } from '@/content/site';
+import { CTA_LABEL, SITE } from '@/content/site';
 
-/** 14 · The closing ask, with the founding-seat option. */
+/** The id of the closing form, which the sticky phone bar hides itself over. */
+export const FINAL_CTA_ID = 'waitlist-final';
+
+/** The closing ask: the same one action, with what happens after it. */
 export function FinalCta() {
   return (
-    <section className="section section--ink cta-final" id="get-access" aria-labelledby="cta-title">
+    <section className="cta-final" aria-labelledby="cta-title">
       <div className="wrap cta-final__inner">
-        <h2 id="cta-title" className="h2 cta-final__title">
+        <h2 id="cta-title" className="h2">
           Find your first leak this week.
         </h2>
         <p className="lede">
-          Dripmetric is in private beta. We’re letting founders in weekly, in small cohorts — and
-          the free plan stays free, forever.
+          Dripmetric is in private beta. We invite founders weekly, in small cohorts, and the free
+          plan stays free.
         </p>
         <SignupForm
           source="final"
-          idPrefix="final"
+          id={FINAL_CTA_ID}
           endpoint={SITE.waitlistEndpoint}
           contactEmail={SITE.contactEmail}
-          noteId="final-email-note"
-          dark
-          foundingOption
+          label={CTA_LABEL}
+          noteId="final-note"
         >
-          <p className="signup__fine" id="final-email-note">
-            We use your email only to let you in and to share launch news. Questions?{' '}
-            <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>
+          <p className="signup__fine" id="final-note">
+            We use your email only to let you in and to share launch news.{' '}
+            <Link prefetch={false} href="/privacy">
+              Privacy
+            </Link>
+            . Questions? <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>
           </p>
         </SignupForm>
       </div>

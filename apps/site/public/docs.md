@@ -16,7 +16,7 @@ Maintenance owner: Dripmetric (hello@dripmetric.com)
 
 Dripmetric installs with one npm package, `dripmetric`, which has two entry points: `dripmetric/browser` for your website and app, and `dripmetric/server` for your backend. A typical team product needs about 10–15 lines of code. Product events alone give you the funnel, step timing, the buying-intent score and four of the nine leaks; one paid event from your billing webhook switches on the other five. There is no billing integration to connect.
 
-Dripmetric is in private beta: your project keys (`pk_live_…` for the browser, a secret key for the server) come with your invite. [Get early access](https://dripmetric.com/#get-access).
+Dripmetric is in private beta: your project keys (`pk_live_…` for the browser, a secret key for the server) come with your invite. [Join the waitlist](https://dripmetric.com/#waitlist).
 
 ## 1. Install {#install}
 

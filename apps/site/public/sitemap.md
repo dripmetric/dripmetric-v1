@@ -2,7 +2,7 @@
 
 Inventory scope: complete. Public documents: 8.
 
-Dripmetric is a revenue-leak detector for small self-serve software teams. It puts product usage and, optionally, payment events on one event schema, runs nine readable leak rules (such as onboarding stall, trial ended unpaid and high-intent user went quiet), scores buying intent from 0 to 100 with transparent rules, and sends masked alerts to Slack or Discord plus a weekly leak report. It needs no billing integration, has a free plan, and is in private beta.
+Dripmetric is a revenue-leak detector for self-serve SaaS. It puts product usage and, optionally, payment events on one event schema, runs nine readable leak rules (such as onboarding stall, trial ended unpaid and high-intent user went quiet), scores buying intent from 0 to 100 with transparent rules, and sends masked alerts to Slack or Discord plus a weekly leak report. It needs no billing integration, never contacts end users, has a free plan, and is in private beta with a waitlist.
 
 ## Topics
 
@@ -15,7 +15,7 @@ Dripmetric is a revenue-leak detector for small self-serve software teams. It pu
 
 ## All public documents
 
-- [Dripmetric — revenue-leak detection for self-serve SaaS](https://dripmetric.com/index.md): What Dripmetric is, the nine leak rules, the buying-intent score, setup, billing-provider independence, comparisons, privacy, pricing and FAQ (en); [canonical page](https://dripmetric.com/).
+- [Dripmetric — revenue-leak detection for self-serve SaaS](https://dripmetric.com/index.md): What Dripmetric is, the waitlist, the nine revenue leaks by stage, how installation works, free and Starter pricing, a simulated sample funnel and alert, and the questions asked before joining (en); [canonical page](https://dripmetric.com/).
 - [Privacy on dripmetric.com](https://dripmetric.com/privacy.md): What this website collects: no cookies, analytics or third-party scripts; waitlist email use and removal (en); [canonical page](https://dripmetric.com/privacy).
 - [The nine revenue leaks in a self-serve SaaS funnel](https://dripmetric.com/leaks.md): Every leak Dripmetric detects between first visit and first payment: the exact rule, threshold, required data, how often it runs, what it is worth and what to do about it (en); [canonical page](https://dripmetric.com/leaks).
 - [How the buying-intent score works](https://dripmetric.com/buying-intent.md): The 0-100 buying-intent (PQL) score: every signal and its points, bands, weekly decay, fit-point cap, pricing attention, team accounts and calibration (en); [canonical page](https://dripmetric.com/buying-intent).

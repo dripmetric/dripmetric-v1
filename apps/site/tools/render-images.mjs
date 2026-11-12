@@ -19,16 +19,16 @@ import { fileURLToPath } from 'node:url';
 const here = (path) => fileURLToPath(new URL(path, import.meta.url));
 const PUBLIC = here('../public/');
 
-/** The mark on a full square: ink field, paper bars, the leak in red. */
+/** The mark on a full square: ink field, white bars, the leak in coral (globals.css). */
 function squareMark(size) {
-  return `<!doctype html><html><body style="margin:0;background:#1a1714">
+  return `<!doctype html><html><body style="margin:0;background:#0b1820">
   <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 32 32">
-    <rect width="32" height="32" fill="#1a1714"/>
+    <rect width="32" height="32" fill="#0b1820"/>
     <g transform="translate(4.8 4.8) scale(0.7)">
-      <rect x="5.5" y="6.5" width="21" height="4.2" rx="2.1" fill="#f6f3ec"/>
-      <rect x="5.5" y="13.9" width="13.2" height="4.2" rx="2.1" fill="#f6f3ec"/>
-      <rect x="5.5" y="21.3" width="7.2" height="4.2" rx="2.1" fill="#f6f3ec"/>
-      <path d="M23.2 13.6c0 0-4.2 5-4.2 8.4a4.2 4.2 0 0 0 8.4 0c0-3.4-4.2-8.4-4.2-8.4z" fill="#e5483f"/>
+      <rect x="5.5" y="6.5" width="21" height="4.2" rx="2.1" fill="#ffffff"/>
+      <rect x="5.5" y="13.9" width="13.2" height="4.2" rx="2.1" fill="#ffffff"/>
+      <rect x="5.5" y="21.3" width="7.2" height="4.2" rx="2.1" fill="#ffffff"/>
+      <path d="M23.2 13.6c0 0-4.2 5-4.2 8.4a4.2 4.2 0 0 0 8.4 0c0-3.4-4.2-8.4-4.2-8.4z" fill="#f0553a"/>
     </g>
   </svg></body></html>`;
 }

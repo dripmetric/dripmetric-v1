@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <style>
-    .bg { fill: #1a1714; }
-    .bar { fill: #f6f3ec; }
-    .drop { fill: #e5483f; }
+    .bg { fill: #0b1820; }
+    .bar { fill: #ffffff; }
+    .drop { fill: #f0553a; }
     @media (prefers-color-scheme: dark) {
-      .bg { fill: #f2ede3; }
-      .bar { fill: #14120f; }
+      .bg { fill: #eef2f5; }
+      .bar { fill: #080c10; }
     }
   </style>
   <rect class="bg" width="32" height="32" rx="7.5"/>

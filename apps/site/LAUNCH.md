@@ -24,9 +24,10 @@ the places those engines quote. The research behind each step is summarised at t
       npm deprecate dripmetric@"<3.0.0" "This is the retired v1 drip-email SDK. Dripmetric v2: https://dripmetric.com/docs"
       ```
 
-- [ ] **Fix the Starter price in the weekly report.** `STARTER_PRICE_MINOR = 2_499`
-      (`packages/engine/src/reports/weekly.ts:26`) makes the report say Starter costs
-      $24.99; the site says $39 a month at launch.
+- [x] **The Starter price agrees everywhere.** `STARTER_PRICE_MINOR = 2_499`
+      (`packages/engine/src/reports/weekly.ts:26`), the `starter` row in migration 0001 and
+      the site all say $24.99 a month (12 Nov 2026 decision — see `docs/decisions.md`).
+      There is no yearly price and no founding seat until one is set.
 - [ ] **Decide what happens to v1 users.** The v1 product (sign-in, dashboard, drip emails)
       is what dripmetric.com serves today. Once v2 takes the domain, `/login`, `/signup`
       and `/dashboard` redirect to `https://app.dripmetric.com/login`. If anyone still uses
@@ -34,11 +35,11 @@ the places those engines quote. The research behind each step is summarised at t
 - [ ] **Deploy the founder app to `app.dripmetric.com` first.** The redirects for `/login`
       and `/terms` land there (`/terms` → `/legal/terms`). Until it is live they lead to a 404.
 - [ ] **Get real terms before you take money.** The product's terms and privacy pages in
-      `apps/web/src/app/legal/` say they are placeholders. Founding seats are a payment, so
-      have them reviewed first.
-- [ ] **Set the two build variables** on the site's host: `NEXT_PUBLIC_WAITLIST_ENDPOINT`
-      (form endpoint) and `NEXT_PUBLIC_FOUNDING_SEAT_URL` (payment link). Without them,
-      sign-ups open an email instead.
+      `apps/web/src/app/legal/` say they are placeholders. Have them reviewed before the
+      first paid plan, and before any founding seat is offered again.
+- [ ] **Set `NEXT_PUBLIC_WAITLIST_ENDPOINT`** on the site's host: an HTTPS endpoint that
+      accepts a form POST with an `email` field. Without it, the button opens the visitor's
+      email app instead of capturing the address. The contract is in `README.md`.
 
 ## 2. Switch the domain (Vercel)
 

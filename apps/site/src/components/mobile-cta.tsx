@@ -3,17 +3,25 @@
 import { useEffect, useState } from 'react';
 
 /**
- * A sticky "Get early access" bar on phones, shown only between the hero form and the
- * final form — never on top of either. Hidden bars are `visibility: hidden` as well as
+ * A sticky "Join the waitlist" bar on phones, shown only between the hero form and the
+ * closing form — never on top of either. Hidden bars are `visibility: hidden` as well as
  * moved off screen, so a keyboard user can never tab into one they cannot see.
  */
-export function MobileCta({ heroFormId, finalId }: { heroFormId: string; finalId: string }) {
+export function MobileCta({
+  heroFormId,
+  finalFormId,
+  label,
+}: {
+  heroFormId: string;
+  finalFormId: string;
+  label: string;
+}) {
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const hero = document.getElementById(heroFormId);
-    const final = document.getElementById(finalId);
+    const final = document.getElementById(finalFormId);
     if (!hero || !final || !('IntersectionObserver' in window)) return;
     setMounted(true);
     let heroVisible = true;
@@ -35,13 +43,13 @@ export function MobileCta({ heroFormId, finalId }: { heroFormId: string; finalId
       heroObserver.disconnect();
       finalObserver.disconnect();
     };
-  }, [heroFormId, finalId]);
+  }, [heroFormId, finalFormId]);
 
   if (!mounted) return null;
   return (
     <div className={visible ? 'mobile-cta is-visible' : 'mobile-cta'} data-mobile-cta>
-      <a className="btn btn--primary" href={`#${finalId}`}>
-        Get early access
+      <a className="btn btn--primary" href={`#${finalFormId}`}>
+        {label}
       </a>
     </div>
   );

@@ -1,12 +1,13 @@
 import type { ArticleMeta } from '@/content/pages';
-import { PLANS, SITE, STARTER_YEARLY } from '@/content/site';
+import { PLANS, SITE, type Plan } from '@/content/site';
 import type { FaqItem } from '@/lib/markdown';
+import { HOME_DESCRIPTION, HOME_TITLE } from '@/lib/metadata';
 
 /**
  * The site's JSON-LD: the smallest truthful entity graph, the same on every page.
  *
- * Organization + WebSite + SoftwareApplication (with the offers visible on the pricing
- * pages, built from the same PLANS data) on every page, plus a node for the page itself,
+ * Organization + WebSite + SoftwareApplication (with the offers visible on that page,
+ * built from the same PLANS data) on every page, plus a node for the page itself,
  * its breadcrumb trail and — where the page shows questions and answers — a FAQPage.
  * Decisions recorded in the SEO work notes, checked against current documentation on
  * 8 Nov 2026:
@@ -24,42 +25,20 @@ const ORG = `${SITE.origin}/#organization`;
 const WEBSITE = `${SITE.origin}/#website`;
 const SOFTWARE = `${SITE.origin}/#software`;
 
-const unit = (price: number, unitCode: 'MON' | 'ANN') => ({
+const unit = (price: number) => ({
   '@type': 'UnitPriceSpecification',
   price: String(price),
   priceCurrency: 'USD',
-  unitCode,
-  referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode },
+  unitCode: 'MON',
+  referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'MON' },
 });
 
-function offers(pricingUrl: string) {
-  return PLANS.flatMap((plan) => {
-    const base = { '@type': 'Offer', priceCurrency: 'USD', url: pricingUrl };
-    if (plan.billing === 'free') return [{ ...base, name: plan.name, price: '0' }];
-    if (plan.id === 'starter') {
-      return [
-        {
-          ...base,
-          name: 'Starter, monthly (launch price)',
-          price: String(plan.price),
-          priceSpecification: unit(plan.price, 'MON'),
-        },
-        {
-          ...base,
-          name: 'Starter, yearly (launch price)',
-          price: String(STARTER_YEARLY.price),
-          priceSpecification: unit(STARTER_YEARLY.price, 'ANN'),
-        },
-      ];
-    }
-    return [
-      {
-        ...base,
-        name: 'Founding seat (first 25 founders, price locked for life)',
-        price: String(plan.price),
-        priceSpecification: unit(plan.price, plan.billing),
-      },
-    ];
+/** Offers for the plans a page actually shows: structured data mirrors visible content. */
+function offers(pricingUrl: string, plans: readonly Plan[]) {
+  return plans.map((plan) => {
+    const base = { '@type': 'Offer', name: plan.name, priceCurrency: 'USD', url: pricingUrl };
+    if (plan.billing === 'free') return { ...base, price: '0' };
+    return { ...base, price: String(plan.price), priceSpecification: unit(plan.price) };
   });
 }
 
@@ -71,7 +50,7 @@ const organization = {
   email: SITE.contactEmail,
   logo: { '@type': 'ImageObject', url: `${SITE.origin}/icon-512.png`, width: 512, height: 512 },
   description:
-    'Dripmetric makes a revenue-leak detector for small self-serve software teams: it shows where and how much revenue leaks between a visitor’s first visit and their first payment.',
+    'Dripmetric makes a revenue-leak detector for small self-serve SaaS teams: it shows where and how much revenue leaks between a visitor’s first visit and their first payment.',
   knowsAbout: [
     'Revenue leaks in SaaS signup funnels',
     'Trial-to-paid conversion',
@@ -90,7 +69,7 @@ const website = {
   publisher: { '@id': ORG },
 };
 
-function software(pricingUrl: string, withOffers: boolean) {
+function software(pricingUrl: string, plans: readonly Plan[]) {
   return {
     '@type': 'SoftwareApplication',
     '@id': SOFTWARE,
@@ -99,9 +78,9 @@ function software(pricingUrl: string, withOffers: boolean) {
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     description:
-      'A revenue-leak detector for self-serve software. It puts product usage and payment events on one event schema, runs nine readable leak rules, scores buying intent from 0 to 100 with transparent rules, and sends masked alerts to Slack or Discord plus a weekly leak report.',
+      'A revenue-leak detector for self-serve SaaS. It puts product usage and payment events on one event schema, runs nine readable leak rules, scores buying intent from 0 to 100 with transparent rules, and sends masked alerts to Slack or Discord plus a weekly leak report. It needs no billing integration and never contacts end users.',
     publisher: { '@id': ORG },
-    ...(withOffers ? { offers: offers(pricingUrl) } : {}),
+    ...(plans.length > 0 ? { offers: offers(pricingUrl, plans) } : {}),
   };
 }
 
@@ -127,9 +106,8 @@ export function homeStructuredData(faq: readonly FaqItem[]): Record<string, unkn
         '@type': 'WebPage',
         '@id': `${SITE.origin}/#webpage`,
         url: SITE.homeUrl,
-        name: 'Dripmetric — Revenue-leak detection for self-serve SaaS',
-        description:
-          'Dripmetric finds where signups stall, who looked ready to buy and went quiet, and what it costs you — from product and payment events on one stream.',
+        name: HOME_TITLE,
+        description: HOME_DESCRIPTION,
         inLanguage: 'en',
         dateModified: SITE.updated,
         isPartOf: { '@id': WEBSITE },
@@ -141,7 +119,7 @@ export function homeStructuredData(faq: readonly FaqItem[]): Record<string, unkn
           height: 630,
         },
       },
-      software(`${SITE.homeUrl}#pricing`, true),
+      software(`${SITE.homeUrl}#pricing`, PLANS),
       ...(faq.length > 0 ? [faqPage(SITE.homeUrl, faq)] : []),
     ],
   };
@@ -162,7 +140,6 @@ export function articleStructuredData({
   updated,
   faq,
 }: ArticlePageFacts): Record<string, unknown> {
-  const isPricing = meta.id === 'pricing';
   const page = {
     '@type': meta.schemaType,
     '@id': `${url}#page`,
@@ -195,7 +172,7 @@ export function articleStructuredData({
       website,
       page,
       breadcrumb,
-      software(url, isPricing),
+      software(url, meta.id === 'pricing' ? PLANS : []),
       ...(faq.length > 0 ? [faqPage(url, faq)] : []),
     ],
   };

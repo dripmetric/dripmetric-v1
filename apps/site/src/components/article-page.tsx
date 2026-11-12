@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SiteFooter } from '@/components/home/site-footer';
-import { SiteHeader } from '@/components/home/site-header';
+import { SiteHeader, WAITLIST_ID } from '@/components/home/site-header';
 import { ARTICLES, inventoryPage, type ArticleId } from '@/content/pages';
-import { SITE } from '@/content/site';
+import { CTA_LABEL, SITE } from '@/content/site';
 import { readContent, renderMarkdown } from '@/lib/markdown';
 import { OPEN_GRAPH } from '@/lib/metadata';
 import { withBase } from '@/lib/paths';
@@ -78,7 +78,7 @@ export function ArticlePage({ id }: { id: ArticleId }) {
           </nav>
 
           <header className="article__head">
-            <p className="eyebrow">{meta.kicker}</p>
+            <p className="label">{meta.kicker}</p>
             <h1 className="article__title">{page.title}</h1>
             <p className="article__meta">
               Reviewed against the product code and its sources on{' '}
@@ -115,20 +115,8 @@ export function ArticlePage({ id }: { id: ArticleId }) {
                 </h2>
                 <p>{meta.cta.body}</p>
                 <div className="article-cta__actions">
-                  <a className="btn btn--primary" href={withBase('/#get-access')}>
-                    Get early access
-                  </a>
-                  {/* With a payment link configured it goes there; otherwise to the sign-up
-                      form on the home page, whose founding-seat box records the interest. */}
-                  <a
-                    className="btn btn--ghost"
-                    href={
-                      /^https:\/\/\S+$/i.test(SITE.foundingSeatUrl)
-                        ? SITE.foundingSeatUrl
-                        : withBase('/#get-access')
-                    }
-                  >
-                    Claim a founding seat
+                  <a className="btn btn--primary" href={withBase(`/#${WAITLIST_ID}`)}>
+                    {CTA_LABEL}
                   </a>
                 </div>
               </aside>

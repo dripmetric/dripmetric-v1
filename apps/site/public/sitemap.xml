@@ -6,11 +6,11 @@ Use https://dripmetric.com/sitemap.md to find the relevant topic and its linked 
 -->
   <url>
     <loc>https://dripmetric.com/</loc>
-    <lastmod>2026-11-08</lastmod>
+    <lastmod>2026-11-12</lastmod>
   </url>
   <url>
     <loc>https://dripmetric.com/privacy</loc>
-    <lastmod>2026-11-04</lastmod>
+    <lastmod>2026-11-12</lastmod>
   </url>
   <url>
     <loc>https://dripmetric.com/leaks</loc>
@@ -26,7 +26,7 @@ Use https://dripmetric.com/sitemap.md to find the relevant topic and its linked 
   </url>
   <url>
     <loc>https://dripmetric.com/pricing</loc>
-    <lastmod>2026-11-08</lastmod>
+    <lastmod>2026-11-12</lastmod>
   </url>
   <url>
     <loc>https://dripmetric.com/guides/trial-to-paid-conversion</loc>
@@ -34,6 +34,6 @@ Use https://dripmetric.com/sitemap.md to find the relevant topic and its linked 
   </url>
   <url>
     <loc>https://dripmetric.com/compare/posthog</loc>
-    <lastmod>2026-11-08</lastmod>
+    <lastmod>2026-11-12</lastmod>
   </url>
 </urlset>

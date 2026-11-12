@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <title>OG image template</title>
@@ -8,24 +8,18 @@
     <style>
       /* In the app next/font provides these; this file loads the same files directly. */
       @font-face {
-        font-family: 'Newsreader';
-        src: url('../src/app/fonts/newsreader-latin-wght-normal.woff2') format('woff2');
-        font-weight: 200 800;
+        font-family: 'Geist';
+        src: url('../src/app/fonts/geist-latin-wght-normal.woff2') format('woff2');
+        font-weight: 100 900;
       }
       @font-face {
-        font-family: 'Schibsted Grotesk';
-        src: url('../src/app/fonts/schibsted-grotesk-latin-wght-normal.woff2') format('woff2');
-        font-weight: 400 900;
-      }
-      @font-face {
-        font-family: 'JetBrains Mono';
-        src: url('../src/app/fonts/jetbrains-mono-latin-wght-normal.woff2') format('woff2');
-        font-weight: 100 800;
+        font-family: 'Geist Mono';
+        src: url('../src/app/fonts/geist-mono-latin-wght-normal.woff2') format('woff2');
+        font-weight: 100 900;
       }
       :root {
-        --font-display-face: 'Newsreader';
-        --font-sans-face: 'Schibsted Grotesk';
-        --font-mono-face: 'JetBrains Mono';
+        --font-sans-face: 'Geist';
+        --font-mono-face: 'Geist Mono';
       }
     </style>
     <style>
@@ -35,29 +29,17 @@
         width: 1200px;
         height: 630px;
         overflow: hidden;
-        background: #f6f3ec;
+        background: var(--bg);
       }
       .og {
         position: relative;
         width: 1200px;
         height: 630px;
-        padding: 64px 72px;
+        padding: 64px 68px;
         display: grid;
-        grid-template-columns: 1.2fr 0.9fr;
-        gap: 48px;
+        grid-template-columns: 1.08fr 1fr;
+        gap: 52px;
         align-items: center;
-        isolation: isolate;
-      }
-      .og::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        z-index: -1;
-        background-image:
-          linear-gradient(to right, rgb(26 23 20 / 6%) 1px, transparent 1px),
-          linear-gradient(to bottom, rgb(26 23 20 / 6%) 1px, transparent 1px);
-        background-size: 48px 48px;
-        mask-image: radial-gradient(ellipse 85% 85% at 75% 30%, #000 25%, transparent 80%);
       }
       .og .brand__mark {
         width: 44px;
@@ -67,44 +49,58 @@
         font-size: 30px;
       }
       .og h1 {
-        font-family: var(--font-display);
-        font-weight: 480;
-        font-size: 64px;
-        line-height: 1.02;
-        letter-spacing: -0.028em;
-        margin: 34px 0 22px;
-        color: #1a1714;
+        margin: 36px 0 22px;
+        font-size: 66px;
+        font-weight: 600;
+        line-height: 1.03;
+        letter-spacing: -0.04em;
       }
-      .og h1 span {
-        color: #a8291f;
+      .og .category {
+        font-size: 22px;
+        color: var(--text-2);
       }
-      .og .eyebrow {
-        font-size: 15px;
+      .og .funnel-card {
+        font-size: 18px;
       }
-      .og .alert-card {
-        width: 100%;
-        animation: none;
-        font-size: 16px;
+      .og .card__bar {
+        padding: 18px 24px;
       }
-      .og .alert-card__fields dt {
-        font-size: 11px;
+      .og .card__title {
+        font-size: 19px;
       }
-      .og .alert-card__fields dd {
+      .og .card__meta {
         font-size: 14px;
       }
+      .og .funnel {
+        padding: 10px 24px 18px;
+      }
+      .og .funnel li {
+        padding-block: 10px;
+      }
+      .og .funnel__label {
+        font-size: 17px;
+      }
+      .og .funnel__n {
+        font-size: 16px;
+      }
+      .og .funnel__track {
+        height: 12px;
+      }
+      .og .funnel__flag {
+        font-size: 16px;
+      }
       .og .sample-label {
-        font-size: 11px;
         margin-top: 12px;
+        font-size: 14px;
         text-align: right;
       }
       .og .url {
         position: absolute;
-        left: 72px;
-        bottom: 40px;
+        left: 68px;
+        bottom: 44px;
         font-family: var(--font-mono);
-        font-size: 16px;
-        color: #655e54;
-        letter-spacing: 0.02em;
+        font-size: 17px;
+        color: var(--text-3);
       }
     </style>
   </head>
@@ -124,44 +120,57 @@
           </svg>
           <span class="brand__name">Dripmetric</span>
         </span>
-        <h1>Find the revenue leaking out of your <span>signup funnel.</span></h1>
-        <p class="eyebrow">
-          <span class="eyebrow__dot"></span>Revenue-leak detection for self-serve software
-        </p>
+        <h1>Find the revenue <span class="leak-word">leaking</span> out of your signup funnel.</h1>
+        <p class="category">Revenue-leak detection for self-serve SaaS</p>
       </div>
       <div>
-        <div class="card alert-card">
-          <div class="alert-card__head">
-            <span class="alert-card__from">Dripmetric</span>
-            <span class="tag">App</span>
-            <span class="alert-card__channel">#revenue-leaks</span>
+        <div class="card funnel-card">
+          <div class="card__bar">
+            <span class="card__title">Your funnel</span>
+            <span class="card__meta">Last 30 days</span>
           </div>
-          <p class="alert-card__title">
-            <span class="dot dot--warn"></span>Someone with buying intent went quiet
-          </p>
-          <p class="alert-card__says">
-            They looked ready to buy — 75 out of 100 — and have not been back for 7 days.
-          </p>
-          <dl class="alert-card__fields">
-            <div>
-              <dt>Who (masked)</dt>
-              <dd class="mono">User A7F2C1</dd>
-            </div>
-            <div>
-              <dt>Buying intent</dt>
-              <dd>75 of 100 · high</dd>
-            </div>
-            <div>
-              <dt>Plan</dt>
-              <dd>Pro</dd>
-            </div>
-            <div>
-              <dt>At stake</dt>
-              <dd class="at-stake">$49.00 at your list price</dd>
-            </div>
-          </dl>
+          <ol class="funnel">
+            <li>
+              <span class="funnel__label">Signed up</span><span class="funnel__n">1,240</span>
+              <span class="funnel__track"
+                ><span class="funnel__bar" style="width: 100%"></span
+              ></span>
+            </li>
+            <li>
+              <span class="funnel__label">Verified email</span><span class="funnel__n">1,018</span>
+              <span class="funnel__track"
+                ><span class="funnel__bar" style="width: 82.1%"></span
+              ></span>
+            </li>
+            <li class="is-leak">
+              <span class="funnel__label">Connected a data source</span
+              ><span class="funnel__n">431</span>
+              <span class="funnel__track"
+                ><span class="funnel__bar" style="width: 34.8%"></span
+                ><span class="funnel__lost" style="left: 34.8%; width: 47.3%"></span
+              ></span>
+              <span class="funnel__flag">
+                <svg viewBox="0 0 12 16" aria-hidden="true">
+                  <path d="M6 0S0 7.1 0 10.4a6 6 0 0 0 12 0C12 7.1 6 0 6 0z" />
+                </svg>
+                587 people stopped here. Your biggest leak.
+              </span>
+            </li>
+            <li>
+              <span class="funnel__label">Activated</span><span class="funnel__n">352</span>
+              <span class="funnel__track"
+                ><span class="funnel__bar" style="width: 28.4%"></span
+              ></span>
+            </li>
+            <li>
+              <span class="funnel__label">Paid</span><span class="funnel__n">61</span>
+              <span class="funnel__track"
+                ><span class="funnel__bar" style="width: 4.9%"></span
+              ></span>
+            </li>
+          </ol>
         </div>
-        <p class="sample-label">Sample alert · simulated data</p>
+        <p class="sample-label">Sample funnel. Simulated data.</p>
       </div>
       <p class="url">dripmetric.com</p>
     </div>

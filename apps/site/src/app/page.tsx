@@ -1,33 +1,21 @@
 import type { Metadata } from 'next';
-import { Compare } from '@/components/home/compare';
-import { Dashboard } from '@/components/home/dashboard';
+import { Facts } from '@/components/home/facts';
 import { Faq, HOME_FAQ } from '@/components/home/faq';
-import { FinalCta } from '@/components/home/final-cta';
+import { FINAL_CTA_ID, FinalCta } from '@/components/home/final-cta';
 import { Hero } from '@/components/home/hero';
 import { HowItWorks } from '@/components/home/how-it-works';
-import { Intent } from '@/components/home/intent';
 import { Leaks } from '@/components/home/leaks';
-import { NoBilling } from '@/components/home/no-billing';
-import { PotentialRevenue } from '@/components/home/potential-revenue';
-import { Pricing } from '@/components/home/pricing';
-import { PrivacyPerformance } from '@/components/home/privacy-performance';
-import { Problem } from '@/components/home/problem';
+import { Plans } from '@/components/home/plans';
 import { SiteFooter } from '@/components/home/site-footer';
-import { SiteHeader } from '@/components/home/site-header';
-import { Specs } from '@/components/home/specs';
+import { SiteHeader, WAITLIST_ID } from '@/components/home/site-header';
 import { MobileCta } from '@/components/mobile-cta';
-import { SITE } from '@/content/site';
-import { OPEN_GRAPH } from '@/lib/metadata';
+import { CTA_LABEL, SITE } from '@/content/site';
+import { HOME_DESCRIPTION, HOME_TITLE, OPEN_GRAPH } from '@/lib/metadata';
 import { homeStructuredData, jsonLd } from '@/lib/structured-data';
 
-const TITLE = 'Dripmetric — Revenue-leak detection for self-serve SaaS';
-// Under 160 characters, so the free plan and "no billing integration" survive truncation.
-const DESCRIPTION =
-  'Dripmetric finds where signups stall, who looked ready to buy and went quiet, and what it costs you. Free plan; no billing integration needed.';
-
 export const metadata: Metadata = {
-  title: { absolute: TITLE },
-  description: DESCRIPTION,
+  title: { absolute: HOME_TITLE },
+  description: HOME_DESCRIPTION,
   alternates: {
     canonical: SITE.homeUrl,
     types: { 'text/markdown': `${SITE.origin}/index.md` },
@@ -38,13 +26,19 @@ export const metadata: Metadata = {
     url: SITE.homeUrl,
     title: 'Dripmetric — Find the revenue leaking out of your signup funnel',
     description:
-      'A revenue-leak detector for self-serve software. Product and payment events on one stream, nine readable leak rules, a transparent buying-intent score. Free plan; no billing integration needed.',
+      'A revenue-leak detector for self-serve SaaS. Nine readable leak rules and a transparent buying-intent score, over product and payment events. Free plan; no billing integration. In private beta.',
   },
 };
 
 /** Fully prerendered at build time: the HTML every crawler gets is the whole page. */
 export const dynamic = 'force-static';
 
+/**
+ * One page, one job: join the waitlist. Seven short sections answer, in order, what
+ * this is, whether it is for you, why to believe it, what it costs and what to do next.
+ * Everything deeper lives on its own page (/leaks, /buying-intent, /docs, /pricing),
+ * and `pnpm site:check` holds this page to a length budget so it stays that way.
+ */
 export default function HomePage() {
   return (
     <>
@@ -55,22 +49,15 @@ export default function HomePage() {
       <SiteHeader />
       <main id="main">
         <Hero />
-        <Specs />
-        <Problem />
-        <HowItWorks />
+        <Facts />
         <Leaks />
-        <Intent />
-        <PotentialRevenue />
-        <NoBilling />
-        <Dashboard />
-        <Compare />
-        <PrivacyPerformance />
-        <Pricing />
+        <HowItWorks />
+        <Plans />
         <Faq />
         <FinalCta />
       </main>
       <SiteFooter />
-      <MobileCta heroFormId="hero-signup" finalId="get-access" />
+      <MobileCta heroFormId={WAITLIST_ID} finalFormId={FINAL_CTA_ID} label={CTA_LABEL} />
     </>
   );
 }

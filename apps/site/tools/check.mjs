@@ -15,7 +15,8 @@
  *  - the guide pages still say what the code does: every leak rule
  *    (packages/engine/src/leaks/types.ts), every intent rule and its points
  *    (packages/engine/src/intent/points.ts) and every catalog event
- *    (packages/catalog/src/events.ts) appears in content/pages.
+ *    (packages/catalog/src/events.ts) appears in content/pages;
+ *  - the home page's facts (src/content/site.ts) state those same leak rules.
  *
  * Rendered checks (on the prerendered HTML from `pnpm site:build`):
  *  - every page in content/inventory.json was built, with its language, title,
@@ -23,7 +24,8 @@
  *  - the canonical matches content/inventory.json;
  *  - JSON-LD parses, every offer price in it is visible on the page, and every FAQPage
  *    question is visible on the page;
- *  - every internal link and #anchor resolves; the 404 page is noindex.
+ *  - every internal link and #anchor resolves; the 404 page is noindex;
+ *  - the home page stays inside its length budget (HOME_BUDGET below).
  */
 import { readFile, stat } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
@@ -105,8 +107,11 @@ const quotedValues = (source, key) =>
   [...source.matchAll(new RegExp(`\\b${key}: '([^']*)'`, 'g'))].map((m) => normalise(m[1]));
 
 const leaksPage = await contentPage('leaks.md');
+// The home page prints one rule per stage in full and names the rest, all from site.ts.
+const homeFacts = normalise(await readFile(join(SITE, 'src/content/site.ts'), 'utf8'));
 for (const rule of quotedValues(await codeFile('packages/engine/src/leaks/types.ts'), 'rule')) {
   if (!leaksPage.includes(rule)) fail(`content/pages/leaks.md no longer states the rule "${rule}"`);
+  if (!homeFacts.includes(rule)) fail(`src/content/site.ts no longer states the rule "${rule}"`);
 }
 const intentPage = await contentPage('buying-intent.md');
 const points = await codeFile('packages/engine/src/intent/points.ts');
@@ -150,6 +155,15 @@ for (const icon of manifest.icons) {
 }
 
 // ---------- Rendered checks (prerendered HTML) ----------
+/**
+ * The home page has one job: the waitlist. In November 2026 it had grown to 14 sections
+ * and about 2,600 visible words (16 screens on a laptop, 26 on a phone), against a median
+ * of 10 screens and 960 words across 25 comparable products' pages (docs/decisions.md).
+ * This budget is what stops it growing back one reasonable addition at a time: depth
+ * belongs on the guide pages, each of which owns its topic. Words are counted in the
+ * HTML, so collapsed FAQ answers and code count too.
+ */
+const HOME_BUDGET = { sections: 8, words: 1400 };
 const textOf = (html) =>
   html
     // React separates adjacent text with <!-- --> in server HTML; browsers render nothing.
@@ -207,6 +221,21 @@ if (Object.keys(html).length === 0) {
       }
     } else if (!/<meta name="robots" content="noindex"/.test(doc)) {
       fail(`${where}: the not-found page must be noindex`);
+    }
+
+    if (page.id === 'home') {
+      const main = doc.match(/<main[\s\S]*?<\/main>/)?.[0] ?? '';
+      const sections = (main.match(/<section[\s>]/g) || []).length;
+      const words = textOf(main).trim().split(' ').length;
+      if (sections > HOME_BUDGET.sections) {
+        fail(`${where}: ${sections} sections, over the budget of ${HOME_BUDGET.sections}`);
+      }
+      if (words > HOME_BUDGET.words) {
+        fail(`${where}: ${words} words, over the budget of ${HOME_BUDGET.words}`);
+      }
+      notes.push(
+        `home page: ${sections} sections, ${words} words (budget ${HOME_BUDGET.sections} and ${HOME_BUDGET.words})`,
+      );
     }
 
     for (const block of doc.matchAll(

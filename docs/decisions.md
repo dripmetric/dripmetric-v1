@@ -1852,3 +1852,152 @@ there; it is kept because it is accurate and costs nothing. The IndexNow key is 
 in `apps/site/public/`: the protocol requires it to be public, and it only proves who may
 submit URLs for the host. Submissions are an owner action (`pnpm site:indexnow --submit`),
 never a CI step.
+
+### 2026-11-11 · The landing page is rebuilt around one job, and measured against its peers
+
+The page had grown to 14 sections and ~2,570 visible words — 16 screens on a 1440×900
+laptop, 26 on a 390 px phone. It explained the whole product: the problem, nine leak
+rules in full, the 14-signal intent table, a revenue calculator, an 8-module dashboard
+tour, a 4-row category comparison, a privacy-and-performance list, three plans with
+add-ons, 12 FAQs. Everything on it was true and most of it was interesting, which is how
+a page gets that way.
+
+Before changing it I measured 43 landing pages — product analytics (PostHog, Mixpanel,
+Amplitude, Plausible, Fathom, Pirsch, Simple Analytics), revenue and churn (Baremetrics,
+ChartMogul, Churnkey, Churn Buster, Paddle Retain, RevenueCat), PQL/intent (Pocus, Common
+Room, Warmly, RB2B, Default), onboarding, lifecycle email, and fourteen pages kept as
+craft references (Linear, Stripe, Vercel, Resend, Attio, Clerk, Supabase, Polar, Dub,
+Raycast, Mercury, Tinybird, Cal, Sentry). Rendered, scrolled and measured, not eyeballed.
+The 25 direct comparables: **median 10.0 screens desktop, 13.4 phone, 959 words**; only
+8 of 39 show pricing on the home page and 10 show an FAQ. So the old page was 1.6× the
+median length and 2.7× the words — not merely "long", an outlier.
+
+**What the rebuild is.** Seven sections, 924 words, 6.2 screens desktop and 9.3 on a
+phone: hero with the form, four measured facts, the nine leaks by stage, how it works,
+pricing, FAQ, closing form. Everything cut has a page that owns it — `/leaks`,
+`/buying-intent`, `/docs`, `/pricing` — and is linked from the section that raises it.
+`pnpm site:check` now enforces a budget of 8 sections and 1,400 words of rendered HTML,
+because a length problem returns one reasonable addition at a time.
+
+**One action, one wording.** The page asks for a work email and nothing else. "Get early
+access", "Claim a founding seat" and a founding-seat checkbox were three asks competing in
+one view; the founding seat now lives on `/pricing`, and its button carries `?seat=founding`
+to the same waitlist form, which says it recorded the request. Every call to action on the
+site reads "Join the waitlist" (`CTA_LABEL`), and the form shows what happens next instead
+of emptying itself.
+
+### 2026-11-11 · The palette: teal is the brand and the action, coral is only ever the leak
+
+The old palette was a warm paper-and-ink scheme (`#f6f3ec`, `#1a1714`) with a red accent
+used for the mark, the kicker numerals, link underlines, the hero's accent word, section
+borders and alert dots alike. When an accent is on decoration and on meaning at once it
+stops carrying either (`01-first-principles.md` P2: salience is relative).
+
+Three colours, three jobs:
+
+- **Ink** (`#0b1820` / `#eef2f5`) carries text.
+- **One water-teal** is the brand _and_ the primary action (`#0b6e7c` light, `#5bd2e3`
+  dark), and the same teal draws the funnel's flow — so "what you can press" and "where
+  your users got to" read as one system.
+- **Coral** (`#f0553a`) is reserved for the leak: the drop in the mark, the hatched part
+  of the funnel bar, the money at stake. Nothing else on the page is coral, so the leak is
+  the first thing the eye lands on.
+
+Checked with the design skill's `contrast_check.py`: 38 light pairs and 41 dark pairs, every
+text pair ≥ 4.5:1 (body text 18.0:1 light, 17.4:1 dark) and the two sub-4.5 pairs are the
+field border and the leak graphic, which need 3:1 as non-text UI (WCAG 1.4.11) and get 3.38
+and 3.46. Dark mode is its own theme, not an inversion: its own surfaces and a brighter teal
+that can carry text on near-black. The hatched "lost" segment means a colour-blind reader
+sees the leak as texture, not hue (WCAG 1.4.1).
+
+**Type: two faces, 52 KB.** Newsreader (serif display), Schibsted Grotesk and JetBrains Mono
+— 145 KB across three families — are replaced by Geist and Geist Mono (SIL OFL 1.1, 29 KB +
+23 KB). The serif was doing editorial work on a product page; a grotesk at 600 weight with
+−0.04em tracking reads as built rather than published, and one family means the headline,
+the UI and the numbers share a voice. Mono stays for code and for figures inside the
+product samples, where it is the product's own typography.
+
+### 2026-11-11 · What the AI-answer research changed, and what it did not
+
+Checked on 11 November 2026, with the dates each claim carries:
+
+- **Google's own guidance** (Search Central, "AI features and your website", and the AI
+  optimization guide published 15 May 2026): a page needs to be indexed and snippet-eligible
+  and nothing else — "There are no additional requirements to appear in AI Overviews or AI
+  Mode". It states plainly that `llms.txt`, content chunking and AI-specific rewrites are not
+  needed, and that Google Search ignores `llms.txt`. SE Ranking's study of ~300,000 domains
+  found no citation effect from `llms.txt`, and Ahrefs found 97% of domains with a valid one
+  received no requests to it in a month.
+- **What this did not change:** we keep `llms.txt`, `sitemap.md` and the `.md` copies. They
+  are an owner convention this repo already committed to, they cost one generator run, and
+  OpenAI's and Anthropic's crawler docs (OAI-SearchBot, Claude-SearchBot) describe search
+  crawling that robots.txt controls — which we allow. We do not claim they cause citations.
+- **What it did change:** the home page is now written so a machine reading it finds the
+  answer where it looks. Kevin Indig's analysis of 18,012 verified ChatGPT citations
+  (Feb 2026) found 44.2% come from the first 30% of a page and that cited passages use
+  definitive language and question headings; Microsoft's own AEO guidance (Oct 2025) asks
+  for self-contained sentences, question headings and real HTML, and warns against answers
+  hidden in tabs or expandable menus. So: the first sentence of the page is the definition
+  ("Dripmetric is a revenue-leak detector for self-serve SaaS"), the same sentence opens
+  the Markdown copy, the footer and the JSON-LD; the FAQ answers each name the product and
+  stand alone; and the `<details>` answers are in the HTML whether open or closed.
+- **The FAQ is chosen, not accumulated.** Seven questions, each one a question an answer
+  engine is actually asked about a product in this category — including "Is Dripmetric an
+  email or drip-campaign tool?", because npm still describes v1 as a drip-email SDK and
+  that is the wrong answer we most need on the record. Questions a guide page owns (what a
+  revenue leak is, how the score is computed) are answered there, not duplicated here.
+- **What nobody can promise.** SparkToro and Gumshoe ran 12 prompts about 2,961 times
+  (Jan 2026) and found a <1-in-100 chance of two identical brand lists, ~1 in 1,000 for
+  identical order. Ahrefs' 75,000-brand study found branded web mentions correlate with AI
+  Overview presence (Spearman 0.664) three times more strongly than backlinks (0.218), and
+  a Paradigm analysis of 370K citations found brand homepages are 3.2% of citations for
+  recommendation answers while "best/top" listicles appear in 48.1%. Which is to say: the
+  home page is not the lever. `apps/site/LAUNCH.md` §5 already holds the lever — be in the
+  listicles, the threads and the directories — and nothing on this page can substitute.
+
+### 2026-11-11 · The samples are the product's own output, not an illustration
+
+The hero shows a funnel and the alert Dripmetric would send about it. The alert's title and
+field labels are built by `packages/engine/src/alerts/payload.ts`, its sentence is the one
+`packages/engine/src/leaks/rules.ts` writes, and the rule printed under it is the engine's
+own `LEAK_DEFINITIONS` text — now also checked by `pnpm site:check`, which fails if
+`src/content/site.ts` stops quoting a rule verbatim.
+
+Both carry a visible "simulated data" label, which is the standing rule for this site. The
+funnel's leak step is drawn as a hatched segment with the count of people who stopped
+("587 people stopped here"), rather than a percentage, because a count is the thing a
+founder reacts to and the percentage is derivable from the numbers already on screen.
+
+### 2026-11-12 · Starter is $24.99, and the site follows the product
+
+The site said $39 a month (list $49), $390 a year (list $490), and a $390 founding seat
+locked for life — from the Ground Truth "Pricing & packaging" decision of 28 Oct 2026.
+The product says $24.99: `STARTER_PRICE_MINOR = 2_499` in
+`packages/engine/src/reports/weekly.ts`, which the Monday report's payback line is
+computed from ("Starter is $24.99; at your $9.00 price, saving 3 users covers it"), and
+the `starter` row seeded in `packages/db/migrations/0001_foundations.sql`, both from
+brief §9. `apps/site/LAUNCH.md` had been carrying the disagreement as a launch task.
+
+The founder settled it on 12 Nov 2026: **$24.99, and the site is what changes.** That
+reverses the 28 Oct pricing decision, knowingly.
+
+**The yearly price and the founding seat are off the site, not re-priced.** Every other
+number on the old pricing page was derived from the monthly one — the $390 year is ten
+months of $39, the struck-through $49 and $490 are its list prices, and the founding seat
+is defined as "Starter's yearly launch price, locked for life". With the monthly price
+changed, none of them follows, and a price nobody has decided is not a price to publish.
+So Starter is monthly-only at $24.99 until a year is priced, and the pricing page answers
+"Is there a yearly plan?" with "Not yet".
+
+What that removed, and what has to come back with it: the founding-seat column and
+section on `/pricing`, its FAQ answer, the "launch price held for 12 months for anyone who
+starts by 30 June 2027" line, the second button on the pricing page's call to action, the
+`?seat=founding` path through the waitlist form and the `founding_seat` field it posted,
+and `NEXT_PUBLIC_FOUNDING_SEAT_URL`. The form is one field again. Keeping an unreachable
+code path against a future price would have been worse than deleting four small pieces and
+adding them back when there is something true to put in them.
+
+Unchanged: the add-ons ($299 teardown, $499 concierge setup) do not depend on the Starter
+price, and the `$49.00 at your list price` in every sample alert is the _simulated
+founder's own_ price, not Dripmetric's — a distinction worth keeping in mind before a
+find-and-replace on "$49".

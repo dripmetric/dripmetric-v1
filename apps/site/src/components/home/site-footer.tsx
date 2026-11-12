@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Brand } from '@/components/ui/brand';
-import { SITE } from '@/content/site';
+import { DEFINITION, SITE } from '@/content/site';
 import { withBase } from '@/lib/paths';
 
 export function SiteFooter({ full = true }: { full?: boolean }) {
@@ -11,16 +11,13 @@ export function SiteFooter({ full = true }: { full?: boolean }) {
           <div className="site-footer__brand">
             <Brand />
             <p>
-              Dripmetric is a revenue-leak detector for small self-serve software teams: one event
-              schema across product usage and money.
+              {DEFINITION} It shows where and how much revenue leaks between a first visit and a
+              first payment.
             </p>
           </div>
           <nav aria-label="Product">
             <p className="site-footer__h">Product</p>
             <ul>
-              <li>
-                <a href={withBase('/#how-it-works')}>How it works</a>
-              </li>
               <li>
                 <a href={withBase('/leaks')}>The nine leaks</a>
               </li>
@@ -32,9 +29,6 @@ export function SiteFooter({ full = true }: { full?: boolean }) {
               </li>
               <li>
                 <a href={withBase('/docs')}>Docs</a>
-              </li>
-              <li>
-                <a href={withBase('/#faq')}>FAQ</a>
               </li>
             </ul>
           </nav>

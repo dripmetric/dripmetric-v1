@@ -2,6 +2,16 @@ import type { Metadata } from 'next';
 import { SITE } from '@/content/site';
 
 /**
+ * The home page's search result: the brand and its category in the title, and in the
+ * description what it finds, the two facts people ask first (free plan, no billing
+ * integration) and that it is in private beta — so nobody clicks expecting a sign-up.
+ * Under 160 characters. The JSON-LD WebPage node uses the same two strings.
+ */
+export const HOME_TITLE = 'Dripmetric — Revenue-leak detection for self-serve SaaS';
+export const HOME_DESCRIPTION =
+  'Dripmetric finds where signups stall, who looked ready to buy and went quiet, and what it costs you. Free plan, no billing integration. In private beta.';
+
+/**
  * Open Graph fields every page shares.
  *
  * Next.js merges metadata shallowly: a page that sets `openGraph` replaces the layout's
@@ -17,7 +27,7 @@ export const OPEN_GRAPH: NonNullable<Metadata['openGraph']> = {
       url: '/og.png',
       width: 1200,
       height: 630,
-      alt: 'Dripmetric: a masked alert reading “Someone with buying intent went quiet — 75 of 100, $49.00 at your list price”.',
+      alt: 'Dripmetric: find the revenue leaking out of your signup funnel. A sample funnel shows 587 people stopping at one step.',
     },
   ],
 };

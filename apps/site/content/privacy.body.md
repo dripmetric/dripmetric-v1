@@ -12,7 +12,7 @@ Like any website, this one is served by a hosting provider, which may keep stand
 
 ## If you join the waitlist
 
-Dripmetric receives the email address you type, which form you used, and whether you asked about a founding seat. Depending on how you sign up, it arrives through the service used to manage the waitlist, or as an email from your own email app. It is used only to let you into the beta and to share launch news, and it is not sold or shared with anyone else.
+Dripmetric receives the email address you type and which form you used. Depending on how you sign up, it arrives through the service used to manage the waitlist, or as an email from your own email app. It is used only to let you into the beta and to share launch news, and it is not sold or shared with anyone else.
 
 ## Getting your details removed
 

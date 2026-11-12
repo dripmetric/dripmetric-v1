@@ -69,8 +69,8 @@ const FAQ: Qa[] = [
     a: (
       <>
         Dripmetric is free forever for where and how much revenue leaks. Starter, which shows who,
-        is $39 a month at the launch price, or $390 a year.{' '}
-        <a href={withBase('/pricing')}>Full pricing</a> lists what each plan includes.
+        is $24.99 a month. <a href={withBase('/pricing')}>Full pricing</a> lists what each plan
+        includes.
       </>
     ),
   },

@@ -1,14 +1,13 @@
 import { SectionHead } from '@/components/ui/section-head';
-import { PLANS, STARTER_YEARLY } from '@/content/site';
+import { PLANS } from '@/content/site';
 import { withBase } from '@/lib/paths';
 
 /**
  * What it costs, explained by what each plan shows: the same alert, masked on Free and
  * revealed on Starter. Prices come from PLANS, which the JSON-LD offers are built from
- * too. The full table, list prices, founding seats and add-ons are on /pricing.
+ * too. What each plan includes in full, and the add-ons, are on /pricing.
  */
 export function Plans() {
-  const plans = PLANS.filter((plan) => plan.onHome);
   return (
     <section className="section" id="pricing" aria-labelledby="pricing-title">
       <div className="wrap plans">
@@ -19,13 +18,12 @@ export function Plans() {
             title="Free shows where and how much. Starter shows who."
           />
           <dl className="plan-list">
-            {plans.map((plan) => (
+            {PLANS.map((plan) => (
               <div className="plan" key={plan.id}>
                 <dt>
                   <span className="plan__name">{plan.name}</span>
                   <span className="plan__price">
                     <strong>${plan.price}</strong> {plan.per}
-                    {plan.id === 'starter' ? `, or $${STARTER_YEARLY.price} a year` : ''}
                   </span>
                 </dt>
                 <dd>{plan.includes}</dd>

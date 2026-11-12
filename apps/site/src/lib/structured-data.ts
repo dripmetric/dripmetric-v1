@@ -1,5 +1,5 @@
 import type { ArticleMeta } from '@/content/pages';
-import { PLANS, SITE, STARTER_YEARLY, type Plan } from '@/content/site';
+import { PLANS, SITE, type Plan } from '@/content/site';
 import type { FaqItem } from '@/lib/markdown';
 import { HOME_DESCRIPTION, HOME_TITLE } from '@/lib/metadata';
 
@@ -25,43 +25,20 @@ const ORG = `${SITE.origin}/#organization`;
 const WEBSITE = `${SITE.origin}/#website`;
 const SOFTWARE = `${SITE.origin}/#software`;
 
-const unit = (price: number, unitCode: 'MON' | 'ANN') => ({
+const unit = (price: number) => ({
   '@type': 'UnitPriceSpecification',
   price: String(price),
   priceCurrency: 'USD',
-  unitCode,
-  referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode },
+  unitCode: 'MON',
+  referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'MON' },
 });
 
 /** Offers for the plans a page actually shows: structured data mirrors visible content. */
 function offers(pricingUrl: string, plans: readonly Plan[]) {
-  return plans.flatMap((plan) => {
-    const base = { '@type': 'Offer', priceCurrency: 'USD', url: pricingUrl };
-    if (plan.billing === 'free') return [{ ...base, name: plan.name, price: '0' }];
-    if (plan.id === 'starter') {
-      return [
-        {
-          ...base,
-          name: 'Starter, monthly (launch price)',
-          price: String(plan.price),
-          priceSpecification: unit(plan.price, 'MON'),
-        },
-        {
-          ...base,
-          name: 'Starter, yearly (launch price)',
-          price: String(STARTER_YEARLY.price),
-          priceSpecification: unit(STARTER_YEARLY.price, 'ANN'),
-        },
-      ];
-    }
-    return [
-      {
-        ...base,
-        name: 'Founding seat (first 25 founders, price locked for life)',
-        price: String(plan.price),
-        priceSpecification: unit(plan.price, plan.billing),
-      },
-    ];
+  return plans.map((plan) => {
+    const base = { '@type': 'Offer', name: plan.name, priceCurrency: 'USD', url: pricingUrl };
+    if (plan.billing === 'free') return { ...base, price: '0' };
+    return { ...base, price: String(plan.price), priceSpecification: unit(plan.price) };
   });
 }
 
@@ -142,10 +119,7 @@ export function homeStructuredData(faq: readonly FaqItem[]): Record<string, unkn
           height: 630,
         },
       },
-      software(
-        `${SITE.homeUrl}#pricing`,
-        PLANS.filter((plan) => plan.onHome),
-      ),
+      software(`${SITE.homeUrl}#pricing`, PLANS),
       ...(faq.length > 0 ? [faqPage(SITE.homeUrl, faq)] : []),
     ],
   };
@@ -166,7 +140,6 @@ export function articleStructuredData({
   updated,
   faq,
 }: ArticlePageFacts): Record<string, unknown> {
-  const isPricing = meta.id === 'pricing';
   const page = {
     '@type': meta.schemaType,
     '@id': `${url}#page`,
@@ -199,7 +172,7 @@ export function articleStructuredData({
       website,
       page,
       breadcrumb,
-      software(url, isPricing ? PLANS : []),
+      software(url, meta.id === 'pricing' ? PLANS : []),
       ...(faq.length > 0 ? [faqPage(url, faq)] : []),
     ],
   };

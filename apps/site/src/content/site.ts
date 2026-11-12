@@ -24,8 +24,6 @@ export const SITE = {
   contactEmail: 'hello@dripmetric.com',
   /** Read at build time. Empty = the form opens a pre-filled email instead. */
   waitlistEndpoint: process.env.NEXT_PUBLIC_WAITLIST_ENDPOINT ?? '',
-  /** Read at build time. Empty = "Claim a founding seat" goes to the waitlist form. */
-  foundingSeatUrl: process.env.NEXT_PUBLIC_FOUNDING_SEAT_URL ?? '',
   /** The date every page on the site was last reviewed against the Ground Truth. */
   updated: '2026-11-11',
 } as const;
@@ -139,22 +137,30 @@ export const LEAK_STAGES: LeakStage[] = [
 ];
 
 export interface Plan {
-  id: 'free' | 'starter' | 'founding';
+  id: 'free' | 'starter';
   name: string;
-  /** Whole US dollars, for display and for the JSON-LD offer. */
+  /** US dollars, for display and for the JSON-LD offer. */
   price: number;
   per: string;
   /** How the JSON-LD prices it. */
-  billing: 'free' | 'MON' | 'ANN';
-  /** Shown on the home page. The founding seat is offered on /pricing only. */
-  onHome: boolean;
+  billing: 'free' | 'MON';
   /** One sentence: what this plan answers. */
   includes: string;
 }
 
 /**
- * Ground Truth "Pricing & packaging" (28 Oct 2026 decision). The full table, list
- * prices and add-ons are on /pricing (content/pages/pricing.md).
+ * Two plans, both monthly.
+ *
+ * $24.99 is the product's own price: `STARTER_PRICE_MINOR` in
+ * packages/engine/src/reports/weekly.ts, which the Monday report's payback line is
+ * computed from, and the `starter` row seeded in packages/db migration 0001. The site
+ * said $39 from the 28 Oct 2026 Ground Truth decision; the founder reversed that on
+ * 12 Nov 2026 so the site matches the product (docs/decisions.md).
+ *
+ * There is no yearly price and no founding seat on the site until one is set, because
+ * every other number on the old pricing page — the $390 year, the struck-through $49
+ * and $490, the seat locked for life — was derived from a monthly price that no longer
+ * holds, and a price nobody has decided is not a price to publish.
  */
 export const PLANS: Plan[] = [
   {
@@ -163,31 +169,17 @@ export const PLANS: Plan[] = [
     price: 0,
     per: 'forever',
     billing: 'free',
-    onHome: true,
     includes:
       'The full funnel and step timing, the buying-intent score, all nine leaks, masked alerts to Slack or Discord, and a weekly leak report.',
   },
   {
     id: 'starter',
     name: 'Starter',
-    price: 39,
-    per: 'a month at launch',
+    price: 24.99,
+    per: 'a month',
     billing: 'MON',
-    onHome: true,
     // Only what is built: reveal_identity and why_signals are wired in the code.
     includes:
       'Everything in Free, plus the name, email and id behind every masked tag, and the signals behind each score.',
   },
-  {
-    id: 'founding',
-    name: 'Founding seat',
-    price: 390,
-    per: 'a year, locked for life',
-    billing: 'ANN',
-    onHome: false,
-    includes: 'A full year of Starter for the first 25 founders, with a guided setup call.',
-  },
 ];
-
-/** Starter's yearly option, shown beside its monthly price and offered in the JSON-LD. */
-export const STARTER_YEARLY = { price: 390 } as const;

@@ -71,11 +71,11 @@ Free shows where and how much. Starter shows who.
 | Plan | Price | What it includes |
 | --- | --- | --- |
 | Free | $0, forever | The full funnel and step timing, the buying-intent score, all nine leaks, masked alerts to Slack or Discord, and a weekly leak report. |
-| Starter | $39 a month at launch, or $390 a year | Everything in Free, plus the name, email and id behind every masked tag, and the signals behind each score. |
+| Starter | $24.99 a month | Everything in Free, plus the name, email and id behind every masked tag, and the signals behind each score. |
 
 On Free, every alert is real: the leak, the score, the plan and the money at stake. Only the person is masked, behind a stable tag. Masking is enforced on our server, so a free project’s pages, alerts and API responses never contain a name, an email or a user id.
 
-Prices in US dollars. List prices, founding seats, add-ons and what each plan includes: [Dripmetric pricing](https://dripmetric.com/pricing) ([Markdown](https://dripmetric.com/pricing.md)).
+Prices in US dollars, billed monthly. Add-ons and what each plan includes in full: [Dripmetric pricing](https://dripmetric.com/pricing) ([Markdown](https://dripmetric.com/pricing.md)).
 
 ## A sample, with simulated data
 
@@ -115,7 +115,7 @@ No. The browser core is 5,018 bytes gzipped. It sends in batches off the renderi
 
 ### How much does Dripmetric cost?
 
-Dripmetric is free forever for where and how much revenue leaks. Starter, which shows who, is $39 a month at the launch price, or $390 a year. [Full pricing](https://dripmetric.com/pricing) lists what each plan includes.
+Dripmetric is free forever for where and how much revenue leaks. Starter, which shows who, is $24.99 a month. [Full pricing](https://dripmetric.com/pricing) lists what each plan includes.
 
 ## What Dripmetric does not do
 

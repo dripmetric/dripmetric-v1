@@ -1967,3 +1967,37 @@ Both carry a visible "simulated data" label, which is the standing rule for this
 funnel's leak step is drawn as a hatched segment with the count of people who stopped
 ("587 people stopped here"), rather than a percentage, because a count is the thing a
 founder reacts to and the percentage is derivable from the numbers already on screen.
+
+### 2026-11-12 · Starter is $24.99, and the site follows the product
+
+The site said $39 a month (list $49), $390 a year (list $490), and a $390 founding seat
+locked for life — from the Ground Truth "Pricing & packaging" decision of 28 Oct 2026.
+The product says $24.99: `STARTER_PRICE_MINOR = 2_499` in
+`packages/engine/src/reports/weekly.ts`, which the Monday report's payback line is
+computed from ("Starter is $24.99; at your $9.00 price, saving 3 users covers it"), and
+the `starter` row seeded in `packages/db/migrations/0001_foundations.sql`, both from
+brief §9. `apps/site/LAUNCH.md` had been carrying the disagreement as a launch task.
+
+The founder settled it on 12 Nov 2026: **$24.99, and the site is what changes.** That
+reverses the 28 Oct pricing decision, knowingly.
+
+**The yearly price and the founding seat are off the site, not re-priced.** Every other
+number on the old pricing page was derived from the monthly one — the $390 year is ten
+months of $39, the struck-through $49 and $490 are its list prices, and the founding seat
+is defined as "Starter's yearly launch price, locked for life". With the monthly price
+changed, none of them follows, and a price nobody has decided is not a price to publish.
+So Starter is monthly-only at $24.99 until a year is priced, and the pricing page answers
+"Is there a yearly plan?" with "Not yet".
+
+What that removed, and what has to come back with it: the founding-seat column and
+section on `/pricing`, its FAQ answer, the "launch price held for 12 months for anyone who
+starts by 30 June 2027" line, the second button on the pricing page's call to action, the
+`?seat=founding` path through the waitlist form and the `founding_seat` field it posted,
+and `NEXT_PUBLIC_FOUNDING_SEAT_URL`. The form is one field again. Keeping an unreachable
+code path against a future price would have been worse than deleting four small pieces and
+adding them back when there is something true to put in them.
+
+Unchanged: the add-ons ($299 teardown, $499 concierge setup) do not depend on the Starter
+price, and the `$49.00 at your list price` in every sample alert is the _simulated
+founder's own_ price, not Dripmetric's — a distinction worth keeping in mind before a
+find-and-replace on "$49".

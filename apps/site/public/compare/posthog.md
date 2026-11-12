@@ -6,9 +6,9 @@ Locale: en
 
 Purpose: A dated, sourced comparison of Dripmetric and PostHog: what each is for, alerts, buying intent, revenue data, pricing, when to choose which and how to use both
 
-Content updated: 2026-11-08
+Content updated: 2026-11-12
 
-Source revision: site-2026-11-08
+Source revision: site-2026-11-12
 
 Maintenance owner: Dripmetric (hello@dripmetric.com)
 
@@ -32,7 +32,7 @@ Facts about PostHog on this page come from PostHog's own documentation and prici
 | Contacting your users | Can send emails to your users with workflows | Never contacts your users |
 | Session replay, feature flags, experiments, surveys | Yes | No |
 | Self-hosting | Open source, self-hostable | Not offered (the SDK is MIT licensed) |
-| Pricing | Free tier with no card; product analytics free for the first 1,000,000 events a month, then usage-based; no per-seat charges | Free forever for where and how much; Starter $39 a month at the launch price (list $49) for who |
+| Pricing | Free tier with no card; product analytics free for the first 1,000,000 events a month, then usage-based; no per-seat charges | Free forever for where and how much; Starter $24.99 a month for who |
 
 ## When PostHog is the better choice {#choose-posthog}
 
@@ -68,7 +68,7 @@ PostHog gives you the parts — funnels, alerts on insights, and revenue analyti
 
 ### Which is cheaper for a small SaaS?
 
-Both have free plans. PostHog's product analytics is free for the first 1,000,000 events a month, then usage-based. Dripmetric's free plan has no time limit and covers where and how much; Starter, which shows who, is $39 a month at the launch price.
+Both have free plans. PostHog's product analytics is free for the first 1,000,000 events a month, then usage-based. Dripmetric's free plan has no time limit and covers where and how much; Starter, which shows who, is $24.99 a month.
 
 ## Sources {#sources}
 

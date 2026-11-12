@@ -81,15 +81,57 @@ deployed — prerendered pages, production headers, real 404s:
 pnpm site:build && pnpm site:start
 ```
 
-## Before you deploy — set two values
+## Before you deploy — set the waitlist endpoint
 
-Both are environment variables, read at build time (see `.env.example`; copy it to
-`.env.local` to try them locally):
+`NEXT_PUBLIC_WAITLIST_ENDPOINT` is the one value the site needs. It is read at build time
+(see `.env.example`; copy it to `.env.local` to try it locally). Leave it empty and "Join
+the waitlist" opens the visitor's email app with a pre-filled message to
+`hello@dripmetric.com` — which works, and loses most people.
 
-| Variable                        | What to put there                                                                                                                                                               | If you leave it empty                                                                                  |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `NEXT_PUBLIC_WAITLIST_ENDPOINT` | An HTTPS endpoint that accepts a form `POST` with an `email` field — Formspree, Loops, Buttondown, Tally, Basin, your own API. Fields sent: `email`, `source`, `founding_seat`. | "Join the waitlist" opens the visitor's email app with a pre-filled message to `hello@dripmetric.com`. |
-| `NEXT_PUBLIC_FOUNDING_SEAT_URL` | The payment link for founding seats, used by the button on `/pricing`.                                                                                                          | "Claim a founding seat" goes to the waitlist form, which records the request and says so.              |
+**What the form sends.** `src/components/signup-form.tsx` posts exactly this:
+
+```
+POST <NEXT_PUBLIC_WAITLIST_ENDPOINT>
+Accept: application/json
+Content-Type: application/x-www-form-urlencoded
+
+email=founder%40example.com&source=hero
+```
+
+- `email` — what the visitor typed, trimmed. The browser validates it as an email first.
+- `source` — `hero` or `final`, so you can tell which form a signup came from.
+- `_gotcha` — a honeypot field, always empty for a person. It never reaches the network:
+  the form short-circuits to the success state when it is filled. Ignore it if your
+  backend sees it.
+
+**What the form expects back.** Any `2xx` is success and the form is replaced by "You're
+on the list." Anything else shows an error and invites a retry. The response body is not
+read, so JSON, an empty body or a redirect all work. The request is a plain cross-origin
+`fetch`, so the endpoint must send `Access-Control-Allow-Origin` for `https://dripmetric.com`
+(every hosted form service already does).
+
+**Without JavaScript** the browser submits the same form natively to the same URL, so an
+endpoint that answers a normal form POST keeps working for everyone.
+
+**Hosted services that fit as-is**, in rough order of fit for a waitlist:
+
+| Service    | Why                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------ |
+| Loops      | Built for SaaS lists: stores the address, sends the welcome mail, ready for launch news.   |
+| Buttondown | If the list is really a newsletter you will write to.                                      |
+| Formspree  | Simplest: a plain endpoint that emails you each signup. No list to manage.                 |
+| Tally      | If you later want a qualifying question or two on the same form.                           |
+| Your own   | Anything that answers a form POST with a 2xx — a route handler on the founder app will do. |
+
+**Rolling your own**, once the database is up: a `POST /v1/waitlist` route handler that
+reads `email` and `source`, rejects anything that does not look like an address, stores it
+with a unique index on the address so a double submit is harmless, and answers `204`. Set
+the CORS header for `https://dripmetric.com`, rate-limit by IP, and send nothing to the
+address until you mean to.
+
+**After it is set**, rebuild and deploy: the value is inlined at build time, so changing
+the variable without a rebuild changes nothing. Then submit the form once on the live site
+and check the address arrived.
 
 ## The design system
 
@@ -113,7 +155,7 @@ Both are environment variables, read at build time (see `.env.example`; copy it 
 
 1. New Vercel project from this repository. **Root Directory: `apps/site`.** Vercel detects
    Next.js and the pnpm workspace; no `vercel.json` is needed.
-2. Add the two environment variables above.
+2. Add the environment variable above.
 3. Add the domain `dripmetric.com` as the **primary** domain and redirect `www` to it with
    a 308. (Today the v1 site redirects the other way, with a 307 — see `LAUNCH.md` §2.)
 

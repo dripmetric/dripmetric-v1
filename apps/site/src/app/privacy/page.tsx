@@ -54,11 +54,10 @@ export default function PrivacyPage() {
 
           <h2>If you join the waitlist</h2>
           <p>
-            We receive the email address you type, which form you used, and whether you asked about
-            a founding seat. Depending on how you sign up, it reaches us through the service we use
-            to manage the waitlist, or as an email from your own email app. We use it only to let
-            you into the beta and to share launch news, and we don’t sell it or share it with anyone
-            else.
+            We receive the email address you type and which form you used. Depending on how you sign
+            up, it reaches us through the service we use to manage the waitlist, or as an email from
+            your own email app. We use it only to let you into the beta and to share launch news,
+            and we don’t sell it or share it with anyone else.
           </p>
 
           <h2>Getting your details removed</h2>

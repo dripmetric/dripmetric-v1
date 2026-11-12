@@ -118,21 +118,6 @@ export function ArticlePage({ id }: { id: ArticleId }) {
                   <a className="btn btn--primary" href={withBase(`/#${WAITLIST_ID}`)}>
                     {CTA_LABEL}
                   </a>
-                  {/* Founding seats are sold on the pricing page only. With a payment link
-                      configured the button goes there; otherwise to the waitlist form, which
-                      records the request (see signup-form.tsx). */}
-                  {id === 'pricing' ? (
-                    <a
-                      className="btn btn--ghost"
-                      href={
-                        /^https:\/\/\S+$/i.test(SITE.foundingSeatUrl)
-                          ? SITE.foundingSeatUrl
-                          : withBase(`/?seat=founding#${WAITLIST_ID}`)
-                      }
-                    >
-                      Claim a founding seat
-                    </a>
-                  ) : null}
                 </div>
               </aside>
 

@@ -4,28 +4,28 @@ Canonical: [Dripmetric pricing](https://dripmetric.com/pricing)
 
 Locale: en
 
-Purpose: Plans and prices in USD: Free forever, Starter launch and list prices, founding seats, add-ons, what masked means and what each plan includes
+Purpose: Plans and prices in USD: Free forever, Starter at $24.99 a month, what each plan includes, what "masked" means, what you need to send, and add-ons
 
-Content updated: 2026-11-08
+Content updated: 2026-11-12
 
-Source revision: site-2026-11-08
+Source revision: site-2026-11-12
 
 Maintenance owner: Dripmetric (hello@dripmetric.com)
 
 [Topic map](https://dripmetric.com/llm/topics/pricing.md) · [Complete scoped map](https://dripmetric.com/sitemap.md)
 
-Dripmetric has a **free plan, forever**, that shows where and how much revenue leaks. **Starter** adds who: the person behind every masked alert and the signals behind every score, for **$39 a month** at the launch price (list $49), or **$390 a year** (list $490). Before launch, the first 25 founders can take a **founding seat**: a year of Starter for $390, with that price locked for life. Prices are in US dollars.
+Dripmetric has a **free plan, forever**, that shows where and how much revenue leaks. **Starter** adds who: the person behind every masked alert and the signals behind every score, for **$24.99 a month**. Prices are in US dollars, billed monthly. There is no yearly plan yet.
 
 ## Plans {#plans}
 
-| Detail | Free | Starter | Founding seat |
-|---|---|---|---|
-| Price | $0, forever | $39 a month (list $49), or $390 a year (list $490) | $390 a year, locked for life |
-| Who it's for | Where and how much revenue leaks | Who is leaking, and why they scored what they did | The first 25 founders, before launch |
-| Raw events kept | 90 days | 13 months | 13 months |
-| Daily summaries kept | Forever | Forever | Forever |
+| Detail | Free | Starter |
+|---|---|---|
+| Price | $0, forever | $24.99 a month |
+| Who it's for | Where and how much revenue leaks | Who is leaking, and why they scored what they did |
+| Raw events kept | 90 days | 13 months |
+| Daily summaries kept | Forever | Forever |
 
-Starter's launch price is held for 12 months for anyone who starts by 30 June 2027.
+Both plans are billed monthly and can be cancelled at any time.
 
 ## What is included {#included}
 
@@ -45,12 +45,6 @@ Starter's launch price is held for 12 months for anyone who starts by 30 June 20
 - The name, email and id behind every masked tag
 - The signals behind each score
 - 13 months of raw events
-
-**Founding seat** — Starter's yearly launch price, locked for life instead of for 12 months:
-
-- A full year of Starter
-- A 45-minute guided setup call
-- Money back within 30 days of launch
 
 ## What "masked" means {#masked}
 
@@ -85,7 +79,7 @@ No billing integration is needed for any of it: see [paid events from any billin
 
 ### How much does Dripmetric cost?
 
-Dripmetric is free forever for where and how much revenue leaks. Starter, which shows who, is $39 a month at the launch price (list $49) or $390 a year (list $490). A founding seat is $390 a year, locked for life, for the first 25 founders before launch.
+Dripmetric is free forever for where and how much revenue leaks. Starter, which shows who, is $24.99 a month. There is no yearly plan yet, and no charge for the free plan at any point.
 
 ### Is there a free plan?
 
@@ -95,6 +89,6 @@ Yes, with no time limit: the full funnel and step timing, the buying-intent scor
 
 Free shows where and how much revenue leaks, with each person masked. Starter shows who — the name, email and id behind every masked tag — and the signals behind each buying-intent score, and keeps 13 months of raw events instead of 90 days.
 
-### What is a founding seat?
+### Is there a yearly plan?
 
-A pre-launch offer for the first 25 founders: a full year of Starter for $390, a price locked for life, a 45-minute guided setup call, and your money back within 30 days of launch if it isn't for you.
+Not yet. Starter is billed monthly at $24.99. A yearly price is not set, so there is nothing to quote; when there is one it will be on this page.

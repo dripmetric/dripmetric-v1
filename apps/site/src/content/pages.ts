@@ -78,16 +78,16 @@ export const ARTICLES: Record<ArticleId, ArticleMeta> = {
   },
   pricing: {
     id: 'pricing',
-    metaTitle: 'Dripmetric pricing: free forever, Starter $39 a month',
+    metaTitle: 'Dripmetric pricing: free forever, Starter $24.99 a month',
     description:
-      'Dripmetric is free forever for where and how much revenue leaks. Starter shows who for $39 a month at launch, or $390 a year. Founding seats: $390, locked.',
+      'Dripmetric is free forever for where and how much revenue leaks. Starter shows who — the person behind every masked alert and each score — for $24.99 a month.',
     kicker: 'Pricing',
     schemaType: 'WebPage',
     published: '2026-11-08',
     related: ['leaks', 'buying-intent', 'docs'],
     cta: {
-      title: 'Start free, or claim a founding seat',
-      body: 'Founding seats are for the first 25 founders, with money back within 30 days of launch.',
+      title: 'Start on the free plan',
+      body: 'Dripmetric is in private beta. Join the waitlist and your keys come with your invite.',
     },
   },
   'trial-to-paid': {

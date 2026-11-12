@@ -4,17 +4,14 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'rea
 
 type Status = { tone: 'ok' | 'error'; text: string } | null;
 
-/** `/?seat=founding#waitlist` — how /pricing's founding-seat button reaches this form. */
-const FOUNDING_PARAM = 'seat';
-
 /**
  * The waitlist form: one field, one button.
  *
- * With an endpoint configured (NEXT_PUBLIC_WAITLIST_ENDPOINT) it POSTs `email`,
- * `source` and `founding_seat` as an ordinary form body, which Formspree, Loops,
- * Buttondown, Tally and most form backends accept. Without one it opens a pre-filled
- * email to the contact address. Without JavaScript the browser submits the same form
- * natively, to the same place.
+ * With an endpoint configured (NEXT_PUBLIC_WAITLIST_ENDPOINT) it POSTs `email` and
+ * `source` as an ordinary `application/x-www-form-urlencoded` body, which Formspree,
+ * Loops, Buttondown, Tally and most form backends accept. Without one it opens a
+ * pre-filled email to the contact address. Without JavaScript the browser submits the
+ * same form natively, to the same place.
  *
  * Once someone is on the list the form is replaced by what happens next, so the page
  * never shows an empty box where a confirmation should be.
@@ -40,14 +37,11 @@ export function SignupForm({
   const [invalid, setInvalid] = useState(false);
   const [busy, setBusy] = useState(false);
   const [joined, setJoined] = useState(false);
-  const [founding, setFounding] = useState(false);
   const email = useRef<HTMLInputElement>(null);
   const configured = /^https:\/\/\S+$/i.test(endpoint);
   const mailto = `mailto:${contactEmail}?subject=${encodeURIComponent('Dripmetric waitlist')}`;
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get(FOUNDING_PARAM) === 'founding') setFounding(true);
     // Arriving from a "Join the waitlist" link puts the cursor in the field it points at.
     const focusIfTargeted = () => {
       if (window.location.hash === `#${id}`) email.current?.focus({ preventScroll: true });
@@ -82,8 +76,6 @@ export function SignupForm({
       const body =
         'Please add me to the Dripmetric waitlist.\r\n\r\nEmail: ' +
         address +
-        '\r\nFounding seat: ' +
-        (founding ? 'yes, I’d like one' : 'not now') +
         '\r\nSigned up from: ' +
         source;
       window.location.href =
@@ -98,11 +90,7 @@ export function SignupForm({
       return;
     }
 
-    const data = new URLSearchParams({
-      email: address,
-      source,
-      founding_seat: founding ? 'yes' : 'no',
-    });
+    const data = new URLSearchParams({ email: address, source });
     setBusy(true);
     setStatus({ tone: 'ok', text: 'Sending…' });
     fetch(endpoint, { method: 'POST', headers: { Accept: 'application/json' }, body: data })
@@ -126,8 +114,7 @@ export function SignupForm({
         <p className="signup__done-title">You’re on the list.</p>
         <p>
           We invite founders weekly, in small cohorts. Your invite and project keys will come to the
-          address you gave us
-          {founding ? ', and we’ve noted that you’d like a founding seat' : ''}.
+          address you gave us.
         </p>
       </div>
     );
@@ -145,7 +132,6 @@ export function SignupForm({
       onSubmit={onSubmit}
     >
       <input type="hidden" name="source" value={source} />
-      <input type="hidden" name="founding_seat" value={founding ? 'yes' : 'no'} />
       <label className="signup__label" htmlFor={inputId}>
         Work email
       </label>
@@ -178,11 +164,6 @@ export function SignupForm({
           {label}
         </button>
       </div>
-      {founding ? (
-        <p className="signup__seat">
-          Founding seat requested: $390 a year, locked for life. We’ll confirm it by email.
-        </p>
-      ) : null}
       <div className="hp" aria-hidden="true">
         <label htmlFor={`${id}-gotcha`}>Leave this empty</label>
         <input id={`${id}-gotcha`} type="text" name="_gotcha" tabIndex={-1} autoComplete="off" />

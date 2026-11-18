@@ -6,9 +6,9 @@ Locale: en
 
 Purpose: Quickstart for the dripmetric npm package: browser and server SDKs, consent, paid events from Stripe, Paddle or Lemon Squeezy without an integration, other stacks, SDK promises and the 76-event catalog
 
-Content updated: 2026-11-08
+Content updated: 2026-11-18
 
-Source revision: site-2026-11-08
+Source revision: site-2026-11-18
 
 Maintenance owner: Dripmetric (hello@dripmetric.com)
 

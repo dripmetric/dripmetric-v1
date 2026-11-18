@@ -31,23 +31,25 @@ const STEPS: { title: string; body: ReactNode }[] = [
     title: 'Let the leaks find you',
     body: (
       <>
-        Nine rules run on their own. Masked alerts go to Slack or Discord, and a leak report arrives
-        every Monday morning.
+        Nine rules run on their own. Alerts go to Slack or Discord, and a leak report arrives every
+        Monday morning.
       </>
     ),
   },
 ];
 
 /**
- * Three steps and the real install code. Event names and properties are the catalog's
- * own (packages/catalog/src/events.ts); the calls are the SDK's (packages/sdk).
+ * A sample walk-through of setup: three steps and the real install code. Event names and
+ * properties are the catalog's own (packages/catalog/src/events.ts); the calls are the
+ * SDK's (packages/sdk). Code is the one non-prose element on the page because it is
+ * literally what a founder pastes.
  */
 export function HowItWorks() {
   return (
-    <section className="section section--alt" id="how-it-works" aria-labelledby="how-title">
+    <section className="section" id="how-it-works" aria-labelledby="how-title">
       <div className="wrap">
         <SectionHead
-          label="How it works"
+          label="Setup"
           id="how-title"
           title="Paste a snippet. See a real number in under 10 minutes."
         />

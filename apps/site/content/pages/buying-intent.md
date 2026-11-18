@@ -73,10 +73,6 @@ Once your product has 30 paying conversions, Dripmetric reports two numbers for 
 
 It also reports each signal's lift (conversion with the signal against conversion without it). When a signal's lift disagrees with its points, it suggests new weights for you to approve. It never applies them automatically: a score that re-weighted itself would stop being the transparent rule set you were shown, and you would have no way to tell.
 
-## What you see on each plan {#plans}
-
-On Free, you get the score and its band for everyone, the high-intent counts and the masked alerts. On Starter, you also see the name, email and id behind each masked tag and the signals behind each score. See [pricing](https://dripmetric.com/pricing).
-
 ## Frequently asked questions {#faq}
 
 ### What is a product-qualified lead (PQL)?
@@ -97,4 +93,4 @@ No. It is a fixed, published points table. After 30 paying conversions Dripmetri
 
 ### Can I see why someone scored what they did?
 
-Yes, on Starter: each score comes with the signals behind it. On Free you see the score and its band, with the person masked.
+Yes. Every point comes from a rule in the table above, so a score can always be broken down into the signals that earned it. Alerts show a person as a masked tag by default.

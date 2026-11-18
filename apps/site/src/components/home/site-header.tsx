@@ -17,7 +17,7 @@ export function SiteHeader({ nav = true }: { nav?: boolean }) {
                 <a href={withBase('/leaks')}>The nine leaks</a>
               </li>
               <li>
-                <a href={withBase('/pricing')}>Pricing</a>
+                <a href={withBase('/buying-intent')}>Buying intent</a>
               </li>
               <li>
                 <a href={withBase('/docs')}>Docs</a>

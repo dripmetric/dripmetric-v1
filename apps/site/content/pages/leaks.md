@@ -21,7 +21,7 @@ Four of the nine run on product events alone. Five more switch on when you send 
 - **Never about someone who already paid.** A leak stays quiet for anyone who has paid, been deleted or opted out (an `optedOut` trait or a deletion request). The two leaks that are *about* paying customers — payer going quiet, and cancelled or payment failed — skip only the "already paid" guard.
 - **Once per episode.** A leak fires once per person per episode. Someone who comes back and stalls again starts a new episode, so it can fire again; the same episode never fires twice.
 - **Off, never silently zero.** A leak whose data you don't send yet is switched off and says why — for example "we are not getting a paid event yet, so we cannot tell who paid". A leak shown as zero because its input is missing would be a number you believed and shouldn't.
-- **Masked on the free plan.** Alerts about a person name them with a masked tag; the name, email and id behind it are on Starter. Step completion collapse is about a step, not a person, so it is never masked.
+- **Masked by default.** An alert about a person shows them as a stable tag such as `User A7F2C1`, not by name. Step completion collapse is about a step, not a person, so it is never masked.
 - **Worth a dollar figure only at your price.** See [what a leak is worth](https://dripmetric.com/leaks#money).
 
 ## Onboarding stall {#onboarding-stall}
@@ -81,7 +81,7 @@ Four of the nine run on product events alone. Five more switch on when you send 
 - **Needs a paid event**, so "never paid" is a fact rather than a guess.
 - **What you see:** an instant masked alert.
 
-**What to do about it:** these are the people most worth a personal message, because they were convinced and something stopped them. The signals behind their score (on Starter) usually say what: a limit they hit, a teammate they invited, a pricing page they read twice.
+**What to do about it:** these are the people most worth a personal message, because they were convinced and something stopped them. The signals behind their score usually say what: a limit they hit, a teammate they invited, a pricing page they read twice.
 
 ## Trial ended unpaid {#trial-ended-unpaid}
 
@@ -135,7 +135,7 @@ Churn is a paying customer leaving. Most leaks happen before anyone pays — in 
 
 ### Does Dripmetric fix the leaks or contact my users?
 
-No. Dripmetric shows you where revenue leaks and how much; on Starter it also shows who and the signals behind each score. It never emails, nudges or messages your users.
+No. Dripmetric shows you where revenue leaks and how much it is worth, and this page suggests what to do about each leak. It does not email, nudge or message your users: what happens next is your call.
 
 ### Can I change the thresholds?
 

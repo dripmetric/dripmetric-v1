@@ -1,14 +1,15 @@
 import type { ArticleMeta } from '@/content/pages';
-import { PLANS, SITE, type Plan } from '@/content/site';
+import { SITE } from '@/content/site';
 import type { FaqItem } from '@/lib/markdown';
 import { HOME_DESCRIPTION, HOME_TITLE } from '@/lib/metadata';
 
 /**
  * The site's JSON-LD: the smallest truthful entity graph, the same on every page.
  *
- * Organization + WebSite + SoftwareApplication (with the offers visible on that page,
- * built from the same PLANS data) on every page, plus a node for the page itself,
- * its breadcrumb trail and — where the page shows questions and answers — a FAQPage.
+ * Organization + WebSite + SoftwareApplication on every page, plus a node for the page
+ * itself, its breadcrumb trail and — where the page shows questions and answers — a
+ * FAQPage. There are no Offer nodes: the site publishes no prices before launch, and
+ * structured data only says what the page says.
  * Decisions recorded in the SEO work notes, checked against current documentation on
  * 8 Nov 2026:
  *  - FAQPage is used only for Q&A that is visible on the page, read from the same
@@ -24,23 +25,6 @@ import { HOME_DESCRIPTION, HOME_TITLE } from '@/lib/metadata';
 const ORG = `${SITE.origin}/#organization`;
 const WEBSITE = `${SITE.origin}/#website`;
 const SOFTWARE = `${SITE.origin}/#software`;
-
-const unit = (price: number) => ({
-  '@type': 'UnitPriceSpecification',
-  price: String(price),
-  priceCurrency: 'USD',
-  unitCode: 'MON',
-  referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'MON' },
-});
-
-/** Offers for the plans a page actually shows: structured data mirrors visible content. */
-function offers(pricingUrl: string, plans: readonly Plan[]) {
-  return plans.map((plan) => {
-    const base = { '@type': 'Offer', name: plan.name, priceCurrency: 'USD', url: pricingUrl };
-    if (plan.billing === 'free') return { ...base, price: '0' };
-    return { ...base, price: String(plan.price), priceSpecification: unit(plan.price) };
-  });
-}
 
 const organization = {
   '@type': 'Organization',
@@ -69,7 +53,7 @@ const website = {
   publisher: { '@id': ORG },
 };
 
-function software(pricingUrl: string, plans: readonly Plan[]) {
+function software() {
   return {
     '@type': 'SoftwareApplication',
     '@id': SOFTWARE,
@@ -78,9 +62,8 @@ function software(pricingUrl: string, plans: readonly Plan[]) {
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     description:
-      'A revenue-leak detector for self-serve SaaS. It puts product usage and payment events on one event schema, runs nine readable leak rules, scores buying intent from 0 to 100 with transparent rules, and sends masked alerts to Slack or Discord plus a weekly leak report. It needs no billing integration and never contacts end users.',
+      'A revenue-leak detector for self-serve SaaS. It puts product usage and payment events on one event schema, runs nine readable leak rules, scores buying intent from 0 to 100 with transparent rules, and sends alerts to Slack or Discord plus a weekly leak report. It needs no billing integration and does not message end users.',
     publisher: { '@id': ORG },
-    ...(plans.length > 0 ? { offers: offers(pricingUrl, plans) } : {}),
   };
 }
 
@@ -119,7 +102,7 @@ export function homeStructuredData(faq: readonly FaqItem[]): Record<string, unkn
           height: 630,
         },
       },
-      software(`${SITE.homeUrl}#pricing`, PLANS),
+      software(),
       ...(faq.length > 0 ? [faqPage(SITE.homeUrl, faq)] : []),
     ],
   };
@@ -172,7 +155,7 @@ export function articleStructuredData({
       website,
       page,
       breadcrumb,
-      software(url, meta.id === 'pricing' ? PLANS : []),
+      software(),
       ...(faq.length > 0 ? [faqPage(url, faq)] : []),
     ],
   };

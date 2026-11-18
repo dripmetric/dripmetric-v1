@@ -265,11 +265,6 @@ code,
 .leak-word {
   color: var(--leak-text);
 }
-.sample-label {
-  margin-top: 14px;
-  font-size: 0.8125rem;
-  color: var(--text-3);
-}
 
 /* ---------- Buttons ---------- */
 .btn {
@@ -381,7 +376,7 @@ code,
 
 /* ---------- Hero ---------- */
 .hero {
-  padding-block: clamp(2.25rem, 1.3rem + 4.2vw, 4.5rem) clamp(2.5rem, 1.9rem + 2.7vw, 4rem);
+  padding-block: clamp(3rem, 1.6rem + 6.2vw, 6.5rem) var(--section-y);
 }
 .hero__copy {
   max-width: 60rem;
@@ -429,6 +424,10 @@ code,
   max-width: 30rem;
   margin: clamp(1.5rem, 1.25rem + 1.1vw, 2rem) auto 0;
   text-align: left;
+}
+/* Wide enough on the first screen for the three assurances to sit on one line. */
+.hero .signup {
+  max-width: 36rem;
 }
 .signup__label {
   display: block;
@@ -527,252 +526,6 @@ code,
     center / contain no-repeat;
 }
 
-/* The product, as proof: a funnel with its leak, and the alert it sends */
-.showcase {
-  margin-top: clamp(2.5rem, 1.75rem + 3.4vw, 4.5rem);
-  text-align: center;
-}
-.showcase__grid {
-  display: grid;
-  gap: 16px;
-  padding: clamp(12px, 0.25rem + 2.4vw, 36px);
-  border: 1px solid var(--border);
-  border-radius: var(--r-xl);
-  background: var(--surface-2);
-  text-align: left;
-}
-@media (min-width: 900px) {
-  .showcase__grid {
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-    gap: 24px;
-    align-items: start;
-  }
-  .alert-card {
-    margin-top: 44px;
-  }
-}
-.card {
-  border: 1px solid var(--border);
-  border-radius: var(--r-l);
-  background: var(--surface);
-  box-shadow: var(--shadow-md);
-}
-.card__bar {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border);
-}
-.card__title {
-  font-size: 0.9375rem;
-  font-weight: 650;
-}
-.card__meta {
-  font-family: var(--font-mono);
-  font-size: var(--fs-micro);
-  color: var(--text-3);
-}
-.funnel {
-  padding: 8px 18px 14px;
-}
-.funnel li {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 6px 12px;
-  padding-block: 9px;
-}
-.funnel__label {
-  font-size: var(--fs-small);
-  color: var(--text-2);
-}
-.funnel__n {
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  font-variant-numeric: tabular-nums;
-}
-.funnel__track {
-  position: relative;
-  grid-column: 1 / -1;
-  height: 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--text) 7%, transparent);
-  overflow: hidden;
-}
-.funnel__bar,
-.funnel__lost {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-}
-.funnel__bar {
-  left: 0;
-  border-radius: 999px;
-  background: var(--flow);
-}
-/* The people who stopped: hatched, so it reads as missing even without colour. */
-.funnel__lost {
-  background: repeating-linear-gradient(
-    135deg,
-    var(--leak) 0 2px,
-    color-mix(in srgb, var(--leak) 22%, transparent) 2px 6px
-  );
-}
-.funnel .is-leak .funnel__label {
-  color: var(--text);
-  font-weight: 600;
-}
-.funnel__flag {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--leak-text);
-}
-.funnel__flag svg {
-  width: 9px;
-  height: 12px;
-  flex: none;
-  fill: var(--leak);
-}
-
-.alert-card {
-  position: relative;
-  padding: 18px 20px 20px 23px;
-  overflow: hidden;
-}
-/* The coloured edge Slack and Discord draw beside an app's message. */
-.alert-card::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: var(--warn);
-}
-.alert-card__head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: var(--fs-small);
-}
-.alert-card__avatar {
-  width: 20px;
-  height: 20px;
-  flex: none;
-}
-.alert-card__from {
-  font-weight: 700;
-}
-.tag {
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--text) 8%, transparent);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-2);
-}
-.alert-card__channel {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-size: var(--fs-micro);
-  color: var(--text-3);
-}
-.alert-card__title {
-  display: flex;
-  gap: 9px;
-  margin-top: 14px;
-  font-size: 1.0625rem;
-  font-weight: 650;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
-}
-.dot {
-  width: 8px;
-  height: 8px;
-  flex: none;
-  margin-top: 0.42em;
-  border-radius: 50%;
-  background: var(--warn);
-}
-.alert-card__says {
-  margin-top: 6px;
-  font-size: 0.9375rem;
-  line-height: 1.5;
-  color: var(--text-2);
-}
-.alert-card__fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px 16px;
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-}
-.alert-card__fields dt {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--text-3);
-}
-.alert-card__fields dd {
-  margin-top: 1px;
-  font-size: var(--fs-small);
-  font-weight: 500;
-}
-.at-stake {
-  color: var(--leak-text);
-  font-weight: 650;
-}
-.alert-card__rule {
-  margin-top: 14px;
-  font-size: 0.8125rem;
-  line-height: 1.5;
-  color: var(--text-3);
-}
-
-/* ---------- Facts ---------- */
-.facts {
-  padding-bottom: clamp(0.5rem, 0.1rem + 1.8vw, 1.5rem);
-}
-.facts__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 28px 24px;
-  padding-top: clamp(1.75rem, 1.5rem + 1.1vw, 2.25rem);
-  border-top: 1px solid var(--border);
-}
-@media (min-width: 820px) {
-  .facts__grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 32px;
-  }
-}
-.fact {
-  display: flex;
-  flex-direction: column-reverse;
-  justify-content: flex-end;
-  gap: 8px;
-}
-.fact dd {
-  font-size: clamp(1.875rem, 1.6rem + 1.2vw, 2.5rem);
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.035em;
-  font-variant-numeric: tabular-nums;
-}
-.fact dt {
-  max-width: 24ch;
-  font-size: var(--fs-small);
-  line-height: 1.45;
-  color: var(--text-2);
-}
-
 /* ---------- Sections ---------- */
 .section {
   padding-block: var(--section-y);
@@ -802,6 +555,77 @@ code,
 .signup__fine a {
   color: var(--brand-text);
   font-weight: 500;
+}
+
+/* ---------- The problem: heading beside a short argument ---------- */
+.split {
+  display: grid;
+  gap: 8px clamp(2rem, 1rem + 4.5vw, 4.5rem);
+}
+@media (min-width: 900px) {
+  .split {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    align-items: start;
+  }
+  .split .section-head {
+    margin-bottom: 0;
+  }
+}
+.split__body {
+  display: grid;
+  gap: 18px;
+  max-width: 40rem;
+  color: var(--text-2);
+}
+.split__body .lede {
+  color: var(--text);
+}
+.quiet {
+  display: grid;
+  gap: 10px;
+  padding-left: 18px;
+  border-left: 2px solid var(--leak);
+}
+.quiet li {
+  color: var(--text);
+}
+.sources {
+  font-size: var(--fs-small);
+  color: var(--text-3);
+}
+.sources a {
+  color: var(--text-2);
+}
+
+/* ---------- When something leaks: what you get ---------- */
+.features {
+  display: grid;
+  gap: 0 32px;
+  border-top: 1px solid var(--border-strong);
+}
+@media (min-width: 760px) {
+  .features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1040px) {
+  .features {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.feature {
+  padding-block: 20px 22px;
+  border-bottom: 1px solid var(--border);
+}
+.feature dt {
+  font-size: var(--fs-h3);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.feature dd {
+  margin-top: 6px;
+  font-size: 0.9375rem;
+  color: var(--text-2);
 }
 
 /* ---------- The nine leaks: a journey in three stages ---------- */
@@ -1014,103 +838,6 @@ code,
 }
 .tok-c {
   color: var(--band-muted);
-}
-
-/* ---------- Pricing: the same alert, masked and revealed ---------- */
-.plans {
-  display: grid;
-  gap: clamp(2rem, 1rem + 4.5vw, 4.5rem);
-  align-items: center;
-}
-@media (min-width: 900px) {
-  .plans {
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-  }
-}
-.plans .section-head {
-  margin-bottom: 20px;
-}
-.plan-list {
-  border-top: 1px solid var(--border-strong);
-}
-.plan {
-  padding-block: 16px;
-  border-bottom: 1px solid var(--border);
-}
-.plan dt {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 2px 16px;
-}
-.plan__name {
-  font-size: var(--fs-h3);
-  font-weight: 650;
-}
-.plan__price {
-  font-size: 0.9375rem;
-  color: var(--text-2);
-}
-.plan__price strong {
-  font-size: 1.125rem;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-.plan dd {
-  margin-top: 6px;
-  font-size: 0.9375rem;
-  color: var(--text-2);
-}
-.plans .section__foot {
-  margin-top: 16px;
-}
-.reveal {
-  display: grid;
-  gap: 12px;
-}
-.mini-alert {
-  padding: 16px 18px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-l);
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
-}
-.mini-alert--revealed {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 4px var(--brand-soft);
-}
-.mini-alert__plan {
-  font-size: 0.6875rem;
-  font-weight: 650;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-3);
-}
-.mini-alert--revealed .mini-alert__plan {
-  color: var(--brand-text);
-}
-.mini-alert__who {
-  margin-top: 6px;
-  font-size: 1.0625rem;
-  font-weight: 650;
-}
-.mini-alert__email {
-  font-size: 0.8125rem;
-  color: var(--text-2);
-}
-.mini-alert__meta {
-  margin-top: 6px;
-  font-size: 0.8125rem;
-  color: var(--text-3);
-}
-.reveal__note {
-  margin-top: 6px;
-  font-size: 0.9375rem;
-  color: var(--text-2);
-}
-.reveal .sample-label {
-  margin-top: 0;
 }
 
 /* ---------- FAQ ---------- */

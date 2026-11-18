@@ -14,7 +14,7 @@ export default function NotFound() {
         <h1>That page isn’t here.</h1>
         <p>
           It may have moved, or the link may be wrong. The home page says what Dripmetric is and
-          links to the nine leaks, pricing and the docs.
+          links to the nine leaks, the buying-intent score and the docs.
         </p>
         <p>
           <Link prefetch={false} className="btn btn--primary" href="/">

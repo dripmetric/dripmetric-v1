@@ -31,148 +31,64 @@
         overflow: hidden;
         background: var(--bg);
       }
+      /* Text only, like the page: the claim, the category and the address. */
       .og {
-        position: relative;
         width: 1200px;
         height: 630px;
-        padding: 64px 68px;
-        display: grid;
-        grid-template-columns: 1.08fr 1fr;
-        gap: 52px;
-        align-items: center;
+        padding: 72px 84px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
       }
       .og .brand__mark {
-        width: 44px;
-        height: 44px;
+        width: 52px;
+        height: 52px;
       }
       .og .brand__name {
-        font-size: 30px;
+        font-size: 34px;
       }
       .og h1 {
-        margin: 36px 0 22px;
-        font-size: 66px;
+        margin: 0;
+        max-width: 15ch;
+        font-size: 88px;
         font-weight: 600;
-        line-height: 1.03;
-        letter-spacing: -0.04em;
+        line-height: 1.02;
+        letter-spacing: -0.045em;
       }
-      .og .category {
-        font-size: 22px;
+      .og .foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-size: 24px;
         color: var(--text-2);
       }
-      .og .funnel-card {
-        font-size: 18px;
-      }
-      .og .card__bar {
-        padding: 18px 24px;
-      }
-      .og .card__title {
-        font-size: 19px;
-      }
-      .og .card__meta {
-        font-size: 14px;
-      }
-      .og .funnel {
-        padding: 10px 24px 18px;
-      }
-      .og .funnel li {
-        padding-block: 10px;
-      }
-      .og .funnel__label {
-        font-size: 17px;
-      }
-      .og .funnel__n {
-        font-size: 16px;
-      }
-      .og .funnel__track {
-        height: 12px;
-      }
-      .og .funnel__flag {
-        font-size: 16px;
-      }
-      .og .sample-label {
-        margin-top: 12px;
-        font-size: 14px;
-        text-align: right;
-      }
       .og .url {
-        position: absolute;
-        left: 68px;
-        bottom: 44px;
         font-family: var(--font-mono);
-        font-size: 17px;
+        font-size: 20px;
         color: var(--text-3);
       }
     </style>
   </head>
   <body>
     <div class="og">
-      <div>
-        <span class="brand">
-          <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
-            <rect width="32" height="32" rx="7.5" class="mark-bg" />
-            <rect x="5.5" y="6.5" width="21" height="4.2" rx="2.1" class="mark-bar" />
-            <rect x="5.5" y="13.9" width="13.2" height="4.2" rx="2.1" class="mark-bar" />
-            <rect x="5.5" y="21.3" width="7.2" height="4.2" rx="2.1" class="mark-bar" />
-            <path
-              d="M23.2 13.6c0 0-4.2 5-4.2 8.4a4.2 4.2 0 0 0 8.4 0c0-3.4-4.2-8.4-4.2-8.4z"
-              class="mark-drop"
-            />
-          </svg>
-          <span class="brand__name">Dripmetric</span>
-        </span>
-        <h1>Find the revenue <span class="leak-word">leaking</span> out of your signup funnel.</h1>
-        <p class="category">Revenue-leak detection for self-serve SaaS</p>
-      </div>
-      <div>
-        <div class="card funnel-card">
-          <div class="card__bar">
-            <span class="card__title">Your funnel</span>
-            <span class="card__meta">Last 30 days</span>
-          </div>
-          <ol class="funnel">
-            <li>
-              <span class="funnel__label">Signed up</span><span class="funnel__n">1,240</span>
-              <span class="funnel__track"
-                ><span class="funnel__bar" style="width: 100%"></span
-              ></span>
-            </li>
-            <li>
-              <span class="funnel__label">Verified email</span><span class="funnel__n">1,018</span>
-              <span class="funnel__track"
-                ><span class="funnel__bar" style="width: 82.1%"></span
-              ></span>
-            </li>
-            <li class="is-leak">
-              <span class="funnel__label">Connected a data source</span
-              ><span class="funnel__n">431</span>
-              <span class="funnel__track"
-                ><span class="funnel__bar" style="width: 34.8%"></span
-                ><span class="funnel__lost" style="left: 34.8%; width: 47.3%"></span
-              ></span>
-              <span class="funnel__flag">
-                <svg viewBox="0 0 12 16" aria-hidden="true">
-                  <path d="M6 0S0 7.1 0 10.4a6 6 0 0 0 12 0C12 7.1 6 0 6 0z" />
-                </svg>
-                587 people stopped here. Your biggest leak.
-              </span>
-            </li>
-            <li>
-              <span class="funnel__label">Activated</span><span class="funnel__n">352</span>
-              <span class="funnel__track"
-                ><span class="funnel__bar" style="width: 28.4%"></span
-              ></span>
-            </li>
-            <li>
-              <span class="funnel__label">Paid</span><span class="funnel__n">61</span>
-              <span class="funnel__track"
-                ><span class="funnel__bar" style="width: 4.9%"></span
-              ></span>
-            </li>
-          </ol>
-        </div>
-        <p class="sample-label">Sample funnel. Simulated data.</p>
-      </div>
-      <p class="url">dripmetric.com</p>
+      <span class="brand">
+        <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
+          <rect width="32" height="32" rx="7.5" class="mark-bg" />
+          <rect x="5.5" y="6.5" width="21" height="4.2" rx="2.1" class="mark-bar" />
+          <rect x="5.5" y="13.9" width="13.2" height="4.2" rx="2.1" class="mark-bar" />
+          <rect x="5.5" y="21.3" width="7.2" height="4.2" rx="2.1" class="mark-bar" />
+          <path
+            d="M23.2 13.6c0 0-4.2 5-4.2 8.4a4.2 4.2 0 0 0 8.4 0c0-3.4-4.2-8.4-4.2-8.4z"
+            class="mark-drop"
+          />
+        </svg>
+        <span class="brand__name">Dripmetric</span>
+      </span>
+      <h1>See where your signup funnel <span class="leak-word">leaks</span> revenue.</h1>
+      <p class="foot">
+        <span>Revenue-leak detection for self-serve SaaS</span>
+        <span class="url">dripmetric.com</span>
+      </p>
     </div>
   </body>
 </html>

@@ -25,7 +25,7 @@ export const SITE = {
   /** Read at build time. Empty = the form opens a pre-filled email instead. */
   waitlistEndpoint: process.env.NEXT_PUBLIC_WAITLIST_ENDPOINT ?? '',
   /** The date every page on the site was last reviewed against the Ground Truth. */
-  updated: '2026-11-11',
+  updated: '2026-11-18',
 } as const;
 
 /**
@@ -37,14 +37,6 @@ export const DEFINITION = 'Dripmetric is a revenue-leak detector for self-serve 
 
 /** The one action on the site, worded the same everywhere it appears. */
 export const CTA_LABEL = 'Join the waitlist';
-
-/** Measured on the shipping code — Ground Truth appendix, "Measured". */
-export const FACTS = [
-  { value: '9', label: 'leak rules, each one written so you can read it' },
-  { value: '5 KB', label: 'browser SDK: 5,018 bytes gzipped. The build fails past 5,120.' },
-  { value: '76', label: 'canonical events, from Signed Up to Payment Failed' },
-  { value: '0', label: 'billing integrations to set up' },
-] as const;
 
 export interface Leak {
   /** The anchor on /leaks, which explains the rule in full. */
@@ -136,50 +128,54 @@ export const LEAK_STAGES: LeakStage[] = [
   },
 ];
 
-export interface Plan {
-  id: 'free' | 'starter';
-  name: string;
-  /** US dollars, for display and for the JSON-LD offer. */
-  price: number;
-  per: string;
-  /** How the JSON-LD prices it. */
-  billing: 'free' | 'MON';
-  /** One sentence: what this plan answers. */
-  includes: string;
+export interface Feature {
+  id: string;
+  title: string;
+  body: string;
 }
 
 /**
- * Two plans, both monthly.
- *
- * $24.99 is the product's own price: `STARTER_PRICE_MINOR` in
- * packages/engine/src/reports/weekly.ts, which the Monday report's payback line is
- * computed from, and the `starter` row seeded in packages/db migration 0001. The site
- * said $39 from the 28 Oct 2026 Ground Truth decision; the founder reversed that on
- * 12 Nov 2026 so the site matches the product (docs/decisions.md).
- *
- * There is no yearly price and no founding seat on the site until one is set, because
- * every other number on the old pricing page — the $390 year, the struck-through $49
- * and $490, the seat locked for life — was derived from a monthly price that no longer
- * holds, and a price nobody has decided is not a price to publish.
+ * What a founder gets once a leak is found. Only what is built and tested:
+ *  - alerts: packages/ingest/src/alerts (Slack and Discord, the in-app feed, 10 a day,
+ *    quiet hours) — M10;
+ *  - the Monday report: packages/engine/src/reports/weekly.ts — M10;
+ *  - the score: packages/engine/src/intent/points.ts — M7, rules published on
+ *    /buying-intent;
+ *  - the dollar figure: settled decision 14, formula always on screen — M8;
+ *  - tracking health: packages/engine/src/health/checks.ts — M11;
+ *  - before-and-after: the Changes comparison, 100 people per window — M10.
+ * Nothing here contacts the founder's users: nudges and recovery are later layers that
+ * are not built (docs/publishing.md, "What is not built").
  */
-export const PLANS: Plan[] = [
+export const FEATURES: Feature[] = [
   {
-    id: 'free',
-    name: 'Free',
-    price: 0,
-    per: 'forever',
-    billing: 'free',
-    includes:
-      'The full funnel and step timing, the buying-intent score, all nine leaks, masked alerts to Slack or Discord, and a weekly leak report.',
+    id: 'alerts',
+    title: 'An alert the moment it matters',
+    body: 'Slack or Discord, plus a feed in the app. Each alert names the leak, the person’s buying intent, their plan and what is at stake at your list price. At most 10 a day, held through your quiet hours.',
   },
   {
-    id: 'starter',
-    name: 'Starter',
-    price: 24.99,
-    per: 'a month',
-    billing: 'MON',
-    // Only what is built: reveal_identity and why_signals are wired in the code.
-    includes:
-      'Everything in Free, plus the name, email and id behind every masked tag, and the signals behind each score.',
+    id: 'report',
+    title: 'A leak report every Monday',
+    body: 'Your biggest leak, the people who reached high buying intent and did not pay, and how any change you made is doing. It arrives Monday morning in your timezone.',
+  },
+  {
+    id: 'money',
+    title: 'A dollar figure on every leak',
+    body: 'The people in a leak times your own list price, with the formula printed beside it. It is labelled potential revenue, because it is a count of people, not money that arrived.',
+  },
+  {
+    id: 'intent',
+    title: 'A buying-intent score for every user',
+    body: 'From 0 to 100, built from published rules: starting checkout, reaching activation, hitting a plan limit and more. It fades when someone goes quiet.',
+  },
+  {
+    id: 'health',
+    title: 'A warning when tracking breaks',
+    body: 'If an event stops arriving, changes shape or is sent twice, Dripmetric says so. Broken tracking never looks like users leaving.',
+  },
+  {
+    id: 'proof',
+    title: 'Proof your fix worked',
+    body: 'Mark a change and Dripmetric compares equal windows before and after, with at least 100 people in each before it calls a result.',
   },
 ];

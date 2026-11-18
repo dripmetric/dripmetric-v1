@@ -11,38 +11,40 @@ interface Qa {
 
 /**
  * The questions people ask before they join, and the ones answer engines are asked
- * about Dripmetric. Each answer stands alone: the first sentence answers the question
- * and names the product, the rest qualifies it. They are restated in
- * content/index.body.md for the Markdown copy. Questions a guide page owns (what a
- * revenue leak is, how the score is calculated) are answered there, not here.
+ * about Dripmetric: who it is for, what it never touches, how it differs, what happens
+ * after joining (the playbook's "answer the related questions on the one page"). Each
+ * answer stands alone: the first sentence answers and names the product. They are
+ * restated in content/index.body.md for the Markdown copy.
+ *
+ * Users are described in the present tense ("does not message them"), not "never":
+ * messaging a founder's users is a later layer that is not built (docs/publishing.md),
+ * and a promise the roadmap would break is not one to make on the page.
  */
 const FAQ: Qa[] = [
   {
     id: 'faq-what',
     q: 'What is Dripmetric?',
-    a: 'Dripmetric is a revenue-leak detector for self-serve SaaS. It reads your product’s usage events and, if you send them, your payment events, and flags the moments where a signup was on its way to becoming revenue and stopped: an onboarding stall, an abandoned checkout, a trial that ended unpaid, a failed payment, a paying customer going quiet. It is built for small teams, from a few hundred signups a month.',
+    a: 'Dripmetric is a revenue-leak detector for self-serve SaaS. It reads your product’s usage events and, if you send them, your payment events, and flags the moments where a signup was on its way to becoming revenue and stopped: an onboarding stall, an abandoned checkout, a trial that ended unpaid, a failed payment, a paying customer going quiet.',
   },
   {
-    id: 'faq-email',
-    q: 'Is Dripmetric an email or drip-campaign tool?',
-    a: 'No. Dripmetric observes and reports to you. It never contacts your users, and it sends no drip campaigns, recovery emails or in-app prompts. The only messages it sends go to you: alerts in Slack, Discord or the app, and a weekly leak report.',
+    id: 'faq-who',
+    q: 'Who is Dripmetric for?',
+    a: 'Small self-serve SaaS teams, from a few hundred signups a month, who want to know where people stop between signing up and paying. It suits products where people sign up and pay without talking to sales.',
+  },
+  {
+    id: 'faq-touch',
+    q: 'What does Dripmetric never touch?',
+    a: 'Your billing provider: Dripmetric never connects to one, and payment events arrive only because you send them. Your visitors’ devices before consent: where consent is required, nothing is stored or sent until it is given. IP addresses, which are never stored. Keystrokes and screens: there is no session replay or fingerprinting. And your users themselves: Dripmetric does not message them.',
   },
   {
     id: 'faq-stripe',
     q: 'Do I need Stripe, or any billing integration?',
-    a: 'No. Dripmetric never connects to a billing provider. You send payment events the same way as any other event, so Stripe, Paddle, Lemon Squeezy, Chargebee, Razorpay, RevenueCat or your own billing table all work the same way. With no payment events at all you still get the funnel, step timing, the buying-intent score and four of the nine leaks.',
+    a: 'No. You send payment events the same way as any other event, so Stripe, Paddle, Lemon Squeezy, Chargebee, Razorpay, RevenueCat or your own billing table all work the same way. With no payment events at all you still get the funnel, step timing, the buying-intent score and four of the nine leaks.',
   },
   {
-    id: 'faq-setup',
-    q: 'How long does Dripmetric take to set up?',
-    a: (
-      <>
-        About 10–15 lines of code for a typical product, most of which the AI-coder prompt writes
-        for you in Cursor or Copilot. The promise every feature is held to is a real drop-off number
-        in under 10 minutes, from product events alone.{' '}
-        <a href={withBase('/docs')}>The install guide</a> has the code.
-      </>
-    ),
+    id: 'faq-email',
+    q: 'Is Dripmetric an email or drip-campaign tool?',
+    a: 'No. Dripmetric watches and reports to you. It does not send email, drip campaigns or in-app messages to your users. The only messages it sends go to you: alerts in Slack, Discord or the app, and a weekly leak report.',
   },
   {
     id: 'faq-posthog',
@@ -51,28 +53,22 @@ const FAQ: Qa[] = [
       <>
         Those are general-purpose product analytics platforms: you explore any event data and build
         the funnels, queries and alerts you need. Dripmetric is narrower on purpose. It ships nine
-        leak rules, a transparent buying-intent score and masked alerts, ready on day one, over
-        product and payment events together. Many teams keep their analytics tool and add Dripmetric
-        for the money questions. <a href={withBase('/compare/posthog')}>Dripmetric vs PostHog</a>{' '}
-        compares the two.
+        leak rules, a buying-intent score and alerts, ready on day one, over product and payment
+        events together. Many teams keep their analytics tool and add Dripmetric for the money
+        questions. <a href={withBase('/compare/posthog')}>Dripmetric vs PostHog</a> compares the
+        two.
       </>
     ),
   },
   {
-    id: 'faq-safe',
-    q: 'Will the Dripmetric SDK slow my site, and what data does it store?',
-    a: 'No. The browser core is 5,018 bytes gzipped. It sends in batches off the rendering path, never throws, and uses 3-second timeouts, so even a Dripmetric outage cannot slow a page. It stores the events you send. Where consent is required, nothing is stored on a visitor’s device, and nothing is sent, until they consent. IP addresses are never stored, emails are encrypted at rest, and one API call deletes everything held about a person.',
+    id: 'faq-speed',
+    q: 'Will the Dripmetric SDK slow my site?',
+    a: 'No. The browser core is 5,018 bytes gzipped, and the build fails if it grows past 5,120. It sends in batches off the rendering path, never throws, and uses 3-second timeouts, so even a Dripmetric outage cannot slow a page or break a request.',
   },
   {
-    id: 'faq-cost',
-    q: 'How much does Dripmetric cost?',
-    a: (
-      <>
-        Dripmetric is free forever for where and how much revenue leaks. Starter, which shows who,
-        is $24.99 a month. <a href={withBase('/pricing')}>Full pricing</a> lists what each plan
-        includes.
-      </>
-    ),
+    id: 'faq-after',
+    q: 'What happens after I join the waitlist?',
+    a: 'Dripmetric is in private beta, and founders are invited weekly in small cohorts. Your invite brings your project keys and the install guide. Your email is used only to let you in and to share launch news, and you can ask for it to be removed at any time.',
   },
 ];
 

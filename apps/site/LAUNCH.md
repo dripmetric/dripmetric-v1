@@ -25,9 +25,9 @@ the places those engines quote. The research behind each step is summarised at t
       ```
 
 - [x] **The Starter price agrees everywhere.** `STARTER_PRICE_MINOR = 2_499`
-      (`packages/engine/src/reports/weekly.ts:26`), the `starter` row in migration 0001 and
-      the site all say $24.99 a month (12 Nov 2026 decision — see `docs/decisions.md`).
-      There is no yearly price and no founding seat until one is set.
+      (`packages/engine/src/reports/weekly.ts:26`) and the `starter` row in migration 0001
+      both say $24.99 a month (12 Nov 2026 decision). Since 18 Nov the site publishes no
+      prices at all before launch, and `/pricing` redirects home — see `docs/decisions.md`.
 - [ ] **Decide what happens to v1 users.** The v1 product (sign-in, dashboard, drip emails)
       is what dripmetric.com serves today. Once v2 takes the domain, `/login`, `/signup`
       and `/dashboard` redirect to `https://app.dripmetric.com/login`. If anyone still uses
@@ -58,18 +58,19 @@ redirects and security headers. Use GitHub Pages as a preview only.
       a permanent redirect for every path, wherever that domain is hosted.
 - [ ] **2.5 Check the live site.** Each of these should answer as shown:
 
-| URL                                                                                                                 | Expect                                                               |
-| ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `https://dripmetric.com/`                                                                                           | 200, title "Dripmetric — Revenue-leak detection for self-serve SaaS" |
-| `https://www.dripmetric.com/`                                                                                       | 308 → `https://dripmetric.com/`                                      |
-| `/leaks`, `/buying-intent`, `/docs`, `/pricing`, `/guides/trial-to-paid-conversion`, `/compare/posthog`, `/privacy` | 200                                                                  |
-| `/login`, `/signup`, `/dashboard`                                                                                   | 308 → `https://app.dripmetric.com/login`                             |
-| `/terms`                                                                                                            | 308 → `https://app.dripmetric.com/legal/terms`                       |
-| `/robots.txt`, `/sitemap.xml`                                                                                       | 200                                                                  |
-| `/llms.txt`                                                                                                         | 200, `text/plain`                                                    |
-| `/index.md`, `/leaks.md`, `/docs.md`                                                                                | 200, `text/markdown`, with a `Link: <…>; rel="canonical"` header     |
-| `/c320416c6f9ba15a005d6b38edad1807.txt`                                                                             | 200, the IndexNow key                                                |
-| `/anything-else`                                                                                                    | 404 page                                                             |
+| URL                                                                                                     | Expect                                                               |
+| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `https://dripmetric.com/`                                                                               | 200, title "Dripmetric — Revenue-leak detection for self-serve SaaS" |
+| `https://www.dripmetric.com/`                                                                           | 308 → `https://dripmetric.com/`                                      |
+| `/leaks`, `/buying-intent`, `/docs`, `/guides/trial-to-paid-conversion`, `/compare/posthog`, `/privacy` | 200                                                                  |
+| `/pricing`                                                                                              | 308 → `https://dripmetric.com/`                                      |
+| `/login`, `/signup`, `/dashboard`                                                                       | 308 → `https://app.dripmetric.com/login`                             |
+| `/terms`                                                                                                | 308 → `https://app.dripmetric.com/legal/terms`                       |
+| `/robots.txt`, `/sitemap.xml`                                                                           | 200                                                                  |
+| `/llms.txt`                                                                                             | 200, `text/plain`                                                    |
+| `/index.md`, `/leaks.md`, `/docs.md`                                                                    | 200, `text/markdown`, with a `Link: <…>; rel="canonical"` header     |
+| `/c320416c6f9ba15a005d6b38edad1807.txt`                                                                 | 200, the IndexNow key                                                |
+| `/anything-else`                                                                                        | 404 page                                                             |
 
 ```bash
 for u in / /leaks /docs /pricing /login /terms /llms.txt /leaks.md; do printf '%-12s ' "$u"; curl -s -o /dev/null -w '%{http_code} %{content_type} %{redirect_url}\n' "https://dripmetric.com$u"; done
@@ -83,8 +84,8 @@ for u in / /leaks /docs /pricing /login /terms /llms.txt /leaks.md; do printf '%
 
 - [ ] **Google Search Console.** Add a _Domain_ property for `dripmetric.com` (DNS TXT
       record) so it covers apex, `www` and `app`. Submit `https://dripmetric.com/sitemap.xml`.
-      In URL Inspection, request indexing for `/`, `/docs` and `/pricing` first (Google
-      already knows those URLs from v1), then `/leaks`, `/buying-intent`,
+      In URL Inspection, request indexing for `/` and `/docs` first (Google already knows
+      those URLs from v1; `/pricing` now redirects home), then `/leaks`, `/buying-intent`,
       `/guides/trial-to-paid-conversion` and `/compare/posthog`. No "Change of address":
       the domain isn't changing, only what it serves.
 - [ ] **Bing Webmaster Tools.** Import the site from Search Console, submit the sitemap,
@@ -96,7 +97,7 @@ for u in / /leaks /docs /pricing /login /terms /llms.txt /leaks.md; do printf '%
       ```
 
       Run it again after every content change, with just the changed paths, for example
-      `pnpm site:indexnow --submit /docs /pricing`. Without `--submit` it shows what it
+      `pnpm site:indexnow --submit / /docs`. Without `--submit` it shows what it
       would send and sends nothing. It refuses to submit until the key file is live.
 
 - [ ] **Bing AI Performance report** (Bing Webmaster Tools, public preview since February

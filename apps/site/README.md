@@ -12,7 +12,7 @@ are no third-party requests, no cookies and no analytics; fonts are self-hosted.
 ```
 apps/site/
   src/app/              layout (fonts, shared metadata) · page.tsx (home) · privacy/ · not-found
-                        leaks/ · buying-intent/ · docs/ · pricing/ · guides/… · compare/…
+                        leaks/ · buying-intent/ · docs/ · guides/… · compare/…
     globals.css         the design system: tokens, light + dark themes, every component
     fonts/              Geist and Geist Mono (SIL OFL 1.1, licences beside them)
   src/content/site.ts   the facts: leak rules, intent points, plans, modules, comparison — one
@@ -36,9 +36,21 @@ apps/site/
 ## One page, one job
 
 The home page exists to do one thing: get a work email onto the waitlist. It answers, in
-order, what this is, whether it is for you, why to believe it, what it costs and what to do
-next — in seven sections, and nothing else. Depth lives on the pages below, each of which
-owns one topic and is linked from the section that raises it.
+order: what this is (the claim and the form), why it matters (the problem), how it works
+(the nine rules), what you get when something leaks, how setup goes, the questions people
+ask (including what Dripmetric never touches), and the ask again. Seven sections, and
+nothing else. Depth lives on the pages below, each of which owns one topic and is linked
+from the section that raises it.
+
+Two rules hold the page honest:
+
+- **Text only, and only what is true today.** No illustrations and no sample data: the
+  first screen is the claim, one sentence of what Dripmetric is, and the form. The only
+  non-prose element is the install code, because that is literally what a founder pastes.
+  The verb is "see", not "fix" — Dripmetric finds and reports leaks; it does not act on
+  them, and it does not message anyone's users (`docs/publishing.md`, "What is not built").
+- **No prices anywhere before launch.** No plan names, no price, no Offer markup. `/pricing`
+  is a permanent redirect to the home page (`content/redirects.json`).
 
 `pnpm site:check` holds the home page to a budget (8 sections, 1,400 words of rendered
 HTML). That is what stops it growing back one reasonable addition at a time: the version
@@ -53,7 +65,6 @@ said, say it on the page that owns the topic and link to it.
 | `/leaks`                           | "SaaS revenue leaks", "onboarding drop off", "checkout abandonment SaaS" | `content/pages/leaks.md`         |
 | `/buying-intent`                   | "product qualified lead", "pql scoring", "buying intent score"           | `content/pages/buying-intent.md` |
 | `/docs`                            | "install dripmetric", "lemon squeezy analytics", "paddle analytics"      | `content/pages/docs.md`          |
-| `/pricing`                         | "dripmetric pricing" (and the v1 `/pricing` URL)                         | `content/pages/pricing.md`       |
 | `/guides/trial-to-paid-conversion` | "trial to paid conversion rate benchmark"                                | `content/pages/guides/…`         |
 | `/compare/posthog`                 | "posthog alternatives", "dripmetric vs posthog"                          | `content/pages/compare/…`        |
 | `/privacy`                         | —                                                                        | `src/app/privacy/page.tsx`       |
@@ -138,13 +149,10 @@ and check the address arrived.
 `src/app/globals.css` is the whole of it: tokens first, then components in page order.
 
 - **Colour has three jobs.** Ink carries the text. One water-teal is the brand _and_ the
-  action, so what you can press and the flow through the funnel look like one thing. Coral
-  is reserved for the leak — the drop in the mark, the people who stopped, the money at
-  stake — and appears nowhere else, so the leak is always what you see first. Every text
-  pair passes WCAG 2.2 AA in both themes, and the hatched "lost" bar in the funnel reads as
-  missing without relying on colour.
-- **Two faces, 52 KB**: Geist for everything a person reads, Geist Mono for code and for
-  figures inside the product samples. Both are self-hosted (the product promises the IP is
+  action. Coral is reserved for the leak — the drop in the mark, the word "leaks" in the
+  headline, the edge of the problem's examples — and appears nowhere else, so the leak is
+  always what you see first. Every text pair passes WCAG 2.2 AA in both themes.
+- **Two faces, 52 KB**: Geist for everything a person reads, Geist Mono for code. Both are self-hosted (the product promises the IP is
   never stored, so the site does not hand visitors' IPs to a font CDN).
 - **Dark mode is a real theme**, not an inversion: its own surfaces, a brighter teal that
   can carry text on near-black, and every pair re-checked.
@@ -258,11 +266,11 @@ Google Search.
 
 - **Facts live in `src/content/site.ts`**, copied from the Ground Truth and checked against
   the code; each group names its source file. The page and the JSON-LD both read it, so a
-  price or a rule cannot differ between them.
-- **Every sample is labelled simulated** — the funnel, the alert and the revealed person.
-  The funnel and the alert on the home page are the product's own: the alert's title and
-  fields come from `packages/engine/src/alerts/payload.ts`, its sentence from
-  `packages/engine/src/leaks/rules.ts` and its rule from `packages/engine/src/leaks/types.ts`.
+  claim or a rule cannot differ between them.
+- **Every sample is labelled simulated.** The home page has none. The guide pages' worked
+  examples (for example "12 people at a $49 list price" on `/leaks`) say they are simulated.
+- **Every feature on the home page names its code.** `FEATURES` in `src/content/site.ts`
+  lists the module behind each one; nothing there is planned work.
 - **Edit the page, then the Markdown copy.** `content/index.body.md` restates the home page
   for AI clients. When a fact changes, change it there too, then run `pnpm site:markdown`.
   The guide pages have no second copy: edit `content/pages/*.md` and run the same command.

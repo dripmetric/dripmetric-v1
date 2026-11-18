@@ -2001,3 +2001,51 @@ Unchanged: the add-ons ($299 teardown, $499 concierge setup) do not depend on th
 price, and the `$49.00 at your list price` in every sample alert is the _simulated
 founder's own_ price, not Dripmetric's — a distinction worth keeping in mind before a
 find-and-replace on "$49".
+
+### 2026-11-18 · The landing page says only what is true today, in text, with no prices
+
+The founder's brief for this pass, against the waitlist playbook dated
+19 Nov 2026 that came with it: the first screen shows something true that Dripmetric claims, in as few words
+as possible, with no made-up graphics; then the problem, how Dripmetric solves it, how it
+helps once something is detected, a sample setup, and a FAQ that carries what Dripmetric
+never touches. Not a single mention of pricing, anywhere on the site.
+
+**The graphics went.** The hero's simulated funnel and Slack alert were labelled
+"simulated data", which was honest but beside the point: on the first screen they read as
+a product shot of something the visitor has not seen. The first screen is now the claim,
+one sentence of what Dripmetric is, the form and three facts that are true of the shipping
+code. The share image is text only for the same reason. The only non-prose element left on
+the page is the install code, because that is literally what a founder pastes.
+
+**The claim uses "see", not "fix" or "solve".** Dripmetric finds, measures and reports
+leaks; it does not act on them. The founder described email nudges to a user who leaves
+mid-way as something offered. They are not built: `docs/publishing.md` lists "Nudges and
+recovery" under _What is not built_, CLAUDE.md calls them a later layer, the `suggested_actions`
+entitlement has no UI, and the only email the system sends goes to the founder (login
+links, the digest and the weekly report, `apps/worker/src/mailer.ts`). So the page does not
+claim them, and the wording about the founder's users changed from "never contacts" to
+"does not message" — true today, and not a promise the roadmap would have to break.
+
+**The page, top to bottom** (the playbook's page anatomy, adjusted to the founder's order):
+the claim and the form; the problem, in four sentences and three examples, with two
+third-party figures labelled as such; how Dripmetric finds leaks (the nine rules by stage);
+what you get when something leaks (six built features, each naming its module in
+`src/content/site.ts`); a setup walk-through with the real install code; eight questions,
+including "What does Dripmetric never touch?", "Who is it for?" and "What happens after I
+join?"; and the form again. The closing headline went from "Find your first leak this
+week" to "Join the private beta": invitations go out in weekly cohorts, and a visitor who
+joins today is not promised a leak this week (playbook B1).
+
+**No prices, site-wide.** `/pricing` is a 308 to the home page (it was indexed under v1 and
+v2, so the URL keeps working). Plan names and prices came out of the leaks, buying-intent
+and PostHog guides; masking is now described as what it is by default ("an alert shows a
+person as a masked tag"), which is true without saying what unmasks it. The JSON-LD has no
+Offer nodes, because structured data only says what the page says. The PostHog comparison
+lost its pricing row and its "which is cheaper" question: a comparison that priced one
+side and not the other would have been worse than none. The product still prices Starter
+at $24.99 (`STARTER_PRICE_MINOR`); only the site is silent.
+
+**What did not change:** the colours, the type, the nine rules, the guide pages' substance,
+`llms.txt` and the Markdown copies. The playbook lists Markdown copies under "what not to
+spend time on" for Google; they stay because they are maintained by one command and serve
+non-Google clients, not because they are expected to move rankings.

@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import { Facts } from '@/components/home/facts';
 import { Faq, HOME_FAQ } from '@/components/home/faq';
+import { Features } from '@/components/home/features';
 import { FINAL_CTA_ID, FinalCta } from '@/components/home/final-cta';
 import { Hero } from '@/components/home/hero';
 import { HowItWorks } from '@/components/home/how-it-works';
 import { Leaks } from '@/components/home/leaks';
-import { Plans } from '@/components/home/plans';
+import { Problem } from '@/components/home/problem';
 import { SiteFooter } from '@/components/home/site-footer';
 import { SiteHeader, WAITLIST_ID } from '@/components/home/site-header';
 import { MobileCta } from '@/components/mobile-cta';
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   openGraph: {
     ...OPEN_GRAPH,
     url: SITE.homeUrl,
-    title: 'Dripmetric — Find the revenue leaking out of your signup funnel',
+    title: 'Dripmetric — See where your signup funnel leaks revenue',
     description:
-      'A revenue-leak detector for self-serve SaaS. Nine readable leak rules and a transparent buying-intent score, over product and payment events. Free plan; no billing integration. In private beta.',
+      'A revenue-leak detector for self-serve SaaS. Nine readable rules over your product and payment events, with alerts and a weekly report. No billing integration. In private beta.',
   },
 };
 
@@ -34,10 +34,11 @@ export const metadata: Metadata = {
 export const dynamic = 'force-static';
 
 /**
- * One page, one job: join the waitlist. Seven short sections answer, in order, what
- * this is, whether it is for you, why to believe it, what it costs and what to do next.
- * Everything deeper lives on its own page (/leaks, /buying-intent, /docs, /pricing),
- * and `pnpm site:check` holds this page to a length budget so it stays that way.
+ * One page, one job: join the waitlist. The sections answer, in order: what is this
+ * (the claim), why it matters (the problem), how it works (the nine rules), what you get
+ * when something leaks, how setup goes, the questions people ask, and the ask again.
+ * Text only: no illustrations, no sample data, no prices. `pnpm site:check` holds it to
+ * a length budget so it stays that way.
  */
 export default function HomePage() {
   return (
@@ -49,10 +50,10 @@ export default function HomePage() {
       <SiteHeader />
       <main id="main">
         <Hero />
-        <Facts />
+        <Problem />
         <Leaks />
+        <Features />
         <HowItWorks />
-        <Plans />
         <Faq />
         <FinalCta />
       </main>

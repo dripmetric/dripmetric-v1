@@ -4,34 +4,41 @@ Canonical: [Dripmetric — revenue-leak detection for self-serve SaaS](https://d
 
 Locale: en
 
-Purpose: What Dripmetric is, the waitlist, the nine revenue leaks by stage, how installation works, free and Starter pricing, a simulated sample funnel and alert, and the questions asked before joining
+Purpose: What Dripmetric is, the waitlist, the problem of silent revenue leaks, the nine leak rules by stage, what you get when a leak is found, a setup walk-through, and the questions asked before joining
 
-Content updated: 2026-11-12
+Content updated: 2026-11-18
 
-Source revision: site-2026-11-12
+Source revision: site-2026-11-18
 
 Maintenance owner: Dripmetric (hello@dripmetric.com)
 
 [Topic map](https://dripmetric.com/llm/topics/product.md) · [Complete scoped map](https://dripmetric.com/sitemap.md)
 
-Dripmetric is a revenue-leak detector for self-serve SaaS. It reads your product and payment events and tells you where signups stall, who looked ready to buy and went quiet, and what it costs you.
+See where your signup funnel leaks revenue.
 
-Status: private beta. Founders are invited weekly, in small cohorts, and the free plan stays free. [Join the waitlist](https://dripmetric.com/#waitlist) with a work email.
+Dripmetric is a revenue-leak detector for self-serve SaaS. It watches your product and payment events, catches the moment a likely buyer stops, and tells you where it happened and what it is worth.
 
-- Free plan, forever.
+Status: private beta. Founders are invited weekly, in small cohorts. [Join the waitlist](https://dripmetric.com/#waitlist) with a work email.
+
 - No billing integration.
+- Keeps your own event names.
 - 10–15 lines to install.
 
-## Measured on the shipping code
+## The problem: revenue rarely leaks loudly
 
-- 9 leak rules, each one written so you can read it.
-- A 5 KB browser SDK: 5,018 bytes gzipped. The build fails past 5,120.
-- 76 canonical events, from Signed Up to Payment Failed.
-- 0 billing integrations to set up.
+Most of what a self-serve product loses is lost in silence. Someone who was going to pay simply stops, with no error, no complaint and no event that says so.
 
-## Nine leaks. Each one a rule you can read.
+- Someone signs up, gets stuck on step two of onboarding, and never comes back.
+- Someone reads your pricing twice, starts checkout, and stops.
+- A trial ends unpaid, or a card fails, and nothing tells you.
 
-A revenue leak is a point where someone who was likely to pay stops, with no error, no complaint and no event to say so. Dripmetric watches for nine of them. There is no black box: every leak is a plain-language rule with a visible default.
+Your product analytics sees what people did, but not the money. Your billing tool sees the money, but not what happened first. The leak sits in the gap between them.
+
+For scale: across 62 B2B SaaS companies, the average activation rate was 37.5% ([Userpilot, 2025](https://userpilot.com/saas-product-metrics/)), and about a third of SaaS churn is a payment that failed rather than a customer who chose to leave ([Recurly, July 2026 data](https://www.recurly.com/research/churn-rate-benchmarks)). Third-party figures, not Dripmetric data.
+
+## How Dripmetric finds them: nine leaks, each a rule you can read
+
+Dripmetric puts your product events and payment events on one stream and checks them against nine plain-language rules. There is no black box: each rule says exactly what counts, and fires once per person per episode.
 
 One rule from each stage of the journey, in the product's own words:
 
@@ -47,15 +54,24 @@ The other six leaks:
 - Before they pay: [Pricing quick exit](https://dripmetric.com/leaks#pricing-quick-exit), [Last-moment drop](https://dripmetric.com/leaks#last-moment-drop), [Trial ended unpaid](https://dripmetric.com/leaks#trial-ended-unpaid) and [Limit reached, no upgrade](https://dripmetric.com/leaks#limit-reached).
 - After they pay: [Cancelled or payment failed](https://dripmetric.com/leaks#cancelled-or-failed).
 
-Four leaks run on product events alone. One paid event switches on the other five and puts a dollar figure on each. Every rule in full, with its threshold, the data it needs and what to do about it: [The nine revenue leaks in a self-serve SaaS funnel](https://dripmetric.com/leaks) ([Markdown](https://dripmetric.com/leaks.md)).
+Four of the rules run on product events alone. One payment event from your billing webhook switches on the other five. Every rule in full, with what to do about each: [The nine revenue leaks in a self-serve SaaS funnel](https://dripmetric.com/leaks) ([Markdown](https://dripmetric.com/leaks.md)).
 
-## How it works
+## When something leaks: you hear about it, with the numbers
 
-Paste a snippet. See a real number in under 10 minutes.
+Finding a leak is half the job. Dripmetric also tells you in time to act, and shows you whether what you changed made a difference.
+
+- **An alert the moment it matters.** Slack or Discord, plus a feed in the app. Each alert names the leak, the person’s buying intent, their plan and what is at stake at your list price. At most 10 a day, held through your quiet hours.
+- **A leak report every Monday.** Your biggest leak, the people who reached high buying intent and did not pay, and how any change you made is doing. It arrives Monday morning in your timezone.
+- **A dollar figure on every leak.** The people in a leak times your own list price, with the formula printed beside it. It is labelled potential revenue, because it is a count of people, not money that arrived.
+- **A buying-intent score for every user.** From 0 to 100, built from published rules: starting checkout, reaching activation, hitting a plan limit and more. It fades when someone goes quiet. [How the score works](https://dripmetric.com/buying-intent) ([Markdown](https://dripmetric.com/buying-intent.md)).
+- **A warning when tracking breaks.** If an event stops arriving, changes shape or is sent twice, Dripmetric says so. Broken tracking never looks like users leaving.
+- **Proof your fix worked.** Mark a change and Dripmetric compares equal windows before and after, with at least 100 people in each before it calls a result.
+
+## Setup: paste a snippet, see a real number in under 10 minutes
 
 1. **Install in 10–15 lines.** `npm install dripmetric`, then `identify()` and `track()` where they belong. Or paste our prompt into Cursor or Copilot and let it write the integration.
 2. **Keep your own event names.** Dripmetric maps them to 76 canonical events, with AI-suggested matches you confirm. Nothing in your code gets renamed.
-3. **Let the leaks find you.** Nine rules run on their own. Masked alerts go to Slack or Discord, and a leak report arrives every Monday morning.
+3. **Let the leaks find you.** Nine rules run on their own. Alerts go to Slack or Discord, and a leak report arrives every Monday morning.
 
 In your app:
 
@@ -78,77 +94,50 @@ dm.track(user.id, 'Subscription Started', {
 });
 ```
 
-Payment events arrive like any other event, so Stripe, Paddle, Lemon Squeezy, Chargebee and a hand-rolled billing table all work the same way. Already on Segment, RudderStack or PostHog? Forward events with no code. The install guide has the browser and server SDKs, consent, paid events and all 76 events: [Install Dripmetric](https://dripmetric.com/docs) ([Markdown](https://dripmetric.com/docs.md)).
-
-## Pricing
-
-Free shows where and how much. Starter shows who.
-
-| Plan | Price | What it includes |
-| --- | --- | --- |
-| Free | $0, forever | The full funnel and step timing, the buying-intent score, all nine leaks, masked alerts to Slack or Discord, and a weekly leak report. |
-| Starter | $24.99 a month | Everything in Free, plus the name, email and id behind every masked tag, and the signals behind each score. |
-
-On Free, every alert is real: the leak, the score, the plan and the money at stake. Only the person is masked, behind a stable tag. Masking is enforced on our server, so a free project’s pages, alerts and API responses never contain a name, an email or a user id.
-
-Prices in US dollars, billed monthly. Add-ons and what each plan includes in full: [Dripmetric pricing](https://dripmetric.com/pricing) ([Markdown](https://dripmetric.com/pricing.md)).
-
-## A sample, with simulated data
-
-The page shows one funnel and the alert Dripmetric would send about it. Both are simulated.
-
-The funnel, over the last 30 days: 1,240 signed up, 1,018 verified their email, 431 connected a data source, 352 activated, 97 started checkout and 61 paid. 587 people stopped at “Connected a data source”, which makes it the biggest leak.
-
-The alert, as it arrives in Slack: “Someone with buying intent went quiet. They looked ready to buy — 75 out of 100 — and have not been back for 7 days.” Who (masked): User A7F2C1 · Buying intent: 75 of 100, high · Plan: Pro · At stake: $49.00 at your list price · When: this week. Rule: Someone reached 60 or more on buying intent, then went 7 days without doing anything, and never paid.
-
-On Free that alert names `User A7F2C1`. On Starter the same alert names the person (in the sample, Maya Okafor, maya@northwind.example).
+Payment events arrive like any other event, so Stripe, Paddle, Lemon Squeezy, Chargebee and a hand-rolled billing table all work the same way. Already on Segment, RudderStack or PostHog? Forward events with no code. The install guide has the browser and server SDKs, consent, payment events and all 76 events: [Install Dripmetric](https://dripmetric.com/docs) ([Markdown](https://dripmetric.com/docs.md)).
 
 ## Frequently asked questions
 
 ### What is Dripmetric?
 
-Dripmetric is a revenue-leak detector for self-serve SaaS. It reads your product’s usage events and, if you send them, your payment events, and flags the moments where a signup was on its way to becoming revenue and stopped: an onboarding stall, an abandoned checkout, a trial that ended unpaid, a failed payment, a paying customer going quiet. It is built for small teams, from a few hundred signups a month.
+Dripmetric is a revenue-leak detector for self-serve SaaS. It reads your product’s usage events and, if you send them, your payment events, and flags the moments where a signup was on its way to becoming revenue and stopped: an onboarding stall, an abandoned checkout, a trial that ended unpaid, a failed payment, a paying customer going quiet.
 
-### Is Dripmetric an email or drip-campaign tool?
+### Who is Dripmetric for?
 
-No. Dripmetric observes and reports to you. It never contacts your users, and it sends no drip campaigns, recovery emails or in-app prompts. The only messages it sends go to you: alerts in Slack, Discord or the app, and a weekly leak report.
+Small self-serve SaaS teams, from a few hundred signups a month, who want to know where people stop between signing up and paying. It suits products where people sign up and pay without talking to sales.
+
+### What does Dripmetric never touch?
+
+Your billing provider: Dripmetric never connects to one, and payment events arrive only because you send them. Your visitors’ devices before consent: where consent is required, nothing is stored or sent until it is given. IP addresses, which are never stored. Keystrokes and screens: there is no session replay or fingerprinting. And your users themselves: Dripmetric does not message them.
 
 ### Do I need Stripe, or any billing integration?
 
-No. Dripmetric never connects to a billing provider. You send payment events the same way as any other event, so Stripe, Paddle, Lemon Squeezy, Chargebee, Razorpay, RevenueCat or your own billing table all work the same way. With no payment events at all you still get the funnel, step timing, the buying-intent score and four of the nine leaks.
+No. You send payment events the same way as any other event, so Stripe, Paddle, Lemon Squeezy, Chargebee, Razorpay, RevenueCat or your own billing table all work the same way. With no payment events at all you still get the funnel, step timing, the buying-intent score and four of the nine leaks.
 
-### How long does Dripmetric take to set up?
+### Is Dripmetric an email or drip-campaign tool?
 
-About 10–15 lines of code for a typical product, most of which the AI-coder prompt writes for you in Cursor or Copilot. The promise every feature is held to is a real drop-off number in under 10 minutes, from product events alone. [The install guide](https://dripmetric.com/docs) has the code.
+No. Dripmetric watches and reports to you. It does not send email, drip campaigns or in-app messages to your users. The only messages it sends go to you: alerts in Slack, Discord or the app, and a weekly leak report.
 
 ### How is Dripmetric different from PostHog, Mixpanel or Amplitude?
 
-Those are general-purpose product analytics platforms: you explore any event data and build the funnels, queries and alerts you need. Dripmetric is narrower on purpose. It ships nine leak rules, a transparent buying-intent score and masked alerts, ready on day one, over product and payment events together. Many teams keep their analytics tool and add Dripmetric for the money questions. [Dripmetric vs PostHog](https://dripmetric.com/compare/posthog) compares the two.
+Those are general-purpose product analytics platforms: you explore any event data and build the funnels, queries and alerts you need. Dripmetric is narrower on purpose. It ships nine leak rules, a buying-intent score and alerts, ready on day one, over product and payment events together. Many teams keep their analytics tool and add Dripmetric for the money questions. [Dripmetric vs PostHog](https://dripmetric.com/compare/posthog) compares the two.
 
-### Will the Dripmetric SDK slow my site, and what data does it store?
+### Will the Dripmetric SDK slow my site?
 
-No. The browser core is 5,018 bytes gzipped. It sends in batches off the rendering path, never throws, and uses 3-second timeouts, so even a Dripmetric outage cannot slow a page. It stores the events you send. Where consent is required, nothing is stored on a visitor’s device, and nothing is sent, until they consent. IP addresses are never stored, emails are encrypted at rest, and one API call deletes everything held about a person.
+No. The browser core is 5,018 bytes gzipped, and the build fails if it grows past 5,120. It sends in batches off the rendering path, never throws, and uses 3-second timeouts, so even a Dripmetric outage cannot slow a page or break a request.
 
-### How much does Dripmetric cost?
+### What happens after I join the waitlist?
 
-Dripmetric is free forever for where and how much revenue leaks. Starter, which shows who, is $24.99 a month. [Full pricing](https://dripmetric.com/pricing) lists what each plan includes.
-
-## What Dripmetric does not do
-
-- It never contacts your users: no drip campaigns, recovery emails or in-app prompts.
-- It never connects to a billing provider; payment events arrive only because you send them.
-- It does not retry cards or run dunning.
-- It does no session replay, keystroke capture or fingerprinting.
+Dripmetric is in private beta, and founders are invited weekly in small cohorts. Your invite brings your project keys and the install guide. Your email is used only to let you in and to share launch news, and you can ask for it to be removed at any time.
 
 ## Guides and reference
 
 - [The nine revenue leaks in a self-serve SaaS funnel](https://dripmetric.com/leaks) ([Markdown](https://dripmetric.com/leaks.md))
 - [How the buying-intent score works](https://dripmetric.com/buying-intent) ([Markdown](https://dripmetric.com/buying-intent.md))
 - [Install Dripmetric](https://dripmetric.com/docs) ([Markdown](https://dripmetric.com/docs.md))
-- [Dripmetric pricing](https://dripmetric.com/pricing) ([Markdown](https://dripmetric.com/pricing.md))
 - [Trial-to-paid conversion rate: 2026 benchmarks, formula and where trials leak](https://dripmetric.com/guides/trial-to-paid-conversion) ([Markdown](https://dripmetric.com/guides/trial-to-paid-conversion.md))
 - [Dripmetric vs PostHog](https://dripmetric.com/compare/posthog) ([Markdown](https://dripmetric.com/compare/posthog.md))
 
 ## Contact
 
-Questions: [hello@dripmetric.com](mailto:hello@dripmetric.com). Every sample on dripmetric.com uses simulated data, and says so.
+Questions: [hello@dripmetric.com](mailto:hello@dripmetric.com).

@@ -1,5 +1,5 @@
 {
-  "note": "Paths the v1 site (the drip-email product) served on dripmetric.com that have no v2 page. Each is a permanent (308) redirect in next.config.ts, and a meta-refresh stub in the static export. /docs, /pricing and /privacy are not here: v2 has pages at those same URLs. Destinations on app.dripmetric.com only work once the founder app is deployed there — see LAUNCH.md.",
+  "note": "Paths the v1 site (the drip-email product) served on dripmetric.com that have no v2 page. Each is a permanent (308) redirect in next.config.ts, and a meta-refresh stub in the static export. /docs and /privacy are not here: v2 has pages at those same URLs. /pricing is here because v2 publishes no prices before launch. Destinations on app.dripmetric.com only work once the founder app is deployed there — see LAUNCH.md.",
   "redirects": [
     {
       "source": "/login",
@@ -20,6 +20,11 @@
       "source": "/terms",
       "destination": "https://app.dripmetric.com/legal/terms",
       "reason": "v1 terms URL (linked from the v1 footer). Product terms live in the founder app."
+    },
+    {
+      "source": "/pricing",
+      "destination": "https://dripmetric.com/",
+      "reason": "No prices are published before launch (founder decision, 18 Nov 2026). The URL was indexed under v1 and under v2 until then, so it keeps working and its history goes to the home page."
     }
   ]
 }

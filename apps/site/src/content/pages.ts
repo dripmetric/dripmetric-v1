@@ -12,8 +12,7 @@
  */
 import inventory from '../../content/inventory.json';
 
-export type ArticleId =
-  'leaks' | 'buying-intent' | 'docs' | 'pricing' | 'trial-to-paid' | 'posthog';
+export type ArticleId = 'leaks' | 'buying-intent' | 'docs' | 'trial-to-paid' | 'posthog';
 
 export interface ArticleMeta {
   id: ArticleId;
@@ -23,7 +22,7 @@ export interface ArticleMeta {
   description: string;
   /** Short label above the H1, and the page's name in breadcrumbs. */
   kicker: string;
-  /** TechArticle for reference pages and guides; WebPage for pricing. */
+  /** TechArticle for reference pages and guides; WebPage for anything else. */
   schemaType: 'TechArticle' | 'WebPage';
   /** First published (fixed). The review date is `updated_at` in the inventory. */
   published: string;
@@ -45,7 +44,7 @@ export const ARTICLES: Record<ArticleId, ArticleMeta> = {
     related: ['buying-intent', 'trial-to-paid', 'docs'],
     cta: {
       title: 'See which of the nine is costing you most',
-      body: 'Four leaks run on product events alone. Free plan; no billing integration needed.',
+      body: 'Four leaks run on product events alone, and none of them needs a billing integration.',
     },
   },
   'buying-intent': {
@@ -56,10 +55,10 @@ export const ARTICLES: Record<ArticleId, ArticleMeta> = {
     kicker: 'Buying intent',
     schemaType: 'TechArticle',
     published: '2026-11-08',
-    related: ['leaks', 'pricing', 'docs'],
+    related: ['leaks', 'trial-to-paid', 'docs'],
     cta: {
       title: 'Know who looked ready to buy',
-      body: 'The score and its bands are on the free plan. Starter shows who, and why they scored it.',
+      body: 'Every tracked user gets a score from rules you can read. Join the waitlist to see yours.',
     },
   },
   docs: {
@@ -70,23 +69,9 @@ export const ARTICLES: Record<ArticleId, ArticleMeta> = {
     kicker: 'Docs',
     schemaType: 'TechArticle',
     published: '2026-11-08',
-    related: ['leaks', 'buying-intent', 'pricing'],
+    related: ['leaks', 'buying-intent', 'trial-to-paid'],
     cta: {
       title: 'Get your project keys',
-      body: 'Dripmetric is in private beta. Join the waitlist and your keys come with your invite.',
-    },
-  },
-  pricing: {
-    id: 'pricing',
-    metaTitle: 'Dripmetric pricing: free forever, Starter $24.99 a month',
-    description:
-      'Dripmetric is free forever for where and how much revenue leaks. Starter shows who — the person behind every masked alert and each score — for $24.99 a month.',
-    kicker: 'Pricing',
-    schemaType: 'WebPage',
-    published: '2026-11-08',
-    related: ['leaks', 'buying-intent', 'docs'],
-    cta: {
-      title: 'Start on the free plan',
       body: 'Dripmetric is in private beta. Join the waitlist and your keys come with your invite.',
     },
   },
@@ -112,10 +97,10 @@ export const ARTICLES: Record<ArticleId, ArticleMeta> = {
     kicker: 'Compare',
     schemaType: 'TechArticle',
     published: '2026-11-08',
-    related: ['leaks', 'pricing', 'docs'],
+    related: ['leaks', 'trial-to-paid', 'docs'],
     cta: {
       title: 'Keep your analytics. Add the money questions.',
-      body: 'Dripmetric reads the events you already send. Free plan; no billing integration needed.',
+      body: 'Dripmetric reads the events you already send. No billing integration needed.',
     },
   },
 };

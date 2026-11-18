@@ -25,9 +25,6 @@ export function SiteFooter({ full = true }: { full?: boolean }) {
                 <a href={withBase('/buying-intent')}>Buying-intent score</a>
               </li>
               <li>
-                <a href={withBase('/pricing')}>Pricing</a>
-              </li>
-              <li>
                 <a href={withBase('/docs')}>Docs</a>
               </li>
             </ul>

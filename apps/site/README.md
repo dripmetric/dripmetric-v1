@@ -162,9 +162,14 @@ and check the address arrived.
 ## Deploy (Vercel, like the founder app) — the production choice
 
 1. New Vercel project from this repository. **Root Directory: `apps/site`.** Vercel detects
-   Next.js and the pnpm workspace; no `vercel.json` is needed.
-2. Add the environment variable above.
-3. Add the domain `dripmetric.com` as the **primary** domain and redirect `www` to it with
+   Next.js and the pnpm workspace (pnpm 10.28.0 from the root `packageManager` field); no
+   `vercel.json` is needed. Leave the build, install and output settings at their defaults.
+2. **Node.js 22.x** (Settings → Build and Deployment). The root `package.json` needs
+   `>=22.12.0`; `apps/site/package.json` declares no engines, so set it explicitly.
+3. Production branch: `main`. Merge the site work there; every other branch gets a preview.
+4. Add the environment variable above, for Production and Preview. Never set
+   `SITE_STATIC_EXPORT` or `SITE_BASE_PATH` on Vercel: they are for GitHub Pages only.
+5. Add the domain `dripmetric.com` as the **primary** domain and redirect `www` to it with
    a 308. (Today the v1 site redirects the other way, with a 307 — see `LAUNCH.md` §2.)
 
 `next.config.ts` sends the security headers, serves the `.md` files as `text/markdown`
@@ -207,9 +212,8 @@ pnpm site:export && npx serve apps/site/out
    the default branch is allowed, the deploy fails with "Branch "v2-observe" is not
    allowed to deploy to github-pages due to environment protection rules".)
 3. **Secrets and variables → Actions → Variables** → New repository variable:
-   `SITE_PAGES_ENABLED` = `true`. Add `NEXT_PUBLIC_WAITLIST_ENDPOINT` and
-   `NEXT_PUBLIC_FOUNDING_SEAT_URL` here too when you have them (they end up in the
-   public page, so variables are fine — no secrets involved).
+   `SITE_PAGES_ENABLED` = `true`. Add `NEXT_PUBLIC_WAITLIST_ENDPOINT` here too when you
+   have it (it ends up in the public page, so a variable is fine — no secret involved).
 
 **Publish:** push a change under `apps/site` to `v2-observe`, or open
 Actions → "Landing page → GitHub Pages" → the latest run → **Re-run all jobs**. The manual

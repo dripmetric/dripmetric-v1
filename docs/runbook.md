@@ -38,6 +38,27 @@ the shadow paths do nothing, which is a supported state.
 
 ---
 
+## When the landing page's waitlist misbehaves
+
+`POST /api/waitlist` answers with a reason (`apps/site/README.md`, "The waitlist").
+
+- **`waitlist_closed`** is the switch, not a fault: `WAITLIST_INTAKE` is not exactly
+  `open` in this deployment. Vercel applies a variable only to the next deployment.
+- **`waitlist_unavailable`** means the site could not reach the database. The Vercel
+  function log has a `waitlist not configured` or `waitlist store failed` line with the
+  cause. The usual three: `SITE_DATABASE_URL` missing; the user written as
+  `dripmetric_site` instead of `dripmetric_site.<project-ref>` ("tenant or user not
+  found"); or `DATABASE_CA_CERT` missing, which is refused on purpose rather than
+  connecting in plaintext.
+- **Nobody got a welcome mail.** Check `WAITLIST_AUTOMATION=on` and the log for
+  `waitlist automation is on but incomplete` or `waitlist hand-off failed`. Nothing is
+  lost: `pnpm waitlist:forward` shows how many are waiting, and `--send` sends them.
+- **Someone asks to be removed** (the privacy page promises it): in the Supabase SQL editor,
+  `DELETE FROM waitlist WHERE lower(email) = lower('them@example.com');`
+- **Backups.** On Supabase Free there are none: `pnpm waitlist:export` weekly is the copy.
+
+---
+
 ## When ingest is slow
 
 Check these in order, because the cheap answers are also the common ones.

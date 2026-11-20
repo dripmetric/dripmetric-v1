@@ -50,6 +50,7 @@ pnpm dev                     # web (:3000) + worker, with Postgres already up
 pnpm test                    # vitest (unit + integration; needs pnpm db:up)
 pnpm lint / pnpm typecheck / pnpm check:licenses
 pnpm verify                  # everything CI runs. NOT `pnpm ci`: that is a pnpm built-in
+pnpm waitlist:export         # landing-page waitlist → CSV (owner connection); :forward sends the backlog
 ```
 
 ## Repo map

@@ -2049,3 +2049,70 @@ at $24.99 (`STARTER_PRICE_MINOR`); only the site is silent.
 `llms.txt` and the Markdown copies. The playbook lists Markdown copies under "what not to
 spend time on" for Google; they stay because they are maintained by one command and serve
 non-Google clients, not because they are expected to move rankings.
+
+### 2026-11-20 · The waitlist lives in the product's database, behind a role that can only add
+
+The founder is launching the landing page before the product, with the waitlist stored in
+the database the product will use, because "the same page will become the main landing
+page with signup". So the list is a table beside `founder_users` (migration 0013), not a
+form service: when signup opens, an invite is a join on the email address.
+
+**Where the endpoint lives.** In `apps/site`, as `POST /api/waitlist`, not in the founder
+app. The founder app is not deployed, and a same-origin endpoint needs no CORS and fits the
+site's existing CSP (`connect-src 'self'`). Its logic is a plain Request → Response function
+(`src/lib/waitlist-handler.ts`) with the database, clock and hand-off injected, so it is
+tested without Next.js; the database code is `@dripmetric/db/waitlist`, a separate entry
+point that loads no tenant scope, no `dbEnv()` and needs no encryption keys.
+
+**Least privilege.** A public website's credential is the one most likely to leak, so the
+site connects as `dripmetric_site`, which can execute two `SECURITY DEFINER` functions and
+nothing else: `waitlist_join` (insert, `ON CONFLICT` on `lower(email)` does nothing) and
+`waitlist_mark_forwarded` (only rows from the last 15 minutes, so a leaked credential
+cannot mark the backlog as sent). It cannot select, so it cannot read the list, not even
+the row it just wrote. RLS is on with no policy, so every non-owner sees nothing. The
+founder app's role is revoked too, despite 0001's default privileges, until the invite
+flow asks for access in its own migration. On Supabase the API roles (`anon`,
+`authenticated`, `service_role`) get default grants on new objects; 0013 revokes them,
+and the go-live steps switch the Data API off.
+
+**Off until told.** The founder asked that the endpoint take nothing "unless told so", and
+that the welcome-mail automation be a placeholder. Two switches, each on only for an exact
+value: `WAITLIST_INTAKE=open` (checked before the body is read) and
+`WAITLIST_AUTOMATION=on` (plus an https URL and a 32+ character secret, or it stays off and
+logs why). The hand-off is a signed webhook (Stripe's `t=…,v1=HMAC-SHA256("t.body")`
+scheme, so any receiver can verify it) sent with `after()`, never in the visitor's path.
+`forwarded_at` is an outbox column: addresses that arrive while the automation is off or
+down wait there, and `pnpm waitlist:forward --send` delivers them.
+
+**No IP is written down.** Rate limiting is in memory, five tries per IP per ten minutes
+per instance, because the privacy page says the IP is not stored with the address.
+Vercel's firewall is the layer for real floods. A repeat address answers exactly like a
+new one, so the form cannot be used to test who has signed up. Log lines never contain the
+address.
+
+**TLS, checked against the installed `pg` rather than recalled.** A connection string with
+no `sslmode` connects in plaintext, and any `sslmode` overrides an `ssl` option given
+beside it, with `require` meaning verify-full against the system CAs, which Supabase's
+own CA is not among. `packages/db/src/tls.ts` therefore verifies against
+`DATABASE_CA_CERT` when it is set, removing the string's TLS parameters so they cannot
+override it, and the site, the migrate CLI and the waitlist CLI refuse a remote host that
+would be reached in plaintext. The founder app's pools use the certificate when it is set
+and are otherwise unchanged.
+
+**A bug found on the way.** The migrate CLI set the published development passwords on
+`dripmetric_app` whenever `NODE_ENV` was not `production`. `docs/publishing.md` ran it
+against Supabase without that, with the dev `.env` loaded, so following the doc would have
+left the production app role with a password anyone can read in this repository. Now the
+passwords are only ever set on a local database, whatever `NODE_ENV` says.
+
+**The static export.** GitHub Pages cannot run a POST handler and `next build` with
+`output: 'export'` fails on one. Server-only files end in `.server.ts`, and `pageExtensions`
+includes that extension only in the server build; the export's form falls back to
+`NEXT_PUBLIC_WAITLIST_ENDPOINT` or email, as before. `apps/site/vercel.json` builds
+`@dripmetric/db` before the site (`pnpm --filter @dripmetric/site... run build`), checked
+in a clean checkout with no `dist/`.
+
+**Privacy page.** Updated to what now happens: the address, the form and the time are
+stored in Dripmetric's own database, the IP is not, and the only other companies that
+handle the address are the site and database hosts and, once there is one, the email
+sender. Not lawyer-reviewed, like the rest of the page.

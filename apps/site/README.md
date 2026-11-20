@@ -2,10 +2,12 @@
 
 The marketing site for Dripmetric, on the same stack as the founder app: **Next.js 16
 (App Router, Turbopack), React 19, TypeScript**, the same pinned versions as `apps/web`.
-It is a separate app so that `dripmetric.com` never depends on the founder app's database,
-auth or secrets — the founder app stays on `app.dripmetric.com`.
+It is a separate app so that `dripmetric.com` never depends on the founder app's auth or
+secrets — the founder app stays on `app.dripmetric.com`. Its one link to the database is
+the waitlist endpoint, through a role that can add an address and do nothing else.
 
-Every page is prerendered at build time (`○ Static` in the build output), so search engines
+Every page is prerendered at build time (`○ Static` in the build output; the only dynamic
+route is `ƒ /api/waitlist`), so search engines
 and AI answer engines get the whole page as plain HTML without running JavaScript. There
 are no third-party requests, no cookies and no analytics; fonts are self-hosted.
 
@@ -13,23 +15,27 @@ are no third-party requests, no cookies and no analytics; fonts are self-hosted.
 apps/site/
   src/app/              layout (fonts, shared metadata) · page.tsx (home) · privacy/ · not-found
                         leaks/ · buying-intent/ · docs/ · guides/… · compare/…
+                        api/waitlist/route.server.ts (the one dynamic route; not in the export)
     globals.css         the design system: tokens, light + dark themes, every component
     fonts/              Geist and Geist Mono (SIL OFL 1.1, licences beside them)
-  src/content/site.ts   the facts: leak rules, intent points, plans, modules, comparison — one
+  src/content/site.ts   the facts: leak rules, features, the waitlist endpoint — one
                         source for the home page AND the JSON-LD, each group naming the code it
                         is checked against
   src/content/pages.ts  the guide pages: search title, description, schema type, related pages
-  src/components/home/  one server component per home section: hero, facts, leaks,
-                        how-it-works, plans, faq, final-cta, header, footer
+  src/content/waitlist-messages.ts  what a visitor reads after joining, one copy for both paths
+  src/components/home/  one server component per home section: hero, problem, leaks,
+                        features, how-it-works, faq, final-cta, header, footer
   src/components/       article-page (the guide layout) and the two client parts:
                         the waitlist form and the sticky phone bar
-  src/lib/              structured data (JSON-LD), Markdown rendering, shared Open Graph
+  src/lib/              structured data (JSON-LD), Markdown rendering, shared Open Graph,
+                        waitlist-handler.ts (the endpoint, testable without Next.js)
   public/               robots.txt · sitemap.xml · og.png · icons · site.webmanifest
                         IndexNow key · llms.txt · sitemap.md · llm/topics/ · *.md (generated)
   content/              inventory.json (the canonical page list) · redirects.json (old v1 URLs)
                         index.body.md · privacy.body.md · pages/*.md (the guide pages)
   tools/                check · build-markdown · export · indexnow · render-images (+ og.html)
   next.config.ts        security headers, v1 redirects, Markdown/llms.txt content types
+  vercel.json           the build command: builds @dripmetric/db first, then the site
   LAUNCH.md             everything outside the repo: domain switch, search engines, listings
 ```
 
@@ -92,57 +98,113 @@ deployed — prerendered pages, production headers, real 404s:
 pnpm site:build && pnpm site:start
 ```
 
-## Before you deploy — set the waitlist endpoint
-
-`NEXT_PUBLIC_WAITLIST_ENDPOINT` is the one value the site needs. It is read at build time
-(see `.env.example`; copy it to `.env.local` to try it locally). Leave it empty and "Join
-the waitlist" opens the visitor's email app with a pre-filled message to
-`hello@dripmetric.com` — which works, and loses most people.
-
-**What the form sends.** `src/components/signup-form.tsx` posts exactly this:
+To try the waitlist end to end, start the local database (`pnpm db:up && pnpm db:migrate`)
+and put two lines in `apps/site/.env.local`:
 
 ```
-POST <NEXT_PUBLIC_WAITLIST_ENDPOINT>
-Accept: application/json
-Content-Type: application/x-www-form-urlencoded
-
-email=founder%40example.com&source=hero
+WAITLIST_INTAKE=open
+SITE_DATABASE_URL=postgres://dripmetric_site:dripmetric_site@localhost:54329/dripmetric
 ```
 
-- `email` — what the visitor typed, trimmed. The browser validates it as an email first.
-- `source` — `hero` or `final`, so you can tell which form a signup came from.
-- `_gotcha` — a honeypot field, always empty for a person. It never reaches the network:
-  the form short-circuits to the success state when it is filled. Ignore it if your
-  backend sees it.
+## The waitlist
 
-**What the form expects back.** Any `2xx` is success and the form is replaced by "You're
-on the list." Anything else shows an error and invites a retry. The response body is not
-read, so JSON, an empty body or a redirect all work. The request is a plain cross-origin
-`fetch`, so the endpoint must send `Access-Control-Allow-Origin` for `https://dripmetric.com`
-(every hosted form service already does).
+The form posts to the site's own endpoint, `POST /api/waitlist`
+(`src/app/api/waitlist/route.server.ts`, logic in `src/lib/waitlist-handler.ts`), which
+writes to the **product's own Postgres**, the same database the founder app uses. When
+signup opens, the people on this list are the first ones invited, and an invite is a join
+on the email address rather than an import from a form service.
 
-**Without JavaScript** the browser submits the same form natively to the same URL, so an
-endpoint that answers a normal form POST keeps working for everyone.
+**It takes nothing until you say so.** Two switches, both off unless set exactly:
 
-**Hosted services that fit as-is**, in rough order of fit for a waitlist:
+| Variable                 | Off (default, or anything else)                        | On                                                    |
+| ------------------------ | ------------------------------------------------------ | ----------------------------------------------------- |
+| `WAITLIST_INTAKE=open`   | Answers "The waitlist isn't open yet", stores nothing  | Stores each address                                   |
+| `WAITLIST_AUTOMATION=on` | Sends nothing anywhere; addresses wait in the database | Hands each new address to the welcome-mail automation |
 
-| Service    | Why                                                                                        |
-| ---------- | ------------------------------------------------------------------------------------------ |
-| Loops      | Built for SaaS lists: stores the address, sends the welcome mail, ready for launch news.   |
-| Buttondown | If the list is really a newsletter you will write to.                                      |
-| Formspree  | Simplest: a plain endpoint that emails you each signup. No list to manage.                 |
-| Tally      | If you later want a qualifying question or two on the same form.                           |
-| Your own   | Anything that answers a form POST with a 2xx — a route handler on the founder app will do. |
+Vercel applies a variable change only to the next deployment: change it, then redeploy.
 
-**Rolling your own**, once the database is up: a `POST /v1/waitlist` route handler that
-reads `email` and `source`, rejects anything that does not look like an address, stores it
-with a unique index on the address so a double submit is harmless, and answers `204`. Set
-the CORS header for `https://dripmetric.com`, rate-limit by IP, and send nothing to the
-address until you mean to.
+**What the site can do to the database.** It connects as `dripmetric_site` (migration
+`0013_waitlist.sql`), a role that can call two functions, `waitlist_join` and
+`waitlist_mark_forwarded`, and nothing else. It cannot read the list, not even the row it
+just wrote, and it cannot reach any other table. If the site's credential leaked, someone
+could add addresses, never read one. Row-level security is on, with no policy, as the
+backstop.
 
-**After it is set**, rebuild and deploy: the value is inlined at build time, so changing
-the variable without a rebuild changes nothing. Then submit the form once on the live site
-and check the address arrived.
+**What the endpoint checks, in order:** the intake switch (before reading the body); that a
+browser's `Origin` is this site; a body under 4 KB, form-encoded or JSON; the `_gotcha`
+honeypot (filled = pretend success, store nothing); five tries per IP per ten minutes, held
+in memory only, so no IP address is ever written down; the address (one `@`, a dotted
+domain, no throwaway providers, the same rules as founder signup). A repeat address answers
+exactly like a new one, so the form can't be used to test who has signed up. Log lines
+never contain the address.
+
+| Outcome                        | Status    | JSON `error`                         |
+| ------------------------------ | --------- | ------------------------------------ |
+| Stored, or already on the list | 200       | none (`{"ok":true}`)                 |
+| Intake closed                  | 503       | `waitlist_closed`                    |
+| Database not reachable         | 503       | `waitlist_unavailable`               |
+| Not an address / throwaway     | 422       | `email_invalid` / `email_disposable` |
+| Too many tries                 | 429       | `rate_limited` (+ `Retry-After`)     |
+| Another site, bad body         | 403 / 400 | `request_refused`                    |
+
+The form shows the matching sentence from `src/content/waitlist-messages.ts`. A browser
+posting without JavaScript gets the same sentence as a small page (`noindex`).
+
+### The welcome-mail automation (a placeholder today)
+
+When `WAITLIST_AUTOMATION=on` and both `WAITLIST_AUTOMATION_URL` (https) and
+`WAITLIST_AUTOMATION_SECRET` (32+ characters, `openssl rand -hex 32`) are set, each **new**
+address is sent, after the visitor has their answer, as:
+
+```
+POST <WAITLIST_AUTOMATION_URL>
+Content-Type: application/json
+Idempotency-Key: waitlist-42
+Dripmetric-Signature: t=1795000000,v1=<hex HMAC-SHA256 of "1795000000.<body>">
+
+{"type":"waitlist.joined","id":42,"email":"founder@example.com","source":"hero","joined_at":"2026-11-20T10:00:00.000Z"}
+```
+
+Any 2xx counts as delivered and stamps `forwarded_at` on the row. To check a request is
+really from the site, recompute the HMAC over `<t>.<raw body>` with the shared secret,
+compare in constant time, and reject a `t` more than five minutes old. Zapier, Make, n8n
+and Loops can all receive this. Make the automation idempotent on `email` or the
+idempotency key: a resend is possible.
+
+**Nothing is lost while it is off.** Every address waits with `forwarded_at` empty. Once
+the automation exists, send the backlog (a dry run first; it only sends with `--send`):
+
+```bash
+pnpm waitlist:forward
+```
+
+```bash
+pnpm waitlist:forward --send
+```
+
+A hand-off that fails is logged and left waiting; the same command sends it next time.
+
+### Export, and the backup it gives you
+
+```bash
+pnpm waitlist:export
+```
+
+Writes every address to `waitlist-export-<date>.csv` (readable by you only, gitignored),
+with formula-looking cells defused for spreadsheets. Both commands run as the database
+owner (`ADMIN_DATABASE_URL`), the only role that can read the list. On Supabase Free there
+are no backups, so this export is the backup: run it weekly until there are.
+
+**Removing someone** who asks (the privacy page promises it), in the Supabase SQL editor:
+`DELETE FROM waitlist WHERE lower(email) = lower('them@example.com');`
+
+### Without a server
+
+The static export (`pnpm site:export`, for GitHub Pages) cannot run the endpoint, so it is
+left out of that build (`.server.ts` files only build on a server; see `next.config.ts`).
+There the form posts to `NEXT_PUBLIC_WAITLIST_ENDPOINT` if you set one, any service that
+answers a form POST of `email` and `source` with a 2xx (Formspree, Loops, Tally), and
+otherwise opens a pre-filled email to `hello@dripmetric.com`.
 
 ## The design system
 
@@ -162,12 +224,16 @@ and check the address arrived.
 ## Deploy (Vercel, like the founder app) — the production choice
 
 1. New Vercel project from this repository. **Root Directory: `apps/site`.** Vercel detects
-   Next.js and the pnpm workspace (pnpm 10.28.0 from the root `packageManager` field); no
-   `vercel.json` is needed. Leave the build, install and output settings at their defaults.
+   Next.js and the pnpm workspace (pnpm 10.28.0 from the root `packageManager` field).
+   `apps/site/vercel.json` sets the build command, `pnpm --filter @dripmetric/site... run
+build`, which builds `@dripmetric/db` (the waitlist's database code) before the site;
+   leave the dashboard's build, install and output settings at their defaults.
 2. **Node.js 22.x** (Settings → Build and Deployment). The root `package.json` needs
    `>=22.12.0`; `apps/site/package.json` declares no engines, so set it explicitly.
 3. Production branch: `main`. Merge the site work there; every other branch gets a preview.
-4. Add the environment variable above, for Production and Preview. Never set
+4. Add the waitlist's variables (`.env.example` and "The waitlist" above):
+   `SITE_DATABASE_URL`, `DATABASE_CA_CERT`, and `WAITLIST_INTAKE` when you are ready to
+   take addresses. Leave `NEXT_PUBLIC_WAITLIST_ENDPOINT` empty, and never set
    `SITE_STATIC_EXPORT` or `SITE_BASE_PATH` on Vercel: they are for GitHub Pages only.
 5. Add the domain `dripmetric.com` as the **primary** domain and redirect `www` to it with
    a 308. (Today the v1 site redirects the other way, with a 307 — see `LAUNCH.md` §2.)
@@ -305,6 +371,8 @@ pnpm site:check      # sitemap, robots, llms.txt, images, Markdown sync; plus th
                      # pages (title, canonical, one h1, JSON-LD prices, links) after a build
 pnpm site:markdown   # regenerate llms.txt, sitemap.md, topic maps and the .md copies
 pnpm site:images     # regenerate og.png and the icons (needs Playwright's Chromium)
+pnpm waitlist:export # every waitlist address to a CSV (owner connection)
+pnpm waitlist:forward # how many addresses wait for the automation; --send sends them
 ```
 
 `pnpm verify` runs `site:check`; CI runs `site:check --require-build` after `pnpm build`.

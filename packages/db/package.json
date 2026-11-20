@@ -12,6 +12,10 @@
     "./admin": {
       "types": "./dist/admin.d.ts",
       "default": "./dist/admin.js"
+    },
+    "./waitlist": {
+      "types": "./dist/waitlist.d.ts",
+      "default": "./dist/waitlist.js"
     }
   },
   "main": "./dist/index.js",
@@ -21,7 +25,8 @@
     "clean": "rm -rf dist *.tsbuildinfo",
     "migrate": "tsx src/cli/migrate.ts",
     "reset": "tsx src/cli/migrate.ts --reset",
-    "migrate:shadow": "tsx src/cli/migrate.ts --shadow"
+    "migrate:shadow": "tsx src/cli/migrate.ts --shadow",
+    "waitlist": "tsx src/cli/waitlist.ts"
   },
   "dependencies": {
     "@dripmetric/catalog": "workspace:*",

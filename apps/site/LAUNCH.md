@@ -37,9 +37,12 @@ the places those engines quote. The research behind each step is summarised at t
 - [ ] **Get real terms before you take money.** The product's terms and privacy pages in
       `apps/web/src/app/legal/` say they are placeholders. Have them reviewed before the
       first paid plan, and before any founding seat is offered again.
-- [ ] **Set `NEXT_PUBLIC_WAITLIST_ENDPOINT`** on the site's host: an HTTPS endpoint that
-      accepts a form POST with an `email` field. Without it, the button opens the visitor's
-      email app instead of capturing the address. The contract is in `README.md`.
+- [ ] **Connect the waitlist to the database.** The form posts to the site's own
+      `/api/waitlist`, which stores addresses in the product's Postgres as the insert-only
+      role `dripmetric_site`. The steps (Supabase project, migrations, the role's password,
+      the CA certificate) are in `docs/publishing.md`, "The landing page on its own". It
+      stays closed (`WAITLIST_INTAKE` unset) until you open it, and the welcome-mail
+      automation stays off until `WAITLIST_AUTOMATION=on` (`README.md`, "The waitlist").
 
 ## 2. Switch the domain (Vercel)
 
@@ -71,9 +74,14 @@ redirects and security headers. Use GitHub Pages as a preview only.
 | `/index.md`, `/leaks.md`, `/docs.md`                                                                    | 200, `text/markdown`, with a `Link: <…>; rel="canonical"` header     |
 | `/c320416c6f9ba15a005d6b38edad1807.txt`                                                                 | 200, the IndexNow key                                                |
 | `/anything-else`                                                                                        | 404 page                                                             |
+| `POST /api/waitlist` (curl below)                                                                       | 503 `waitlist_closed` until `WAITLIST_INTAKE=open`, then 200         |
 
 ```bash
 for u in / /leaks /docs /pricing /login /terms /llms.txt /leaks.md; do printf '%-12s ' "$u"; curl -s -o /dev/null -w '%{http_code} %{content_type} %{redirect_url}\n' "https://dripmetric.com$u"; done
+```
+
+```bash
+curl -s -X POST https://dripmetric.com/api/waitlist -H 'Accept: application/json' --data-urlencode 'email=you@yourcompany.com' -d 'source=hero'
 ```
 
 - [ ] **Check Vercel isn't blocking crawlers.** If Bot Protection, Attack Challenge Mode

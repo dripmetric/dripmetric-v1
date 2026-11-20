@@ -26,3 +26,8 @@ examples/next-app/next-env.d.ts
 
 # Build metadata, regenerated on every SDK build.
 packages/sdk/size-report.json
+
+# Waitlist exports hold people's email addresses (pnpm waitlist:export).
+waitlist-export-*.csv
+# The database's CA certificate (docs/publishing.md). Public, but it belongs to your setup.
+supabase-ca.crt

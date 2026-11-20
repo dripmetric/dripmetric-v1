@@ -1,17 +1,22 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { waitlistMessage, type WaitlistOutcome } from '@/content/waitlist-messages';
 
 type Status = { tone: 'ok' | 'error'; text: string } | null;
 
 /**
  * The waitlist form: one field, one button.
  *
- * With an endpoint configured (NEXT_PUBLIC_WAITLIST_ENDPOINT) it POSTs `email` and
- * `source` as an ordinary `application/x-www-form-urlencoded` body, which Formspree,
- * Loops, Buttondown, Tally and most form backends accept. Without one it opens a
+ * It POSTs `email` and `source` as an ordinary `application/x-www-form-urlencoded`
+ * body: to the site's own /api/waitlist on Vercel, or to NEXT_PUBLIC_WAITLIST_ENDPOINT
+ * when that is set (src/content/site.ts). With neither (the static export) it opens a
  * pre-filled email to the contact address. Without JavaScript the browser submits the
- * same form natively, to the same place.
+ * same form natively, to the same place, and the endpoint answers with a small page.
+ *
+ * What the visitor reads afterwards comes from src/content/waitlist-messages.ts, the
+ * same words the endpoint uses, so "closed", "check your address" and "on the list"
+ * read the same with or without JavaScript.
  *
  * Once someone is on the list the form is replaced by what happens next, so the page
  * never shows an empty box where a confirmation should be.
@@ -38,7 +43,8 @@ export function SignupForm({
   const [busy, setBusy] = useState(false);
   const [joined, setJoined] = useState(false);
   const email = useRef<HTMLInputElement>(null);
-  const configured = /^https:\/\/\S+$/i.test(endpoint);
+  // An https:// URL, or a path on this site such as /api/waitlist.
+  const configured = /^(https:\/\/\S+|\/\S*)$/i.test(endpoint);
   const mailto = `mailto:${contactEmail}?subject=${encodeURIComponent('Dripmetric waitlist')}`;
 
   useEffect(() => {
@@ -94,10 +100,27 @@ export function SignupForm({
     setBusy(true);
     setStatus({ tone: 'ok', text: 'Sending…' });
     fetch(endpoint, { method: 'POST', headers: { Accept: 'application/json' }, body: data })
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        setStatus(null);
-        setJoined(true);
+      .then(async (response) => {
+        if (response.ok) {
+          setStatus(null);
+          setJoined(true);
+          return;
+        }
+        // The site's endpoint names the problem; anything else is a generic failure.
+        const answer = (await response.json().catch(() => null)) as { error?: string } | null;
+        const known: WaitlistOutcome[] = [
+          'waitlist_closed',
+          'email_invalid',
+          'email_disposable',
+          'rate_limited',
+        ];
+        const outcome = known.find((code) => code === answer?.error) ?? 'waitlist_unavailable';
+        const message = waitlistMessage(outcome, contactEmail);
+        if (outcome === 'email_invalid' || outcome === 'email_disposable') {
+          setInvalid(true);
+          input.focus();
+        }
+        setStatus({ tone: 'error', text: `${message.title} ${message.body}` });
       })
       .catch(() =>
         setStatus({
@@ -109,13 +132,11 @@ export function SignupForm({
   };
 
   if (joined) {
+    const done = waitlistMessage('joined', contactEmail);
     return (
       <div className="signup signup--done" id={id} role="status">
-        <p className="signup__done-title">You’re on the list.</p>
-        <p>
-          We invite founders weekly, in small cohorts. Your invite and project keys will come to the
-          address you gave us.
-        </p>
+        <p className="signup__done-title">{done.title}</p>
+        <p>{done.body}</p>
       </div>
     );
   }

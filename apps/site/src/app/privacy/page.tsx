@@ -27,7 +27,7 @@ export default function PrivacyPage() {
       <SiteHeader nav={false} />
       <main id="main" className="page">
         <div className="wrap">
-          <p className="label">Last updated 4 November 2026</p>
+          <p className="label">Last updated 20 November 2026</p>
           <h1>Privacy on dripmetric.com</h1>
           <p>
             This notice covers this website only — not the Dripmetric product. It is written in
@@ -54,10 +54,12 @@ export default function PrivacyPage() {
 
           <h2>If you join the waitlist</h2>
           <p>
-            We receive the email address you type and which form you used. Depending on how you sign
-            up, it reaches us through the service we use to manage the waitlist, or as an email from
-            your own email app. We use it only to let you into the beta and to share launch news,
-            and we don’t sell it or share it with anyone else.
+            We store the email address you type, which form you used and when, in Dripmetric’s own
+            database. Your IP address is not stored with it. If you sign up by email instead, your
+            message simply reaches our inbox. We use the address only to let you into the beta and
+            to share launch news. We don’t sell it, and the only other companies that handle it are
+            the ones that host this site and our database and the one that sends our emails, each
+            only to provide that service.
           </p>
 
           <h2>Getting your details removed</h2>

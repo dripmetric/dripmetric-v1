@@ -22,8 +22,17 @@ export const SITE = {
   homeUrl: urlOf('home'),
   privacyUrl: urlOf('privacy'),
   contactEmail: 'hello@dripmetric.com',
-  /** Read at build time. Empty = the form opens a pre-filled email instead. */
-  waitlistEndpoint: process.env.NEXT_PUBLIC_WAITLIST_ENDPOINT ?? '',
+  /**
+   * Where the form posts. On Vercel, the site's own endpoint (src/app/api/waitlist),
+   * which stores nothing until WAITLIST_INTAKE=open. NEXT_PUBLIC_WAITLIST_ENDPOINT
+   * overrides it, and is the only option for the static export, which has no server;
+   * with neither, the form opens a pre-filled email. Read at build time.
+   */
+  waitlistEndpoint:
+    process.env.NEXT_PUBLIC_WAITLIST_ENDPOINT ||
+    (process.env.NEXT_PUBLIC_STATIC_EXPORT
+      ? ''
+      : `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/waitlist`),
   /** The date every page on the site was last reviewed against the Ground Truth. */
   updated: '2026-11-18',
 } as const;

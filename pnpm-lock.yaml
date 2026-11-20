@@ -53,6 +53,9 @@ importers:
 
   apps/site:
     dependencies:
+      '@dripmetric/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       marked:
         specifier: 18.1.1
         version: 18.1.1

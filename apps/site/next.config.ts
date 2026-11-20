@@ -94,11 +94,22 @@ const securityHeaders = async () => {
 const legacyRedirects = async () =>
   legacy.redirects.map(({ source, destination }) => ({ source, destination, permanent: true }));
 
+/**
+ * Server-only files end in `.server.ts`: today that is the waitlist endpoint,
+ * src/app/api/waitlist/route.server.ts. The Vercel build treats them as routes; the
+ * static export cannot run a POST handler, so it leaves them out, and the form falls
+ * back to NEXT_PUBLIC_WAITLIST_ENDPOINT or email (src/content/site.ts).
+ */
+const pageExtensions = staticExport
+  ? ['tsx', 'ts', 'jsx', 'js']
+  : ['tsx', 'ts', 'jsx', 'js', 'server.ts'];
+
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  pageExtensions,
   ...(basePath ? { basePath } : {}),
-  env: { NEXT_PUBLIC_BASE_PATH: basePath },
+  env: { NEXT_PUBLIC_BASE_PATH: basePath, NEXT_PUBLIC_STATIC_EXPORT: staticExport ? '1' : '' },
   // Static hosts can send neither headers nor redirects; tools/export.mjs writes redirect
   // stubs instead.
   ...(staticExport

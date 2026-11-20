@@ -20,6 +20,9 @@ const EnvSchema = z.object({
    * gate on real founder data.
    */
   SHADOW_DATABASE_URL: z.string().optional(),
+  /** The database server's CA certificate, PEM text or a file path (tls.ts). Supabase
+   *  signs with its own CA, so without this a verified TLS connection is impossible. */
+  DATABASE_CA_CERT: z.string().optional(),
   /** Envelope-encryption keys: `<keyId>:<base64 32-byte key>`, comma-separated.
    *  The first encrypts; all of them decrypt, so a key rotates without a backfill. */
   ENCRYPTION_KEYS: z.string().min(1),

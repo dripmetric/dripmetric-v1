@@ -34,6 +34,90 @@ precious.
 
 ---
 
+## The landing page on its own (before the product)
+
+dripmetric.com can go live before the founder app, with its waitlist stored in the
+product's own database. Nothing here needs the founder app, the worker, Resend or an
+encryption key, and everything you set up is reused unchanged when the product launches.
+
+**1. Create the Supabase project.** Choose the region nearest your visitors. Keep the
+database password it generates in your password manager: it is the owner's password.
+Then switch off the REST API, which Dripmetric never uses: **Integrations → Data API →
+Enable Data API: off**. Migration 0013 also takes back the API roles' grants on the
+waitlist, but off means there is nothing to get wrong.
+
+**2. Download the CA certificate.** Database Settings → SSL Configuration → Download
+certificate, and save it in the repository folder as `supabase-ca.crt` (gitignored).
+Supabase signs its servers with its own CA, so this file is what lets every
+connection be both encrypted and verified (`packages/db/src/tls.ts`). It is public, not a
+secret.
+
+**3. Run the migrations from your machine, as the owner.** Use the **Session pooler**
+connection string from the project's Connect panel (port 5432, user
+`postgres.<project-ref>`). The direct connection is IPv6-only unless you buy the add-on,
+so many home networks cannot reach it.
+
+```bash
+ADMIN_DATABASE_URL='postgresql://postgres.<ref>:<owner-password>@<pooler-host>:5432/postgres' DATABASE_CA_CERT=./supabase-ca.crt pnpm db:migrate
+```
+
+It refuses to run without the certificate rather than send the owner password in
+plaintext. On a remote database it creates `dripmetric_app` and `dripmetric_site` with no
+password, so neither can log in until you give it one; development passwords are only
+ever set on a local database.
+
+**4. Give the site's role a password**, in the Supabase SQL editor (hex, so it needs no
+escaping in a URL; generate it with `openssl rand -hex 24`):
+
+```sql
+ALTER ROLE dripmetric_site WITH LOGIN PASSWORD '<48 hex characters>';
+```
+
+**5. Set the site's variables in Vercel** (Settings → Environment Variables, Production):
+
+| Variable            | Value                                                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `SITE_DATABASE_URL` | the **Transaction pooler** string (port 6543) with the user changed to `dripmetric_site.<project-ref>` and the step-4 password |
+| `DATABASE_CA_CERT`  | the whole certificate file from step 2, pasted as text                                                                         |
+| `WAITLIST_INTAKE`   | leave unset until you are ready; then `open`                                                                                   |
+
+Leave `WAITLIST_AUTOMATION` unset: the welcome-mail automation is off until it exists.
+Redeploy after every change; Vercel applies variables only to new deployments.
+
+**6. Check it, closed and then open.**
+
+```bash
+curl -s -X POST https://dripmetric.com/api/waitlist -H 'Accept: application/json' --data-urlencode 'email=you@yourcompany.com' -d 'source=hero'
+```
+
+Closed answers `{"ok":false,"error":"waitlist_closed"}`. Set `WAITLIST_INTAKE=open`,
+redeploy, and the same command answers `{"ok":true}`; the row appears in the Supabase
+Table Editor under `waitlist`. `waitlist_unavailable` means the site could not reach the
+database: the function log in Vercel says why (wrong password, missing certificate, or
+the username without `.<project-ref>`). Delete your test row afterwards:
+`DELETE FROM waitlist WHERE lower(email) = lower('you@yourcompany.com');`
+
+**7. Back it up.** Supabase Free has no backups. Until you have Supabase Pro or the shadow
+copy (step 0), export weekly from your machine:
+
+```bash
+ADMIN_DATABASE_URL='<as in step 3>' DATABASE_CA_CERT=./supabase-ca.crt pnpm waitlist:export
+```
+
+**When the welcome-mail automation exists:** set `WAITLIST_AUTOMATION_URL`,
+`WAITLIST_AUTOMATION_SECRET` and `WAITLIST_AUTOMATION=on` in Vercel, redeploy, then send
+everyone who joined before it: `pnpm waitlist:forward`, then `pnpm waitlist:forward
+--send`, with the same three variables in your shell. The payload and how to verify its
+signature are in `apps/site/README.md`, "The waitlist". Name the email service on the
+privacy page when it starts receiving addresses.
+
+**When signup opens:** the founder app and the worker use this same database
+(Step 2 below gives `dripmetric_app` its password). Invites come from the `waitlist` table;
+the migration that builds them grants the founder app what it needs. Set
+`WAITLIST_INTAKE` back to unset to close the list.
+
+---
+
 ## Step 1 · Publish the SDK to npm
 
 The package is `dripmetric`, MIT, and already configured: `files` is limited to
@@ -101,15 +185,20 @@ serverless functions multiply connections.
 Nothing in the codebase names a prepared statement, deliberately, so the same queries
 work through both.
 
-Then:
+Download the CA certificate (Database Settings → SSL Configuration) and set
+`DATABASE_CA_CERT` to it everywhere a connection string is set: Supabase signs with its
+own CA, so without it a connection is either unverified or refused. Then, from your
+machine (the Session pooler string; the direct one is IPv6-only):
 
 ```bash
-ADMIN_DATABASE_URL="postgres://..." pnpm db:migrate
+ADMIN_DATABASE_URL="postgresql://postgres.<ref>:..." DATABASE_CA_CERT=./supabase-ca.crt pnpm db:migrate
 ```
 
 This also creates the non-owner role `dripmetric_app` that row-level security applies
-to. **In production, set that role's password yourself** and point `DATABASE_URL` at
-it — the migration only sets a dev password locally.
+to, and the landing page's insert-only `dripmetric_site`. **On a remote database neither
+gets a password**: set each one yourself (`ALTER ROLE … WITH LOGIN PASSWORD …`) and point
+`DATABASE_URL` (as `dripmetric_app.<ref>`) and the site's `SITE_DATABASE_URL` (as
+`dripmetric_site.<ref>`) at them. Development passwords are only set on a local database.
 
 ---
 
@@ -229,6 +318,8 @@ a deployment with no error service still has a searchable error record.
 - [ ] `pnpm verify` green, and CI green on the branch
 - [ ] `pnpm db:migrate` run against production
 - [ ] the `dripmetric_app` role has a password you set, and `DATABASE_URL` uses it
+- [ ] `dripmetric_site` has its own password, and the site's `SITE_DATABASE_URL` uses it
+- [ ] the Supabase Data API is off (Integrations → Data API)
 - [ ] `ENCRYPTION_KEYS` backed up somewhere that is not Vercel
 - [ ] Resend domain verified, and a magic link actually received
 - [ ] `SLACK_OAUTH_BASE` / `DISCORD_OAUTH_BASE` pointed at the real endpoints

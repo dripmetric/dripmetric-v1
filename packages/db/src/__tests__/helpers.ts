@@ -19,6 +19,7 @@ export async function ensureMigrated(): Promise<void> {
   try {
     await runMigrations(client);
     await client.query(`ALTER ROLE dripmetric_app LOGIN PASSWORD 'dripmetric_app'`);
+    await client.query(`ALTER ROLE dripmetric_site LOGIN PASSWORD 'dripmetric_site'`);
   } finally {
     await client.end();
   }

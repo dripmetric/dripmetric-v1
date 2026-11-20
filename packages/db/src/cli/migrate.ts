@@ -7,11 +7,16 @@
  * application role exists, because row-level security does not apply to the owner and
  * the whole point of the role is that it does. In development the role is given a
  * login password so `pnpm dev` can use it; in production the password is set out of
- * band (docs/runbook.md) and this step is skipped.
+ * band (docs/runbook.md) and this step is skipped. The same goes for `dripmetric_site`,
+ * the landing page's insert-only role (migration 0013).
+ *
+ * The owner password is the most valuable credential there is, so a remote database is
+ * only reached over verified TLS: DATABASE_CA_CERT, or an explicit sslmode (tls.ts).
  */
 import pg from 'pg';
 import { loadRootEnv } from '../load-env.js';
 import { runMigrations, resetDatabase } from '../migrate.js';
+import { connectionOptions, isLocalDatabase } from '../tls.js';
 
 loadRootEnv();
 
@@ -40,7 +45,11 @@ if (!url) {
 }
 if (shadow) console.log('Migrating the SHADOW copy.');
 
-const client = new pg.Client({ connectionString: url });
+// The shadow is self-managed and may be a box on a private network, so only the
+// primary insists on TLS; both use the CA when one is given.
+const client = new pg.Client(
+  connectionOptions(url, { caCert: process.env['DATABASE_CA_CERT'], requireTls: !shadow }),
+);
 await client.connect();
 
 try {
@@ -54,10 +63,21 @@ try {
   if (skipped.length > 0) console.log(`${skipped.length} already applied`);
   if (applied.length === 0 && !reset) console.log('Nothing to do: the database is up to date.');
 
-  if (process.env['NODE_ENV'] !== 'production') {
-    // Dev-only password, so a fresh clone works with the committed .env.example.
+  /*
+   * Dev-only passwords, so a fresh clone works with the committed .env.example — and
+   * ONLY on a database on this machine. NODE_ENV alone was not enough: running
+   * `pnpm db:migrate` from a laptop against Supabase, with the dev .env loaded, gave the
+   * production roles these published passwords (docs/decisions.md, 2026-11-20).
+   */
+  if (process.env['NODE_ENV'] !== 'production' && isLocalDatabase(url)) {
     await client.query(`ALTER ROLE dripmetric_app LOGIN PASSWORD 'dripmetric_app'`);
-    console.log('Application role dripmetric_app is ready (development password).');
+    await client.query(`ALTER ROLE dripmetric_site LOGIN PASSWORD 'dripmetric_site'`);
+    console.log('Roles dripmetric_app and dripmetric_site are ready (development passwords).');
+  } else if (!shadow) {
+    console.log(
+      'Roles dripmetric_app and dripmetric_site exist without a password. Set each one yourself ' +
+        'before anything connects as it (docs/publishing.md).',
+    );
   }
 } finally {
   await client.end();

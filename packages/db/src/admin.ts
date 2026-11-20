@@ -9,3 +9,9 @@
 export { runMigrations, loadMigrations, resetDatabase, MIGRATIONS_DIR } from './migrate.js';
 export type { Migration, MigrateResult } from './migrate.js';
 export { loadRootEnv } from './load-env.js';
+export {
+  countPendingWaitlist,
+  forwardPendingWaitlist,
+  exportWaitlistCsv,
+} from './waitlist-admin.js';
+export type { ForwardResult } from './waitlist-admin.js';

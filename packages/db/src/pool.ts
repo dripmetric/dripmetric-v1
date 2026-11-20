@@ -1,5 +1,6 @@
 import pg from 'pg';
 import { dbEnv } from './env.js';
+import { connectionOptions } from './tls.js';
 
 /**
  * One pool per process.
@@ -30,7 +31,8 @@ let shadowPoolUrl: string | undefined;
 
 function make(connectionString: string, max: number): pg.Pool {
   const pool = new Pool({
-    connectionString,
+    // Verified against DATABASE_CA_CERT when it is set (tls.ts); unchanged otherwise.
+    ...connectionOptions(connectionString, { caCert: dbEnv().DATABASE_CA_CERT }),
     max,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,

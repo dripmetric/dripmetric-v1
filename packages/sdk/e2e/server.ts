@@ -131,6 +131,14 @@ export async function startTestServer(): Promise<TestServer> {
     breakIngest: (value: boolean) => {
       broken = value;
     },
-    close: () => new Promise<void>((resolve) => server.close(() => resolve())),
+    // `server.close()` waits for every connection to end, and the page is still open
+    // when afterEach runs, so a request it has in flight (a flush after consent, say)
+    // held the hook past its timeout about one run in twenty. The test is over by then:
+    // drop the connections rather than wait for them.
+    close: () =>
+      new Promise<void>((resolve) => {
+        server.close(() => resolve());
+        server.closeAllConnections();
+      }),
   };
 }

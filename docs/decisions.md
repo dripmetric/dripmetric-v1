@@ -2198,3 +2198,14 @@ Only `next` and `@next/*` moved in the lockfile. Checked: `pnpm audit --prod` fi
 licences pass, and in a runner's environment from a clean tree the static export, the
 typecheck, the build, the landing-page checks, the SDK's browser tests and the dashboard
 screens with the masking scan all pass on 16.4.6.
+
+### 2026-11-21 · The split CI jobs needed the build the old job got by accident
+
+Tests import the workspace packages through their built `dist/` (each package.json's
+`exports`). The old single job never built before Tests and did not need to: Typecheck ran
+first, and `tsc -b` writes `dist/`. Splitting the jobs lost that. From a tree with no
+`dist/`, the Tests job as first written failed 18 of 45 files ("Failed to resolve entry for
+package @dripmetric/db"), and the simulator jobs had the same gap. Both now build the
+packages first, about 10 s. Caught here before any GitHub run, but late: the first local
+check of the Tests job ran after a build. A job's commands have to be checked from the
+state that job starts in, which for CI is a fresh checkout.

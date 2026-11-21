@@ -131,6 +131,12 @@ jobs:
         with:
           database: 'true'
 
+      # Tests import the workspace packages through their built dist/ (package.json
+      # "exports"), so a fresh checkout builds them first. The old single job got this
+      # by accident: its Typecheck step ran before Tests, and `tsc -b` writes dist/.
+      - name: Build the workspace packages
+        run: pnpm -r --filter "./packages/**" build
+
       # Every test file except the simulator runs, which have their own job below.
       # A new test file lands here by default. A file excluded here MUST be in the
       # `sim` matrix, or nothing runs it.
@@ -174,6 +180,10 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           database: 'true'
+
+      # See the same step in `test`: tests load the packages from dist/.
+      - name: Build the workspace packages
+        run: pnpm -r --filter "./packages/**" build
 
       - name: Tests
         run: pnpm test ${{ matrix.files }}

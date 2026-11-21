@@ -16,19 +16,17 @@ import { share } from '../score.js';
 import type { TruthFile } from '../types.js';
 
 /*
- * 20 minutes, not 10.
+ * 5 minutes. The whole file takes ~27 s locally.
  *
  * This hook replays weeks of simulated history through the real ingest pipeline in
- * small time-local batches (send.ts says why they cannot be packed), which is about
- * 69,000 SQL round trips and ~8,900 transactions. It takes ~60s against a local
- * Postgres and is round-trip bound — 72% of that is the process waiting — so a
- * runner with slower round trips scales it by a lot more than its CPU would suggest.
- * CI timed out at 10 minutes on a hook that passes here in one.
- *
- * The headroom is the honest fix: the work is real, not accidental. Cutting the
- * round trips belongs in M13's load test, where ingest performance is the subject.
+ * small time-local batches (send.ts says why they cannot be packed), then runs the
+ * engines over it. It used to allow 20 minutes, after CI timed out at 10, and the
+ * time was blamed on ingest's ~69,000 round trips. It was one query: the intent facts
+ * query, planned as if the brand-new project were empty, took 402 of 441 seconds
+ * (docs/decisions.md, 2026-11-21). The limit is tight again so that a plan like that
+ * fails here rather than quietly costing CI minutes.
  */
-const SIM_LOAD_TIMEOUT_MS = 1_200_000;
+const SIM_LOAD_TIMEOUT_MS = 300_000;
 
 /**
  * M7 exit checks (brief §11):

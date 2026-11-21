@@ -142,20 +142,27 @@ interface UserRow {
  *
  * `now` is a parameter, including for the rolling "last 7 days" window, so a score
  * can be recomputed as of a past moment and come out the same (rule 9).
+ *
+ * Every CTE is MATERIALIZED: computed once, then read. Inlined, `signup_device` and
+ * `core_action_third` were re-run for every event row whenever the planner thought
+ * the project was empty, which is what it thinks right after a new project's history
+ * arrives and before autoanalyze has seen it. That plan took 402 s on 5,195 events
+ * (the `named` list scanned 1,044,195 times). Each CTE covers the whole project
+ * anyway, so materializing costs no filtering.
  */
 async function loadUserRows(db: ScopedDb, now: Date): Promise<UserRow[]> {
   return db.query<UserRow>(
-    `WITH named AS (
+    `WITH named AS MATERIALIZED (
        SELECT e.user_key, e.occurred_at, e.props, n.canonical
          FROM events e
          JOIN event_names n ON n.project_id = e.project_id AND n.id = e.name_id
         WHERE e.project_id = $1 AND e.user_key IS NOT NULL AND n.canonical IS NOT NULL
-     ), signup_device AS (
+     ), signup_device AS MATERIALIZED (
        SELECT DISTINCT ON (s.user_key) s.user_key, s.device_type
          FROM sessions s
         WHERE s.project_id = $1 AND s.user_key IS NOT NULL
         ORDER BY s.user_key, s.started_at
-     ), core_action_third AS (
+     ), core_action_third AS MATERIALIZED (
        /*
         * When the THIRD early core action happened, not the last one.
         *

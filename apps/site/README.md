@@ -365,7 +365,8 @@ Google Search.
 pnpm site:dev        # next dev on :3001
 pnpm site:build      # next build — every page prerendered
 pnpm site:start      # next start on :3001, production headers
-pnpm site:export     # static export to apps/site/out (GitHub Pages / any static host)
+pnpm site:export     # static export to apps/site/out (GitHub Pages / any static host);
+                     # builds @dripmetric/db first, so it works from a clean checkout
 pnpm site:indexnow   # dry run of an IndexNow submission; --submit sends it (after deploying)
 pnpm site:check      # sitemap, robots, llms.txt, images, Markdown sync; plus the rendered
                      # pages (title, canonical, one h1, JSON-LD prices, links) after a build

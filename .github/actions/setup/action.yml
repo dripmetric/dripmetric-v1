@@ -1,0 +1,44 @@
+name: Set up the workspace
+description: >-
+  pnpm, Node 22 with the pnpm store cached, and a frozen install. With `database: true`
+  it also prepares the job's Postgres service: faster commits, then the migrations.
+
+inputs:
+  database:
+    description: 'Prepare the Postgres service the job declares ("true" or "false").'
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 10.28.0
+
+    - uses: actions/setup-node@v5
+      with:
+        node-version: 22
+        cache: pnpm
+
+    - name: Install
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    # This database is thrown away when the job ends, so durability buys nothing
+    # and costs a WAL flush on every commit. The sim tests commit ~8,900 times
+    # each. Measured locally at 13% off the heaviest test.
+    #
+    # `synchronous_commit` is reloadable, which is why it is set here rather than
+    # with `fsync=off`: a service container takes docker options, not Postgres
+    # ones, and `fsync` needs a restart.
+    - name: Make the throwaway database faster
+      if: inputs.database == 'true'
+      shell: bash
+      run: >-
+        psql "$ADMIN_DATABASE_URL" -c
+        "ALTER DATABASE dripmetric SET synchronous_commit = off"
+
+    - name: Apply migrations
+      if: inputs.database == 'true'
+      shell: bash
+      run: pnpm db:migrate

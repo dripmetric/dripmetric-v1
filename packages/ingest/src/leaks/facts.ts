@@ -71,15 +71,19 @@ interface UserRow {
  * The weekly active-day counts are computed here rather than in the engine because
  * they are a group-by over events; the comparison between them is the rule, and that
  * stays in the engine.
+ *
+ * The CTEs are MATERIALIZED, computed once, for the reason `loadUserRows` in
+ * intent/facts.ts gives: inlined, `weekly` can be re-aggregated for every event row
+ * when the planner thinks a new project is empty.
  */
 export async function loadUserLeakFacts(db: ScopedDb, now: Date): Promise<UserLeakFacts[]> {
   const rows = await db.query<UserRow>(
-    `WITH named AS (
+    `WITH named AS MATERIALIZED (
        SELECT e.user_key, e.occurred_at, e.props, n.canonical
          FROM events e
          JOIN event_names n ON n.project_id = e.project_id AND n.id = e.name_id
         WHERE e.project_id = $1 AND e.user_key IS NOT NULL AND n.canonical IS NOT NULL
-     ), weekly AS (
+     ), weekly AS MATERIALIZED (
        /*
         * Active days per week, counting back from the given moment in whole
         *

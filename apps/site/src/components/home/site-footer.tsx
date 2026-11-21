@@ -67,7 +67,7 @@ export function SiteFooter({ full = true }: { full?: boolean }) {
         <div className="site-footer__base">
           <p>© 2026 Dripmetric</p>
           {full ? (
-            <p>Every sample on this site uses simulated data, and says so.</p>
+            <p>Figures on this site come from named, linked research, not Dripmetric data.</p>
           ) : (
             <p>
               <Link prefetch={false} href="/">

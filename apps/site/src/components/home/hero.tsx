@@ -5,7 +5,8 @@ import { WAITLIST_ID } from './site-header';
 /**
  * The first screen: the claim, one sentence of what Dripmetric is, and the form.
  *
- * Nothing else. No illustration and no sample data: everything a visitor reads here is
+ * Nothing else, not even reassurance ticks under the form (the founder removed them on
+ * 21 Nov 2026). No illustration and no sample data: everything a visitor reads here is
  * something the product does today (apps/site/README.md, "One page, one job"). The verb
  * is "see", not "fix": Dripmetric finds and reports leaks; it does not act on them.
  */
@@ -30,14 +31,7 @@ export function Hero() {
           endpoint={SITE.waitlistEndpoint}
           contactEmail={SITE.contactEmail}
           label={CTA_LABEL}
-          noteId="hero-note"
-        >
-          <ul className="assurances" id="hero-note">
-            <li>No billing integration</li>
-            <li>Keeps your own event names</li>
-            <li>10–15 lines to install</li>
-          </ul>
-        </SignupForm>
+        />
       </div>
     </section>
   );

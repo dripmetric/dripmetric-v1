@@ -34,7 +34,7 @@ export const SITE = {
       ? ''
       : `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/waitlist`),
   /** The date every page on the site was last reviewed against the Ground Truth. */
-  updated: '2026-11-18',
+  updated: '2026-11-21',
 } as const;
 
 /**
@@ -47,93 +47,80 @@ export const DEFINITION = 'Dripmetric is a revenue-leak detector for self-serve 
 /** The one action on the site, worded the same everywhere it appears. */
 export const CTA_LABEL = 'Join the waitlist';
 
-export interface Leak {
-  /** The anchor on /leaks, which explains the rule in full. */
-  id: string;
-  name: string;
-  /** The rule text from packages/engine/src/leaks/types.ts, unchanged. */
-  rule: string;
-}
+/**
+ * How much the public site says (docs/decisions.md, 2026-11-21).
+ *
+ * The founder's call: public pages stay general. They say what Dripmetric watches for
+ * and why it matters, and link outside research for the "why". The exact rules,
+ * thresholds, intent points and the full event list are for invited founders only.
+ * `pnpm site:check` fails if an engine rule sentence appears on a public page, so the
+ * detail cannot drift back in by accident.
+ */
+
 export interface LeakStage {
   id: string;
   title: string;
-  /** The one rule printed in full on the home page. */
-  featured: Leak;
-  /** The stage's other leaks, named and linked. */
-  also: Leak[];
+  /** One plain sentence: what goes wrong at this stage, with no rule or threshold. */
+  line: string;
 }
 
-/**
- * The nine leaks, by where in the journey they happen.
- *
- * packages/engine/src/leaks/types.ts holds the rules; `pnpm site:check` fails if one of
- * them stops matching the text here. Four need product events only (onboarding stall,
- * step completion collapse, pricing quick exit, cancelled or payment failed); the other
- * five switch on with one paid event.
- */
+/** The nine leaks, by where in the journey they happen. /leaks names each one. */
 export const LEAK_STAGES: LeakStage[] = [
   {
     id: 'activate',
     title: 'Before they activate',
-    featured: {
-      id: 'onboarding-stall',
-      name: 'Onboarding stall',
-      rule: 'Someone entered a step and made no progress for longer than the step allows — 24 hours by default, or the step’s own slowest tenth once 20 people have finished it.',
-    },
-    also: [
-      {
-        id: 'step-collapse',
-        name: 'Step completion collapse',
-        rule: 'A step’s completions in the last 24 hours fell so far below its own 14-day rate that chance does not explain it.',
-      },
-    ],
+    line: 'New signups stall in onboarding and never reach the moment the product clicks.',
   },
   {
     id: 'pay',
     title: 'Before they pay',
-    featured: {
-      id: 'high-intent-quiet',
-      name: 'High-intent user went quiet',
-      rule: 'Someone reached 60 or more on buying intent, then went 7 days without doing anything, and never paid.',
-    },
-    also: [
-      {
-        id: 'pricing-quick-exit',
-        name: 'Pricing quick exit',
-        rule: 'Someone opened your pricing page for the first time, glanced at it and left.',
-      },
-      {
-        id: 'last-moment-drop',
-        name: 'Last-moment drop',
-        rule: 'Someone started checkout and no payment arrived within 2 hours. A trial-only checkout does not count.',
-      },
-      {
-        id: 'trial-ended-unpaid',
-        name: 'Trial ended unpaid',
-        rule: 'Their trial end date passed and no payment arrived.',
-      },
-      {
-        id: 'limit-reached',
-        name: 'Limit reached, no upgrade',
-        rule: 'They hit a limit of their plan and did not upgrade within 7 days.',
-      },
-    ],
+    line: 'People who look ready to buy hesitate at pricing, checkout or the end of a trial.',
   },
   {
     id: 'stay',
     title: 'After they pay',
-    featured: {
-      id: 'payer-going-quiet',
-      name: 'Payer going quiet',
-      rule: 'A paying customer’s active days halved or worse against their own 4-week baseline, two weeks running.',
-    },
-    also: [
-      {
-        id: 'cancelled-or-failed',
-        name: 'Cancelled or payment failed',
-        rule: 'They cancelled, or a payment failed.',
-      },
-    ],
+    line: 'Paying customers drift away, or a payment fails and nobody notices.',
+  },
+];
+
+export interface Finding {
+  id: string;
+  /** What the research found, in a sentence a founder can repeat. */
+  finding: string;
+  /** Who published it, and when. */
+  source: string;
+  url: string;
+}
+
+/**
+ * Why the problem matters, from outside research rather than our own examples.
+ *
+ * Each figure was checked against its source on the date in docs/decisions.md and is
+ * shown with who published it. They are third-party numbers, never Dripmetric data.
+ * The benchmark guide (content/pages/guides/trial-to-paid-conversion.md) cites the same
+ * two reports in full.
+ */
+export const RESEARCH: Finding[] = [
+  {
+    id: 'activation',
+    finding:
+      'Most new users never reach the point where the product works for them: the average activation rate across 62 B2B SaaS companies was 37.5%.',
+    source: 'Userpilot, SaaS Product Metrics Benchmark Report 2025',
+    url: 'https://userpilot.com/saas-product-metrics/',
+  },
+  {
+    id: 'conversion',
+    finding:
+      'Most trials end without a payment: the median free-to-paid conversion rate across 200 software products was 8%.',
+    source: 'Kyle Poyar with ChartMogul and ProductLed, The SaaS Conversion Report, February 2026',
+    url: 'https://chartmogul.com/reports/saas-conversion-report/',
+  },
+  {
+    id: 'failed-payments',
+    finding:
+      'About a third of SaaS churn is a payment that failed, not a customer who chose to leave.',
+    source: 'Recurly, churn rate benchmarks, July 2026 data',
+    url: 'https://www.recurly.com/research/churn-rate-benchmarks',
   },
 ];
 
@@ -144,12 +131,12 @@ export interface Feature {
 }
 
 /**
- * What a founder gets once a leak is found. Only what is built and tested:
+ * What a founder gets once a leak is found, said generally (the specifics are for
+ * invited founders). Only what is built and tested:
  *  - alerts: packages/ingest/src/alerts (Slack and Discord, the in-app feed, 10 a day,
  *    quiet hours) — M10;
  *  - the Monday report: packages/engine/src/reports/weekly.ts — M10;
- *  - the score: packages/engine/src/intent/points.ts — M7, rules published on
- *    /buying-intent;
+ *  - the score: packages/engine/src/intent/points.ts — M7;
  *  - the dollar figure: settled decision 14, formula always on screen — M8;
  *  - tracking health: packages/engine/src/health/checks.ts — M11;
  *  - before-and-after: the Changes comparison, 100 people per window — M10.
@@ -159,32 +146,32 @@ export interface Feature {
 export const FEATURES: Feature[] = [
   {
     id: 'alerts',
-    title: 'An alert the moment it matters',
-    body: 'Slack or Discord, plus a feed in the app. Each alert names the leak, the person’s buying intent, their plan and what is at stake at your list price. At most 10 a day, held through your quiet hours.',
+    title: 'An alert when it matters',
+    body: 'In Slack or Discord, and in the app, saying what leaked and what is at stake.',
   },
   {
     id: 'report',
     title: 'A leak report every Monday',
-    body: 'Your biggest leak, the people who reached high buying intent and did not pay, and how any change you made is doing. It arrives Monday morning in your timezone.',
+    body: 'Your biggest leak, who looked ready to buy and didn’t, and how your last change is doing.',
   },
   {
     id: 'money',
-    title: 'A dollar figure on every leak',
-    body: 'The people in a leak times your own list price, with the formula printed beside it. It is labelled potential revenue, because it is a count of people, not money that arrived.',
+    title: 'What each leak is worth',
+    body: 'Valued at your own prices, with the working shown beside the number.',
   },
   {
     id: 'intent',
-    title: 'A buying-intent score for every user',
-    body: 'From 0 to 100, built from published rules: starting checkout, reaching activation, hitting a plan limit and more. It fades when someone goes quiet.',
+    title: 'Who is closest to buying',
+    body: 'A buying-intent score for every user, so you know who to look at first.',
   },
   {
     id: 'health',
     title: 'A warning when tracking breaks',
-    body: 'If an event stops arriving, changes shape or is sent twice, Dripmetric says so. Broken tracking never looks like users leaving.',
+    body: 'If an event stops arriving or changes, you hear about it. Broken tracking never looks like users leaving.',
   },
   {
     id: 'proof',
     title: 'Proof your fix worked',
-    body: 'Mark a change and Dripmetric compares equal windows before and after, with at least 100 people in each before it calls a result.',
+    body: 'Mark a change and see whether it made a difference, measured fairly before and after.',
   },
 ];

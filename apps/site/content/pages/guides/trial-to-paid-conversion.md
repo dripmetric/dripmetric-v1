@@ -39,12 +39,12 @@ A trial rarely converts before the product has worked for someone — the moment
 
 ## Where trials leak {#where-trials-leak}
 
-A trial that ends unpaid has often stopped days earlier, at one of a few points. Each of these is a rule Dripmetric checks:
+A trial that ends unpaid has often stopped days earlier, at one of a few points. Dripmetric watches for each of these:
 
 1. **They stall in onboarding.** A step they started and never finished — [onboarding stall](https://dripmetric.com/leaks#onboarding-stall).
 2. **They glance at pricing and leave.** A first visit to the pricing page that lasts seconds — [pricing quick exit](https://dripmetric.com/leaks#pricing-quick-exit).
-3. **They were convinced, then went quiet.** Buying intent of 60 or more, then a week of nothing — [high-intent user went quiet](https://dripmetric.com/leaks#high-intent-quiet).
-4. **They start checkout and don't finish.** No payment within 2 hours — [last-moment drop](https://dripmetric.com/leaks#last-moment-drop).
+3. **They were convinced, then went quiet.** High buying intent, then nothing — [high-intent user went quiet](https://dripmetric.com/leaks#high-intent-quiet).
+4. **They start checkout and don't finish.** No payment follows — [last-moment drop](https://dripmetric.com/leaks#last-moment-drop).
 5. **They hit a limit and don't upgrade.** The clearest upgrade moment, missed — [limit reached, no upgrade](https://dripmetric.com/leaks#limit-reached).
 6. **The trial simply ends.** The end date passes with no payment — [trial ended unpaid](https://dripmetric.com/leaks#trial-ended-unpaid).
 

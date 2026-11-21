@@ -12,11 +12,13 @@
  *  - every link in llms.txt resolves to a page or a public file;
  *  - images have the dimensions their tags declare;
  *  - legacy redirects (content/redirects.json) never shadow a page and go to https;
- *  - the guide pages still say what the code does: every leak rule
- *    (packages/engine/src/leaks/types.ts), every intent rule and its points
- *    (packages/engine/src/intent/points.ts) and every catalog event
- *    (packages/catalog/src/events.ts) appears in content/pages;
- *  - the home page's facts (src/content/site.ts) state those same leak rules.
+ *  - /leaks still names every leak the engine has (packages/engine/src/leaks/types.ts),
+ *    each with its own #anchor;
+ *  - the exact rules stay off the public site (founder's call, docs/decisions.md
+ *    2026-11-21): no leak rule or intent rule sentence from the engine appears in
+ *    content/, src/content or src/components;
+ *  - every event name the install guide and the home page use is a real catalog event
+ *    (packages/catalog/src/events.ts).
  *
  * Rendered checks (on the prerendered HTML from `pnpm site:build`):
  *  - every page in content/inventory.json was built, with its language, title,
@@ -27,7 +29,7 @@
  *  - every internal link and #anchor resolves; the 404 page is noindex;
  *  - the home page stays inside its length budget (HOME_BUDGET below).
  */
-import { readFile, stat } from 'node:fs/promises';
+import { readFile, readdir, stat } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -97,8 +99,9 @@ for (const { source, destination } of redirects) {
   if (!destination.startsWith('https://')) fail(`redirect ${source} must go to an https URL`);
 }
 
-// The guide pages restate rules that live in code. Compare them, so a changed threshold
-// fails here instead of leaving a page that quotes the old number.
+// The public pages are general on purpose; the exact rules are for invited founders.
+// These checks keep the pages complete (every leak named), private (no rule text) and
+// correct (every event name the install guide uses exists).
 const normalise = (text) => text.replace(/[’‘]/g, "'").replace(/\s+/g, ' ');
 const contentPage = async (file) =>
   normalise(await readFile(join(SITE, 'content/pages', file), 'utf8'));
@@ -106,31 +109,65 @@ const codeFile = (file) => readFile(join(REPO, file), 'utf8');
 const quotedValues = (source, key) =>
   [...source.matchAll(new RegExp(`\\b${key}: '([^']*)'`, 'g'))].map((m) => normalise(m[1]));
 
+const leakSource = await codeFile('packages/engine/src/leaks/types.ts');
 const leaksPage = await contentPage('leaks.md');
-// The home page prints one rule per stage in full and names the rest, all from site.ts.
-const homeFacts = normalise(await readFile(join(SITE, 'src/content/site.ts'), 'utf8'));
-for (const rule of quotedValues(await codeFile('packages/engine/src/leaks/types.ts'), 'rule')) {
-  if (!leaksPage.includes(rule)) fail(`content/pages/leaks.md no longer states the rule "${rule}"`);
-  if (!homeFacts.includes(rule)) fail(`src/content/site.ts no longer states the rule "${rule}"`);
+// Anchors that predate the engine's ids. Other pages and outside links use them, so the
+// page keeps the old anchor and this maps the engine id to it.
+const LEAK_ANCHORS = { 'limit-reached-no-upgrade': 'limit-reached' };
+for (const type of quotedValues(leakSource, 'type')) {
+  const anchor = LEAK_ANCHORS[type] ?? type;
+  if (!leaksPage.includes(`{#${anchor}}`)) {
+    fail(`content/pages/leaks.md does not name the leak "${type}" (#${anchor})`);
+  }
 }
-const intentPage = await contentPage('buying-intent.md');
-const points = await codeFile('packages/engine/src/intent/points.ts');
-for (const m of points.matchAll(/\bpoints: (-?\d+),\s*rule: '([^']*)'/g)) {
-  const value = Number(m[1]);
-  const label = value < 0 ? `−${Math.abs(value)}` : `+${value}`;
-  const rule = normalise(m[2]);
-  if (!intentPage.includes(rule)) fail(`content/pages/buying-intent.md no longer states "${rule}"`);
-  if (!intentPage.includes(label)) fail(`content/pages/buying-intent.md has no ${label} signal`);
+
+/** Every file a visitor can read, as text: the content and the components that render it. */
+async function publicFiles() {
+  const roots = [join(SITE, 'content'), join(SITE, 'src/content'), join(SITE, 'src/components')];
+  const files = [];
+  const walk = async (dir) => {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) await walk(path);
+      else if (/\.(md|ts|tsx|json)$/.test(entry.name)) files.push(path);
+    }
+  };
+  for (const root of roots) await walk(root);
+  return files;
 }
+const privateRules = [
+  ...quotedValues(leakSource, 'rule'),
+  ...[
+    ...(await codeFile('packages/engine/src/intent/points.ts')).matchAll(/\brule: '([^']*)'/g),
+  ].map((m) => normalise(m[1])),
+].filter((rule) => rule.split(' ').length >= 6);
+for (const file of await publicFiles()) {
+  const text = normalise(await readFile(file, 'utf8'));
+  for (const rule of privateRules) {
+    if (text.includes(rule)) {
+      fail(
+        `${file.slice(SITE.length)} states an exact rule, which is for invited founders: "${rule}"`,
+      );
+    }
+  }
+}
+
+const events = new Set(quotedValues(await codeFile('packages/catalog/src/events.ts'), 'name'));
 const docsPage = await contentPage('docs.md');
-const events = quotedValues(await codeFile('packages/catalog/src/events.ts'), 'name');
-for (const name of events) {
-  if (!docsPage.includes(`| ${name} |`))
-    fail(`content/pages/docs.md is missing the event "${name}"`);
+const homeSetup = await readFile(join(SITE, 'src/components/home/how-it-works.tsx'), 'utf8');
+const usedEvents = new Set([
+  // `Signed Up` in prose, and 'Signed Up' or "Signed Up" in code samples.
+  ...[...docsPage.matchAll(/[`'"]((?:[A-Z][a-z]+ )+[A-Z][a-z]+)[`'"]/g)].map((m) => m[1]),
+  ...[...homeSetup.matchAll(/'((?:[A-Z][a-z]+ )+[A-Z][a-z]+)'/g)].map((m) => m[1]),
+]);
+// The install guide's example of a founder's OWN event name, which is mapped, not matched.
+const OWN_NAME_EXAMPLES = new Set(['Invoice Sent']);
+for (const name of usedEvents) {
+  if (!events.has(name) && !OWN_NAME_EXAMPLES.has(name)) {
+    fail(`"${name}" is used as an event name but is not in the catalog`);
+  }
 }
-if (!docsPage.includes(`Dripmetric reads ${events.length} canonical events`)) {
-  fail(`content/pages/docs.md must say the catalog has ${events.length} events`);
-}
+if (usedEvents.size === 0) fail('found no event names in the install guide to check');
 
 const png = async (file) => {
   const buffer = await readFile(join(PUBLIC, file));
@@ -279,9 +316,8 @@ if (Object.keys(html).length === 0) {
 }
 
 // ---------- Report ----------
-if (!/^https:\/\//.test(process.env.NEXT_PUBLIC_WAITLIST_ENDPOINT ?? '')) {
-  notes.push('NEXT_PUBLIC_WAITLIST_ENDPOINT is not set here: sign-ups fall back to email');
-}
+// The server build posts to the site's own /api/waitlist; only the static export needs an
+// outside endpoint (src/content/site.ts), and that is checked where it is built.
 for (const note of notes) console.log('note  ' + note);
 if (failures.length) {
   for (const message of failures) console.error('FAIL  ' + message);

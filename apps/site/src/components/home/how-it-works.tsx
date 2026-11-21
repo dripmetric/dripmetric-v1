@@ -22,8 +22,8 @@ const STEPS: { title: string; body: ReactNode }[] = [
     title: 'Keep your own event names',
     body: (
       <>
-        Dripmetric maps them to 76 canonical events, with AI-suggested matches you confirm. Nothing
-        in your code gets renamed.
+        Dripmetric matches them to its own events, with suggestions you confirm. Nothing in your
+        code gets renamed.
       </>
     ),
   },
@@ -31,8 +31,8 @@ const STEPS: { title: string; body: ReactNode }[] = [
     title: 'Let the leaks find you',
     body: (
       <>
-        Nine rules run on their own. Alerts go to Slack or Discord, and a leak report arrives every
-        Monday morning.
+        Dripmetric watches on its own. Alerts go to Slack or Discord, and a leak report arrives
+        every Monday.
       </>
     ),
   },

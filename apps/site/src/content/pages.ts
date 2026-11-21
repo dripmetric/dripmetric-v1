@@ -37,35 +37,35 @@ export const ARTICLES: Record<ArticleId, ArticleMeta> = {
     id: 'leaks',
     metaTitle: 'The nine revenue leaks in a SaaS signup funnel — Dripmetric',
     description:
-      'The nine revenue leaks Dripmetric detects between first visit and first payment — the exact rule, threshold and data behind each, and what to do about it.',
+      'The nine places a self-serve SaaS loses revenue between first visit and renewal: what each leak is, why it matters, and the research behind it.',
     kicker: 'Revenue leaks',
     schemaType: 'TechArticle',
     published: '2026-11-08',
     related: ['buying-intent', 'trial-to-paid', 'docs'],
     cta: {
       title: 'See which of the nine is costing you most',
-      body: 'Four leaks run on product events alone, and none of them needs a billing integration.',
+      body: 'Dripmetric watches for all nine from the events you already send. No billing integration needed.',
     },
   },
   'buying-intent': {
     id: 'buying-intent',
-    metaTitle: 'How the buying-intent (PQL) score works — Dripmetric',
+    metaTitle: 'What a buying-intent (PQL) score is — Dripmetric',
     description:
-      'A 0–100 buying-intent score for self-serve SaaS with every point explained: the full points table, bands, weekly decay, fit cap and calibration.',
+      'A buying-intent score shows how close each person is to paying, from what they do in your product. What it is, why it matters and how Dripmetric uses it.',
     kicker: 'Buying intent',
     schemaType: 'TechArticle',
     published: '2026-11-08',
     related: ['leaks', 'trial-to-paid', 'docs'],
     cta: {
       title: 'Know who looked ready to buy',
-      body: 'Every tracked user gets a score from rules you can read. Join the waitlist to see yours.',
+      body: 'Every tracked user gets a score you can explain. Join the waitlist to see yours.',
     },
   },
   docs: {
     id: 'docs',
-    metaTitle: 'Install Dripmetric: quickstart, paid events and event catalog',
+    metaTitle: 'Install Dripmetric: quickstart, SDKs and paid events',
     description:
-      'Install Dripmetric with npm in about 10–15 lines: browser and server SDKs, consent, paid events from Stripe, Paddle or Lemon Squeezy, and all 76 events.',
+      'Install Dripmetric with npm in about 10–15 lines: browser and server SDKs, consent, and paid events from Stripe, Paddle, Lemon Squeezy or any provider.',
     kicker: 'Docs',
     schemaType: 'TechArticle',
     published: '2026-11-08',
@@ -93,7 +93,7 @@ export const ARTICLES: Record<ArticleId, ArticleMeta> = {
     id: 'posthog',
     metaTitle: 'Dripmetric vs PostHog: revenue leaks or all-in-one analytics?',
     description:
-      'PostHog is an all-in-one product platform; Dripmetric is a revenue-leak detector with nine ready rules. A fair, dated comparison — and how to use both.',
+      'PostHog is an all-in-one product platform; Dripmetric is a revenue-leak detector that works on day one. A fair, dated comparison, and how to use both.',
     kicker: 'Compare',
     schemaType: 'TechArticle',
     published: '2026-11-08',

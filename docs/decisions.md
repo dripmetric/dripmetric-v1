@@ -2117,148 +2117,41 @@ stored in Dripmetric's own database, the IP is not, and the only other companies
 handle the address are the site and database hosts and, once there is one, the email
 sender. Not lawyer-reviewed, like the rest of the page.
 
-### 2026-11-21 · CI runs its jobs side by side, skips what a push cannot break, and never runs twice
+### 2026-11-21 · The public site is general; the exact rules are for invited founders
 
-CI was one job of 12 to 22 minutes, everything waiting on everything else. Measured from
-the logs of runs 34 and 35: two files were three quarters of it, `intent.test.ts` (349 s)
-and `leaks.test.ts` (345 s), then the dashboard screens (2.7 to 5.7 min). The other 45 test
-files took about 30 s. And a commit pushed to both `main` and `v2-observe` ran all of it
-twice, side by side.
+The founder's review: buying intent was over-explained, the home page read like the whole
+product spelled out, the problem section used made-up scenarios, and the three ticks under
+the first form and the rule text and tags under each leak stage were bulk. Asked where the
+exact detail should live, the founder chose **invited founders only**: every public page
+stays general, `/docs` keeps only the install steps, and the precise rules, thresholds,
+intent points and the full event list are for people with an invite.
 
-Only one step checked nothing new: `pnpm sdk:build` rebuilt the SDK after `pnpm build` had
-built it, and that build is what enforces the 5 KB budget. It is gone; the Build step's
-comment says where the budget lives now. Every other check stays, arranged differently:
+**What changed.** The hero lost its three ticks. "Revenue rarely leaks loudly" is now
+general statements plus three linked, third-party findings (Userpilot on activation,
+ChartMogul's 2026 report on trial conversion, Recurly on failed payments), held once in
+`RESEARCH` in `src/content/site.ts`. The leak stages are three lines with one link to
+`/leaks`. The features, setup steps and FAQ lost their specifics ("76 canonical events",
+"at most 10 a day", "5,018 bytes"). `/leaks` names the nine with one plain sentence each
+and no thresholds; `/buying-intent` says what the score is, why it matters, what it is for
+and three principles, with no points table, bands, decay rate or calibration numbers;
+`/docs` dropped the 76-event catalog; the PostHog comparison and the benchmark guide lost
+the two rules they quoted. Home went from 1,326 to 1,122 words, `/leaks` from 2,188 to
+583, `/buying-intent` from 1,234 to 396, `/docs` from 3,148 to 1,391.
 
-- **Five jobs in parallel** (`.github/workflows/ci.yml`): checks (no database), tests (45
-  files), the simulator runs on one runner each (intent, leaks, ingest and funnel), and
-  the browser job (e2e and screens). A run takes as long as its slowest job instead of the
-  sum. The repository is public, so the extra runners cost nothing.
-- **A plan job** (`scripts/ci-plan.mjs`) decides how much a push needs. A change confined
-  to `apps/site/`, `docs/` and Markdown skips the simulator and browser jobs: nothing there
-  is read by the engines, ingest, the SDK or the dashboard (checked: nothing imports
-  `apps/site`, and no product code reads a `.md` at runtime). It skips only on positive
-  evidence. A new branch, a force-push, an empty commit, a manual run or any error means
-  everything runs. Of the last 14 commits, 4 would have been quick runs.
-- **No duplicate runs.** A push to any branch but `main` skips when `main` already has a
-  run of the same commit. Only that direction, because `main`'s runs are never cancelled,
-  so the run it defers to always finishes and its result shows on the commit. A newer
-  push to the same branch or pull request cancels the older run.
+**Research only where it can be checked.** OpenView's product-qualified-lead research was
+the obvious source for buying intent, but its pages now serve an empty template or a 404,
+so nothing is cited from it. Every figure on the site is one that was read at its source.
 
-The cost of the split: the simulator files are listed twice in `ci.yml`, as the test job's
-`--exclude` and as the `sim` matrix. A file excluded but missing from the matrix would run
-nowhere, and the comment above the exclude says so. The other drifts are safe: a renamed
-file stops matching the exclude and runs in the test job, and a deleted one fails its
-matrix entry because vitest exits non-zero when a filter matches no file.
+**The check now guards the opposite direction.** `pnpm site:check` used to fail unless
+every rule, point and event appeared on the guide pages. Now it fails if `/leaks` stops
+naming a leak the engine has, if any engine rule sentence (leaks or intent) appears in
+`content/`, `src/content` or `src/components`, or if the install guide uses an event name
+that is not in the catalog. Planting a rule sentence on a page was tried and fails the
+check.
 
-Still not done, for the reasons given on 2026-10-29: Postgres on tmpfs (unverifiable from
-here) and fewer round trips per ingest batch (M13's subject).
-
-**The Pages export was broken, and CI could not see it.** The site began importing
-`@dripmetric/db/waitlist` on 2026-11-20, and `site-pages.yml` failed on that commit with
-TS2307: `pnpm site:export` built only the site, so the db package had no `dist/`. CI passed
-because its `pnpm build` builds the packages first. `site:export` now builds the site's
-workspace dependencies first, as `apps/site/vercel.json` already did. Checked from a tree
-with no `dist/`: the old command fails with the same TS2307, the new one exports 92 files.
-
-**Verifying CI from a coding agent.** Next.js 16.4.3 stops `next build` when it detects an
-agent in the environment, to print an upgrade notice; runners are not affected, and CI's
-build passed on 2026-11-20. Every job's commands were therefore run as `ci.yml` writes
-them, under `env -i` with `CI=true` and the workflow's variables: checks from a tree with
-no build output and an unreachable database, the 45-file test command, each simulator
-command, and the browser job's build, e2e and screens. Also actionlint on both workflows,
-and the plan script against real history, including the real duplicate (run 35 defers to
-run 34). The new workflow has not yet run on GitHub: its first run is the proof.
-
-### 2026-11-21 · The SDK's browser tests could hang in their own cleanup
-
-One run in four of `pnpm test:e2e` failed today, on "after consent, the queued events
-flush with their ORIGINAL timestamps", and not on an assertion: the afterEach hook timed
-out in `server.close()`. That call waits for every connection to end, the page is still
-open while afterEach runs, and a request it has in flight keeps one open. Repeating the
-test reproduced it once in 20. The test server now drops its connections on close
-(`closeAllConnections()`): every test starts its own server and has made its assertions by
-then. 60 of 60 after. A flaky check fails pushes that broke nothing, which is the opposite
-of what CI is for.
-
-### 2026-11-21 · Next.js 16.4.3 → 16.4.6, for seven security advisories
-
-`pnpm audit --prod` reported seven moderate advisories against 16.4.3, all fixed from
-16.4.5: cross-user cache disclosure and poisoning, HttpOnly cookie exposure through
-internal requests, cross-client response injection, a cache leak and an information
-disclosure across root params, cache poisoning of shared fallback shells, and an SVG bypass
-in image optimisation (for example GHSA-mfr8-8qww-v76h). 16.4.6 is the current `latest` and
-includes all of them. The founder app, the landing page and the example app move together.
-
-They stay exact pins, not `^16.4.6` or `latest`. The lockfile and `--frozen-lockfile` decide
-what installs either way, so a range changes nothing until someone runs `pnpm update`, and
-`latest` would let any fresh install jump a major version. Fixes arriving on their own is a
-bot's job: one pull request per bump, tested by CI.
-
-Only `next` and `@next/*` moved in the lockfile. Checked: `pnpm audit --prod` finds nothing,
-licences pass, and in a runner's environment from a clean tree the static export, the
-typecheck, the build, the landing-page checks, the SDK's browser tests and the dashboard
-screens with the masking scan all pass on 16.4.6.
-
-### 2026-11-21 · The split CI jobs needed the build the old job got by accident
-
-Tests import the workspace packages through their built `dist/` (each package.json's
-`exports`). The old single job never built before Tests and did not need to: Typecheck ran
-first, and `tsc -b` writes `dist/`. Splitting the jobs lost that. From a tree with no
-`dist/`, the Tests job as first written failed 18 of 45 files ("Failed to resolve entry for
-package @dripmetric/db"), and the simulator jobs had the same gap. Both now build the
-packages first, about 10 s. Caught here before any GitHub run, but late: the first local
-check of the Tests job ran after a build. A job's commands have to be checked from the
-state that job starts in, which for CI is a fresh checkout.
-
-### 2026-11-21 · The simulator tests were slow because of one query, not ingest's round trips
-
-`intent.test.ts` and `leaks.test.ts` took ~345 s and ~333 s each, here and on a runner, and
-the 2026-10-29 entry put that down to ingest's ~69,000 round trips per load. Measured with
-`pg_stat_statements` and `auto_explain`: in a 441 s run, ONE call of the intent facts query
-(`loadUserRows`, `packages/ingest/src/intent/facts.ts`) took 402 s. All 94,914 other
-statements, the whole ingest replay included, took about 15 s together.
-
-The plan says why. Every estimate was 1 row. Each test creates a new project and loads its
-history seconds before the query runs, and the statistics Postgres last gathered knew only
-earlier projects, so the new one looked empty. Expecting one row, the planner put two
-inlined subqueries inside nested loops: `signup_device` and `core_action_third` ran once
-per event row (5,195 times), and inside the second the `named` list was scanned 1,044,195
-times.
-
-Fixed by computing each CTE once: `AS MATERIALIZED` in the intent and leak facts queries,
-and on `refreshLifecycle`'s `firsts`, which has the same shape. A wrong estimate can now
-cost a re-read of a small stored list, never a recomputation, and since every one of these
-CTEs covers the whole project, none loses a filter. Not `ANALYZE`: the app role does not
-own the tables, and it would hide the plan in tests rather than remove it.
-
-It is not only a test problem. A founder whose history arrives just before the first sweep
-is exactly that new project, on a database with few projects. The leak sweep runs every 5
-minutes; a query that takes minutes on 5,000 events, and grows faster than the data, would
-never keep up.
-
-**The results are identical.** The old (git HEAD) and new SQL, run side by side on the same
-simulated project, return the same rows: 235 people and 3,087 values for intent, 235 and
-2,093 for leaks, and the same 201 lifecycle updates (in a rolled-back transaction). The
-texts differ only by `MATERIALIZED`. The truth-file scores are unchanged: 91 of 91 stalls
-caught, recall 100%, precision 46.3%, the same signal lifts.
-
-| Measured locally, plain Postgres    | Before    | After                       |
-| ----------------------------------- | --------- | --------------------------- |
-| `intent.test.ts`                    | 345 s     | 27 s                        |
-| `leaks.test.ts`                     | 333 s     | 27 s                        |
-| `pnpm screens`                      | 167–308 s | 49 s                        |
-| `ingest.test.ts` + `funnel.test.ts` | 109 s     | 136 s (ingest-bound; noise) |
-
-What follows from it:
-
-- The 2026-10-29 CI timeout "in `intent.test.ts`'s loader hook" was most likely this
-  query: that hook runs `refreshIntentState`. Its limit, and the leak test's, go from 20
-  minutes back to 5, so a plan like this fails a test instead of quietly costing minutes.
-  `funnel.test.ts` keeps 20: its hook really is ingest-bound.
-- CI's three simulator runners become one `sim` job for everything under `packages/sim/`,
-  and the test job takes everything else. Where a test file lives now decides its job, so
-  the duplicated file list from the earlier entry today is gone.
-- Left alone, and next in line: the step-collapse lookup in `funnel/facts.ts`
-  (`SELECT st.step_id, st.user_key …`), ~1.1 s twice per leak run. It is an ordinary join
-  that visits ~3.7 million rows under the same misestimate, and it grows with people ×
-  events.
+**What this does not do.** Both GitHub repositories (`harshit110927/dripmetric-v1` and
+`dripmetric/dripmetric-v1`) are public, and the rules live in `packages/engine`, the
+events in `packages/catalog` and every threshold in this file. Keeping the detail to
+invited founders needs the repositories made private; that is the founder's call and is
+flagged to them. The in-app reference for invited founders is to be built with the
+founder app.

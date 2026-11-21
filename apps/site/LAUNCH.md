@@ -121,9 +121,9 @@ Search and answer engines currently describe Dripmetric from v1 sources (npm, pk
 the OnboardFlow listing, the old page). Replace every one with the same words. Long form:
 
 > Dripmetric is a revenue-leak detector for self-serve SaaS. It shows where and how much
-> revenue leaks between a visitor's first visit and their first payment — nine readable
-> leak rules, a transparent buying-intent score and masked alerts — with no billing
-> integration.
+> revenue leaks between a visitor's first visit and their first payment — it watches for
+> nine kinds of leak, scores how close each user is to buying and sends masked alerts —
+> with no billing integration.
 
 Short form (under 160 characters): _Revenue-leak detection for self-serve SaaS: where, how much
 and who revenue leaks between first visit and first payment. No billing integration._
@@ -147,8 +147,9 @@ answers mostly cite listicles, Reddit threads and YouTube videos, and only rarel
 own homepage. So earn those, honestly.
 
 - [ ] **Launch posts, one per channel, written for that audience:**
-  - Show HN — lead with the rules, not the pitch: _"Show HN: Dripmetric – nine readable
-    rules that find revenue leaks in a SaaS funnel"_, linking `/leaks`. Stay to answer.
+  - Show HN — lead with the problem and the research, not the pitch: _"Show HN:
+    Dripmetric – find where your SaaS funnel leaks revenue"_, linking `/leaks`. Stay to
+    answer. (The exact rules are for invited founders, so don't promise them in the post.)
   - Product Hunt (new product, see §4).
   - Indie Hackers product page and a launch post.
   - Reddit: r/SaaS, r/startups, r/indiehackers, r/SideProject. Read each sub's
@@ -253,7 +254,8 @@ Each page owns one topic; add them the same way as the existing ones (a file in
   ranking in the top 10 ([Paradigm, _AI Search Citation Study 2026_](https://paradigmmedianetworks.com/ai-search-citation-study-2026/)).
 - **Competition for "leaks":** ThriveStack publishes about 26 "growth leak" pages with
   unsourced statistics; billing-side tools own "revenue leak" wording. Dripmetric's edge is
-  exact rules from its own code and sourced numbers.
+  sourced numbers and plain language. (Since 21 Nov 2026 the exact rules are for invited
+  founders only; this research predates that call.)
 - **Platform rules:** Google needs nothing special for AI Overviews or AI Mode beyond
   normal indexing and snippet eligibility; it stopped showing FAQ rich results on 7 May 2026. ChatGPT search uses `OAI-SearchBot`, Claude uses `Claude-SearchBot`, Perplexity
   uses `PerplexityBot`; the site's robots.txt allows them all. Blocking the training

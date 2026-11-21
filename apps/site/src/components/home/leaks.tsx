@@ -3,9 +3,9 @@ import { LEAK_STAGES } from '@/content/site';
 import { withBase } from '@/lib/paths';
 
 /**
- * How Dripmetric finds leaks: nine rules, by where in the journey they happen. One rule
- * per stage is printed in full, in the engine's own words; the rest are named and linked
- * to /leaks, which explains every rule, its threshold, the data it needs and what to do.
+ * Where leaks happen, in three stages of one plain line each. No rules, thresholds or
+ * per-leak tags on the home page (founder's call, 21 Nov 2026); /leaks names all nine,
+ * and the exact rules are for invited founders.
  */
 export function Leaks() {
   return (
@@ -14,35 +14,19 @@ export function Leaks() {
         <SectionHead
           label="How Dripmetric finds them"
           id="leaks-title"
-          title="Nine leaks. Each one a rule you can read."
-          lede="Dripmetric puts your product events and payment events on one stream and checks them against nine plain-language rules. There is no black box: each rule says exactly what counts, and fires once per person per episode."
+          title="Nine leaks, from signup to renewal."
+          lede="Dripmetric reads your product and payment events together and watches for nine kinds of leak across the whole journey."
         />
         <ol className="stages">
           {LEAK_STAGES.map((stage) => (
             <li className="stage-col" key={stage.id}>
               <h3 className="stage-col__title">{stage.title}</h3>
-              <div className="rule-card">
-                <p className="rule-card__name">
-                  <a href={withBase(`/leaks#${stage.featured.id}`)}>{stage.featured.name}</a>
-                </p>
-                <p className="rule-card__rule">
-                  <span className="rule-card__tag">Rule</span> {stage.featured.rule}
-                </p>
-              </div>
-              <ul className="stage-col__also" aria-label={`Also ${stage.title.toLowerCase()}`}>
-                {stage.also.map((leak) => (
-                  <li key={leak.id}>
-                    <a href={withBase(`/leaks#${leak.id}`)}>{leak.name}</a>
-                  </li>
-                ))}
-              </ul>
+              <p className="stage-col__line">{stage.line}</p>
             </li>
           ))}
         </ol>
         <p className="section__foot">
-          Four of the rules run on product events alone. One payment event from your billing webhook
-          switches on the other five.{' '}
-          <a href={withBase('/leaks')}>Every rule in full, with what to do about each</a>.
+          <a href={withBase('/leaks')}>See all nine leaks</a>
         </p>
       </div>
     </section>

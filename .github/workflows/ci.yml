@@ -9,8 +9,8 @@ name: CI
 #             landing page, docs or Markdown changed.
 #   checks    script names, key-shaped strings, licences, lint, format, types, the
 #             build (which enforces the SDK size budget) and the landing page.
-#   test      every test file except the simulator runs.
-#   sim       the simulator runs, one runner each.
+#   test      every test file outside packages/sim.
+#   sim       the simulator's tests: real ingest, engines scored against a truth file.
 #   browser   the SDK in a real browser, and the dashboard masking scan.
 
 on:
@@ -137,33 +137,21 @@ jobs:
       - name: Build the workspace packages
         run: pnpm -r --filter "./packages/**" build
 
-      # Every test file except the simulator runs, which have their own job below.
-      # A new test file lands here by default. A file excluded here MUST be in the
-      # `sim` matrix, or nothing runs it.
+      # Every test file outside packages/sim. The simulator's own tests run in `sim`,
+      # so where a new test file lives decides its job, with no list to keep in step.
       - name: Tests
-        run: pnpm test --exclude "packages/sim/src/__tests__/{intent,leaks,ingest,funnel}.test.ts"
+        run: pnpm test --exclude "packages/sim/**"
 
   sim:
-    name: Simulator (${{ matrix.name }})
+    name: Simulator
     needs: plan
     if: needs.plan.outputs.run == 'true' && needs.plan.outputs.full == 'true'
     runs-on: ubuntu-latest
-    # Each replays weeks of simulated history through the real ingest pipeline, one
-    # small time-local batch at a time (send.ts says why the batches must stay small):
-    # ~69,000 SQL round trips per heavy file, so a slower runner shows up as minutes,
-    # not seconds. The heaviest took ~6 minutes on a runner; their hooks allow 20.
-    timeout-minutes: 30
-    strategy:
-      # One engine failing says nothing about the others, so let them all finish.
-      fail-fast: false
-      matrix:
-        include:
-          - name: intent engine
-            files: packages/sim/src/__tests__/intent.test.ts
-          - name: leak engine
-            files: packages/sim/src/__tests__/leaks.test.ts
-          - name: ingest and funnel
-            files: packages/sim/src/__tests__/ingest.test.ts packages/sim/src/__tests__/funnel.test.ts
+    # The simulator's tests replay weeks of simulated history through the real ingest
+    # pipeline and score the engines against a truth file: about 3 minutes in all.
+    # The intent and leak files took ~6 minutes EACH until 2026-11-21, nearly all of it
+    # one query planned as if the new project were empty (docs/decisions.md).
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:16-alpine
@@ -186,7 +174,7 @@ jobs:
         run: pnpm -r --filter "./packages/**" build
 
       - name: Tests
-        run: pnpm test ${{ matrix.files }}
+        run: pnpm test packages/sim/
 
   browser:
     name: Browser

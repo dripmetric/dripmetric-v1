@@ -2209,3 +2209,56 @@ package @dripmetric/db"), and the simulator jobs had the same gap. Both now buil
 packages first, about 10 s. Caught here before any GitHub run, but late: the first local
 check of the Tests job ran after a build. A job's commands have to be checked from the
 state that job starts in, which for CI is a fresh checkout.
+
+### 2026-11-21 · The simulator tests were slow because of one query, not ingest's round trips
+
+`intent.test.ts` and `leaks.test.ts` took ~345 s and ~333 s each, here and on a runner, and
+the 2026-10-29 entry put that down to ingest's ~69,000 round trips per load. Measured with
+`pg_stat_statements` and `auto_explain`: in a 441 s run, ONE call of the intent facts query
+(`loadUserRows`, `packages/ingest/src/intent/facts.ts`) took 402 s. All 94,914 other
+statements, the whole ingest replay included, took about 15 s together.
+
+The plan says why. Every estimate was 1 row. Each test creates a new project and loads its
+history seconds before the query runs, and the statistics Postgres last gathered knew only
+earlier projects, so the new one looked empty. Expecting one row, the planner put two
+inlined subqueries inside nested loops: `signup_device` and `core_action_third` ran once
+per event row (5,195 times), and inside the second the `named` list was scanned 1,044,195
+times.
+
+Fixed by computing each CTE once: `AS MATERIALIZED` in the intent and leak facts queries,
+and on `refreshLifecycle`'s `firsts`, which has the same shape. A wrong estimate can now
+cost a re-read of a small stored list, never a recomputation, and since every one of these
+CTEs covers the whole project, none loses a filter. Not `ANALYZE`: the app role does not
+own the tables, and it would hide the plan in tests rather than remove it.
+
+It is not only a test problem. A founder whose history arrives just before the first sweep
+is exactly that new project, on a database with few projects. The leak sweep runs every 5
+minutes; a query that takes minutes on 5,000 events, and grows faster than the data, would
+never keep up.
+
+**The results are identical.** The old (git HEAD) and new SQL, run side by side on the same
+simulated project, return the same rows: 235 people and 3,087 values for intent, 235 and
+2,093 for leaks, and the same 201 lifecycle updates (in a rolled-back transaction). The
+texts differ only by `MATERIALIZED`. The truth-file scores are unchanged: 91 of 91 stalls
+caught, recall 100%, precision 46.3%, the same signal lifts.
+
+| Measured locally, plain Postgres    | Before    | After                       |
+| ----------------------------------- | --------- | --------------------------- |
+| `intent.test.ts`                    | 345 s     | 27 s                        |
+| `leaks.test.ts`                     | 333 s     | 27 s                        |
+| `pnpm screens`                      | 167–308 s | 49 s                        |
+| `ingest.test.ts` + `funnel.test.ts` | 109 s     | 136 s (ingest-bound; noise) |
+
+What follows from it:
+
+- The 2026-10-29 CI timeout "in `intent.test.ts`'s loader hook" was most likely this
+  query: that hook runs `refreshIntentState`. Its limit, and the leak test's, go from 20
+  minutes back to 5, so a plan like this fails a test instead of quietly costing minutes.
+  `funnel.test.ts` keeps 20: its hook really is ingest-bound.
+- CI's three simulator runners become one `sim` job for everything under `packages/sim/`,
+  and the test job takes everything else. Where a test file lives now decides its job, so
+  the duplicated file list from the earlier entry today is gone.
+- Left alone, and next in line: the step-collapse lookup in `funnel/facts.ts`
+  (`SELECT st.step_id, st.user_key …`), ~1.1 s twice per leak run. It is an ordinary join
+  that visits ~3.7 million rows under the same misestimate, and it grows with people ×
+  events.

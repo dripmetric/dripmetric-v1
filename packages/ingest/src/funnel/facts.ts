@@ -113,10 +113,14 @@ export interface LifecycleFact {
  *
  * It reads the CANONICAL name, so a founder's own "upgraded_to_pro" counts from the
  * moment they map it — the same mapping that drives everything else.
+ *
+ * `firsts` is MATERIALIZED, computed once, for the reason `loadUserRows` in
+ * intent/facts.ts gives: inlined into the UPDATE's join, the aggregate can be re-run
+ * for every person when the planner thinks a new project is empty.
  */
 export async function refreshLifecycle(db: ScopedDb): Promise<number> {
   return db.exec(
-    `WITH firsts AS (
+    `WITH firsts AS MATERIALIZED (
        SELECT e.user_key,
               min(e.occurred_at) FILTER (WHERE n.canonical = $2) AS signed_up_at,
               min(e.occurred_at) FILTER (WHERE n.canonical = $3) AS activated_at,

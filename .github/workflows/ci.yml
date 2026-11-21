@@ -1,79 +1,77 @@
 name: CI
 
+# Five jobs, side by side, so a run takes as long as its slowest job rather than the
+# sum of all of them (it was one job of 12–22 minutes, 11 of them two simulator files
+# running one after the other). `pnpm verify` still runs the whole suite locally.
+#
+#   plan      what this push needs (scripts/ci-plan.mjs). Nothing, if main is already
+#             checking this exact commit. No simulator or browser jobs, if only the
+#             landing page, docs or Markdown changed.
+#   checks    script names, key-shaped strings, licences, lint, format, types, the
+#             build (which enforces the SDK size budget) and the landing page.
+#   test      every test file except the simulator runs.
+#   sim       the simulator runs, one runner each.
+#   browser   the SDK in a real browser, and the dashboard masking scan.
+
 on:
   push:
-    branches: [v2-observe, main]
+    branches: [main, v2-observe]
   pull_request:
+  # "Run workflow" in the Actions tab: always the full run.
+  workflow_dispatch:
+
+# A newer push to the same branch or pull request makes an older run pointless, so the
+# older one is cancelled. main's never are: every commit that lands there gets a result,
+# and ci-plan.mjs relies on that when it skips a duplicate.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+env:
+  NODE_ENV: test
+  # The app connects as the non-owner role, so RLS applies to it in CI too.
+  DATABASE_URL: postgres://dripmetric_app:dripmetric_app@localhost:54329/dripmetric
+  ADMIN_DATABASE_URL: postgres://dripmetric:dripmetric@localhost:54329/dripmetric
+  APP_URL: http://localhost:3000
+  AUTH_SECRET: ci-only-auth-secret-0000000000000000000000
+  ENCRYPTION_KEYS: k1:ZGV2LW9ubHktMzItYnl0ZS1rZXktZm9yLWxvY2FsISE=
+  LOG_LEVEL: silent
 
 jobs:
-  check:
+  plan:
+    name: Plan
     runs-on: ubuntu-latest
-    # The sim tests replay weeks of simulated history through the real ingest
-    # pipeline, one small time-local batch at a time (see send.ts for why the batches
-    # must stay small). That is ~69,000 SQL round trips per heavy test, so the suite
-    # is round-trip bound and a slower runner shows up as minutes, not seconds.
-    timeout-minutes: 35
-
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: dripmetric
-          POSTGRES_PASSWORD: dripmetric
-          POSTGRES_DB: dripmetric
-        ports: ['54329:5432']
-        options: >-
-          --health-cmd "pg_isready -U dripmetric -d dripmetric"
-          --health-interval 2s --health-timeout 3s --health-retries 30
-
-    env:
-      NODE_ENV: test
-      # The app connects as the non-owner role, so RLS applies to it in CI too.
-      DATABASE_URL: postgres://dripmetric_app:dripmetric_app@localhost:54329/dripmetric
-      ADMIN_DATABASE_URL: postgres://dripmetric:dripmetric@localhost:54329/dripmetric
-      APP_URL: http://localhost:3000
-      AUTH_SECRET: ci-only-auth-secret-0000000000000000000000
-      ENCRYPTION_KEYS: k1:ZGV2LW9ubHktMzItYnl0ZS1rZXktZm9yLWxvY2FsISE=
-      LOG_LEVEL: silent
-
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read # to find a run of this same commit on main
+    outputs:
+      run: ${{ steps.plan.outputs.run }}
+      full: ${{ steps.plan.outputs.full }}
     steps:
       - uses: actions/checkout@v5
-
-      - uses: pnpm/action-setup@v4
         with:
-          version: 10.28.0
+          fetch-depth: 0 # the diff needs the commit from before the push
 
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: pnpm
+      - id: plan
+        name: Decide what this push needs
+        run: node scripts/ci-plan.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
 
-      - run: pnpm install --frozen-lockfile
-
-      # This database is thrown away when the job ends, so durability buys nothing
-      # and costs a WAL flush on every commit. The sim tests commit ~8,900 times
-      # each. Measured locally at 13% off the heaviest test; a CI runner's disk is
-      # slower than this container's, so it should be worth more there.
-      #
-      # `synchronous_commit` is reloadable, which is why it is set here rather than
-      # with `fsync=off`: a service container takes docker options, not Postgres
-      # ones, and `fsync` needs a restart.
-      - name: Make the throwaway database faster
-        run: >-
-          psql "$ADMIN_DATABASE_URL" -c
-          "ALTER DATABASE dripmetric SET synchronous_commit = off"
-
-      - name: Apply migrations
-        run: pnpm db:migrate
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Formatting
-        run: pnpm format:check
-
-      - name: Typecheck
-        run: pnpm typecheck
+  checks:
+    name: Checks
+    needs: plan
+    if: needs.plan.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
 
       # `pnpm licenses` is a pnpm BUILT-IN and silently won over a script of that
       # name, so this step used to run pnpm's own command and never our check.
@@ -90,9 +88,17 @@ jobs:
       - name: Licences
         run: pnpm check:licenses
 
-      - name: Tests
-        run: pnpm test
+      - name: Lint
+        run: pnpm lint
 
+      - name: Formatting
+        run: pnpm format:check
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Also the SDK size budget: the SDK's build measures the gzipped core and FAILS
+      # over 5 KB (brief section 6: "CI enforces the size budgets").
       - name: Build
         run: pnpm build
 
@@ -102,10 +108,102 @@ jobs:
       - name: Landing page checks
         run: pnpm site:check --require-build
 
-      # The SDK build measures the gzipped core and FAILS over 5 KB
-      # (brief section 6: "CI enforces the size budgets").
-      - name: SDK size budget
-        run: pnpm sdk:build
+  test:
+    name: Tests
+    needs: plan
+    if: needs.plan.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: dripmetric
+          POSTGRES_PASSWORD: dripmetric
+          POSTGRES_DB: dripmetric
+        ports: ['54329:5432']
+        options: >-
+          --health-cmd "pg_isready -U dripmetric -d dripmetric"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+        with:
+          database: 'true'
+
+      # Every test file except the simulator runs, which have their own job below.
+      # A new test file lands here by default. A file excluded here MUST be in the
+      # `sim` matrix, or nothing runs it.
+      - name: Tests
+        run: pnpm test --exclude "packages/sim/src/__tests__/{intent,leaks,ingest,funnel}.test.ts"
+
+  sim:
+    name: Simulator (${{ matrix.name }})
+    needs: plan
+    if: needs.plan.outputs.run == 'true' && needs.plan.outputs.full == 'true'
+    runs-on: ubuntu-latest
+    # Each replays weeks of simulated history through the real ingest pipeline, one
+    # small time-local batch at a time (send.ts says why the batches must stay small):
+    # ~69,000 SQL round trips per heavy file, so a slower runner shows up as minutes,
+    # not seconds. The heaviest took ~6 minutes on a runner; their hooks allow 20.
+    timeout-minutes: 30
+    strategy:
+      # One engine failing says nothing about the others, so let them all finish.
+      fail-fast: false
+      matrix:
+        include:
+          - name: intent engine
+            files: packages/sim/src/__tests__/intent.test.ts
+          - name: leak engine
+            files: packages/sim/src/__tests__/leaks.test.ts
+          - name: ingest and funnel
+            files: packages/sim/src/__tests__/ingest.test.ts packages/sim/src/__tests__/funnel.test.ts
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: dripmetric
+          POSTGRES_PASSWORD: dripmetric
+          POSTGRES_DB: dripmetric
+        ports: ['54329:5432']
+        options: >-
+          --health-cmd "pg_isready -U dripmetric -d dripmetric"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+        with:
+          database: 'true'
+
+      - name: Tests
+        run: pnpm test ${{ matrix.files }}
+
+  browser:
+    name: Browser
+    needs: plan
+    if: needs.plan.outputs.run == 'true' && needs.plan.outputs.full == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: dripmetric
+          POSTGRES_PASSWORD: dripmetric
+          POSTGRES_DB: dripmetric
+        ports: ['54329:5432']
+        options: >-
+          --health-cmd "pg_isready -U dripmetric -d dripmetric"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+        with:
+          database: 'true'
+
+      # The e2e tests load the built SDK; the screens run the production web app.
+      - name: Build
+        run: pnpm build
 
       # The dev container has Chromium pre-installed and points Playwright at it
       # with PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers. A CI runner has neither, so
@@ -139,7 +237,7 @@ jobs:
         run: pnpm screens
 
       - name: Keep the screenshots
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: dashboard-screens

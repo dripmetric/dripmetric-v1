@@ -2116,3 +2116,55 @@ in a clean checkout with no `dist/`.
 stored in Dripmetric's own database, the IP is not, and the only other companies that
 handle the address are the site and database hosts and, once there is one, the email
 sender. Not lawyer-reviewed, like the rest of the page.
+
+### 2026-11-21 · CI runs its jobs side by side, skips what a push cannot break, and never runs twice
+
+CI was one job of 12 to 22 minutes, everything waiting on everything else. Measured from
+the logs of runs 34 and 35: two files were three quarters of it, `intent.test.ts` (349 s)
+and `leaks.test.ts` (345 s), then the dashboard screens (2.7 to 5.7 min). The other 45 test
+files took about 30 s. And a commit pushed to both `main` and `v2-observe` ran all of it
+twice, side by side.
+
+Only one step checked nothing new: `pnpm sdk:build` rebuilt the SDK after `pnpm build` had
+built it, and that build is what enforces the 5 KB budget. It is gone; the Build step's
+comment says where the budget lives now. Every other check stays, arranged differently:
+
+- **Five jobs in parallel** (`.github/workflows/ci.yml`): checks (no database), tests (45
+  files), the simulator runs on one runner each (intent, leaks, ingest and funnel), and
+  the browser job (e2e and screens). A run takes as long as its slowest job instead of the
+  sum. The repository is public, so the extra runners cost nothing.
+- **A plan job** (`scripts/ci-plan.mjs`) decides how much a push needs. A change confined
+  to `apps/site/`, `docs/` and Markdown skips the simulator and browser jobs: nothing there
+  is read by the engines, ingest, the SDK or the dashboard (checked: nothing imports
+  `apps/site`, and no product code reads a `.md` at runtime). It skips only on positive
+  evidence. A new branch, a force-push, an empty commit, a manual run or any error means
+  everything runs. Of the last 14 commits, 4 would have been quick runs.
+- **No duplicate runs.** A push to any branch but `main` skips when `main` already has a
+  run of the same commit. Only that direction, because `main`'s runs are never cancelled,
+  so the run it defers to always finishes and its result shows on the commit. A newer
+  push to the same branch or pull request cancels the older run.
+
+The cost of the split: the simulator files are listed twice in `ci.yml`, as the test job's
+`--exclude` and as the `sim` matrix. A file excluded but missing from the matrix would run
+nowhere, and the comment above the exclude says so. The other drifts are safe: a renamed
+file stops matching the exclude and runs in the test job, and a deleted one fails its
+matrix entry because vitest exits non-zero when a filter matches no file.
+
+Still not done, for the reasons given on 2026-10-29: Postgres on tmpfs (unverifiable from
+here) and fewer round trips per ingest batch (M13's subject).
+
+**The Pages export was broken, and CI could not see it.** The site began importing
+`@dripmetric/db/waitlist` on 2026-11-20, and `site-pages.yml` failed on that commit with
+TS2307: `pnpm site:export` built only the site, so the db package had no `dist/`. CI passed
+because its `pnpm build` builds the packages first. `site:export` now builds the site's
+workspace dependencies first, as `apps/site/vercel.json` already did. Checked from a tree
+with no `dist/`: the old command fails with the same TS2307, the new one exports 92 files.
+
+**Verifying CI from a coding agent.** Next.js 16.4.3 stops `next build` when it detects an
+agent in the environment, to print an upgrade notice; runners are not affected, and CI's
+build passed on 2026-11-20. Every job's commands were therefore run as `ci.yml` writes
+them, under `env -i` with `CI=true` and the workflow's variables: checks from a tree with
+no build output and an unreachable database, the 45-file test command, each simulator
+command, and the browser job's build, e2e and screens. Also actionlint on both workflows,
+and the plan script against real history, including the real duplicate (run 35 defers to
+run 34). The new workflow has not yet run on GitHub: its first run is the proof.

@@ -2179,3 +2179,22 @@ test reproduced it once in 20. The test server now drops its connections on clos
 (`closeAllConnections()`): every test starts its own server and has made its assertions by
 then. 60 of 60 after. A flaky check fails pushes that broke nothing, which is the opposite
 of what CI is for.
+
+### 2026-11-21 · Next.js 16.4.3 → 16.4.6, for seven security advisories
+
+`pnpm audit --prod` reported seven moderate advisories against 16.4.3, all fixed from
+16.4.5: cross-user cache disclosure and poisoning, HttpOnly cookie exposure through
+internal requests, cross-client response injection, a cache leak and an information
+disclosure across root params, cache poisoning of shared fallback shells, and an SVG bypass
+in image optimisation (for example GHSA-mfr8-8qww-v76h). 16.4.6 is the current `latest` and
+includes all of them. The founder app, the landing page and the example app move together.
+
+They stay exact pins, not `^16.4.6` or `latest`. The lockfile and `--frozen-lockfile` decide
+what installs either way, so a range changes nothing until someone runs `pnpm update`, and
+`latest` would let any fresh install jump a major version. Fixes arriving on their own is a
+bot's job: one pull request per bump, tested by CI.
+
+Only `next` and `@next/*` moved in the lockfile. Checked: `pnpm audit --prod` finds nothing,
+licences pass, and in a runner's environment from a clean tree the static export, the
+typecheck, the build, the landing-page checks, the SDK's browser tests and the dashboard
+screens with the masking scan all pass on 16.4.6.

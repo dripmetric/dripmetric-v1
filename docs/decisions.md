@@ -2168,3 +2168,14 @@ no build output and an unreachable database, the 45-file test command, each simu
 command, and the browser job's build, e2e and screens. Also actionlint on both workflows,
 and the plan script against real history, including the real duplicate (run 35 defers to
 run 34). The new workflow has not yet run on GitHub: its first run is the proof.
+
+### 2026-11-21 · The SDK's browser tests could hang in their own cleanup
+
+One run in four of `pnpm test:e2e` failed today, on "after consent, the queued events
+flush with their ORIGINAL timestamps", and not on an assertion: the afterEach hook timed
+out in `server.close()`. That call waits for every connection to end, the page is still
+open while afterEach runs, and a request it has in flight keeps one open. Repeating the
+test reproduced it once in 20. The test server now drops its connections on close
+(`closeAllConnections()`): every test starts its own server and has made its assertions by
+then. 60 of 60 after. A flaky check fails pushes that broke nothing, which is the opposite
+of what CI is for.

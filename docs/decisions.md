@@ -2116,3 +2116,42 @@ in a clean checkout with no `dist/`.
 stored in Dripmetric's own database, the IP is not, and the only other companies that
 handle the address are the site and database hosts and, once there is one, the email
 sender. Not lawyer-reviewed, like the rest of the page.
+
+### 2026-11-21 · The public site is general; the exact rules are for invited founders
+
+The founder's review: buying intent was over-explained, the home page read like the whole
+product spelled out, the problem section used made-up scenarios, and the three ticks under
+the first form and the rule text and tags under each leak stage were bulk. Asked where the
+exact detail should live, the founder chose **invited founders only**: every public page
+stays general, `/docs` keeps only the install steps, and the precise rules, thresholds,
+intent points and the full event list are for people with an invite.
+
+**What changed.** The hero lost its three ticks. "Revenue rarely leaks loudly" is now
+general statements plus three linked, third-party findings (Userpilot on activation,
+ChartMogul's 2026 report on trial conversion, Recurly on failed payments), held once in
+`RESEARCH` in `src/content/site.ts`. The leak stages are three lines with one link to
+`/leaks`. The features, setup steps and FAQ lost their specifics ("76 canonical events",
+"at most 10 a day", "5,018 bytes"). `/leaks` names the nine with one plain sentence each
+and no thresholds; `/buying-intent` says what the score is, why it matters, what it is for
+and three principles, with no points table, bands, decay rate or calibration numbers;
+`/docs` dropped the 76-event catalog; the PostHog comparison and the benchmark guide lost
+the two rules they quoted. Home went from 1,326 to 1,122 words, `/leaks` from 2,188 to
+583, `/buying-intent` from 1,234 to 396, `/docs` from 3,148 to 1,391.
+
+**Research only where it can be checked.** OpenView's product-qualified-lead research was
+the obvious source for buying intent, but its pages now serve an empty template or a 404,
+so nothing is cited from it. Every figure on the site is one that was read at its source.
+
+**The check now guards the opposite direction.** `pnpm site:check` used to fail unless
+every rule, point and event appeared on the guide pages. Now it fails if `/leaks` stops
+naming a leak the engine has, if any engine rule sentence (leaks or intent) appears in
+`content/`, `src/content` or `src/components`, or if the install guide uses an event name
+that is not in the catalog. Planting a rule sentence on a page was tried and fails the
+check.
+
+**What this does not do.** Both GitHub repositories (`harshit110927/dripmetric-v1` and
+`dripmetric/dripmetric-v1`) are public, and the rules live in `packages/engine`, the
+events in `packages/catalog` and every threshold in this file. Keeping the detail to
+invited founders needs the repositories made private; that is the founder's call and is
+flagged to them. The in-app reference for invited founders is to be built with the
+founder app.

@@ -62,7 +62,7 @@ function software() {
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     description:
-      'A revenue-leak detector for self-serve SaaS. It puts product usage and payment events on one event schema, runs nine readable leak rules, scores buying intent from 0 to 100 with transparent rules, and sends alerts to Slack or Discord plus a weekly leak report. It needs no billing integration and does not message end users.',
+      'A revenue-leak detector for self-serve SaaS. It reads product usage and payment events together, watches for nine kinds of revenue leak, scores how close each user is to buying, and sends alerts to Slack or Discord plus a weekly leak report. It needs no billing integration and does not message end users.',
     publisher: { '@id': ORG },
   };
 }

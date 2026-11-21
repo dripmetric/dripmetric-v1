@@ -35,7 +35,8 @@ export function SignupForm({
   endpoint: string;
   contactEmail: string;
   label: string;
-  noteId: string;
+  /** The id of a note under the form that the field should point screen readers to. */
+  noteId?: string;
   children?: ReactNode;
 }) {
   const [status, setStatus] = useState<Status>(null);
@@ -167,7 +168,7 @@ export function SignupForm({
           inputMode="email"
           placeholder="you@yourcompany.com"
           required
-          aria-describedby={noteId}
+          aria-describedby={noteId || undefined}
           aria-invalid={invalid || undefined}
           onInput={() => {
             if (invalid && email.current?.checkValidity()) {

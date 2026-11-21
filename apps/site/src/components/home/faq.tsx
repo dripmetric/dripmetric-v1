@@ -39,7 +39,7 @@ const FAQ: Qa[] = [
   {
     id: 'faq-stripe',
     q: 'Do I need Stripe, or any billing integration?',
-    a: 'No. You send payment events the same way as any other event, so Stripe, Paddle, Lemon Squeezy, Chargebee, Razorpay, RevenueCat or your own billing table all work the same way. With no payment events at all you still get the funnel, step timing, the buying-intent score and four of the nine leaks.',
+    a: 'No. You send payment events the same way as any other event, so Stripe, Paddle, Lemon Squeezy, Chargebee, Razorpay, RevenueCat or your own billing table all work the same way. Without payment events you still see where people stall before paying; adding them switches on the rest.',
   },
   {
     id: 'faq-email',
@@ -52,8 +52,8 @@ const FAQ: Qa[] = [
     a: (
       <>
         Those are general-purpose product analytics platforms: you explore any event data and build
-        the funnels, queries and alerts you need. Dripmetric is narrower on purpose. It ships nine
-        leak rules, a buying-intent score and alerts, ready on day one, over product and payment
+        the funnels, queries and alerts you need. Dripmetric is narrower on purpose. It watches for
+        revenue leaks and buying intent, with alerts, ready on day one, over product and payment
         events together. Many teams keep their analytics tool and add Dripmetric for the money
         questions. <a href={withBase('/compare/posthog')}>Dripmetric vs PostHog</a> compares the
         two.
@@ -63,7 +63,7 @@ const FAQ: Qa[] = [
   {
     id: 'faq-speed',
     q: 'Will the Dripmetric SDK slow my site?',
-    a: 'No. The browser core is 5,018 bytes gzipped, and the build fails if it grows past 5,120. It sends in batches off the rendering path, never throws, and uses 3-second timeouts, so even a Dripmetric outage cannot slow a page or break a request.',
+    a: 'No. The browser library is about 5 KB gzipped. It sends in batches off the rendering path, never throws and gives up after 3 seconds, so even a Dripmetric outage cannot slow a page or break a request.',
   },
   {
     id: 'faq-after',

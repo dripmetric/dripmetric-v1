@@ -1,14 +1,10 @@
 import { SectionHead } from '@/components/ui/section-head';
-
-const QUIET = [
-  'Someone signs up, gets stuck on step two of onboarding, and never comes back.',
-  'Someone reads your pricing twice, starts checkout, and stops.',
-  'A trial ends unpaid, or a card fails, and nothing tells you.',
-];
+import { RESEARCH } from '@/content/site';
 
 /**
- * The problem, in short. The two figures are third-party, sourced and dated, and they
- * are labelled as such; they were checked on 11 Nov 2026 (docs/decisions.md).
+ * The problem, in general terms, backed by outside research instead of our own
+ * examples (founder's call, 21 Nov 2026). Every figure is third-party, named and
+ * linked; RESEARCH in src/content/site.ts says when each was checked.
  */
 export function Problem() {
   return (
@@ -17,30 +13,25 @@ export function Problem() {
         <SectionHead label="The problem" id="problem-title" title="Revenue rarely leaks loudly." />
         <div className="split__body">
           <p className="lede">
-            Most of what a self-serve product loses is lost in silence. Someone who was going to pay
-            simply stops, with no error, no complaint and no event that says so.
+            Most of what a self-serve product loses, it loses quietly. People stall before the
+            product works for them, hesitate before they pay, or slip away after, and nothing raises
+            an error.
           </p>
-          <ul className="quiet">
-            {QUIET.map((line) => (
-              <li key={line}>{line}</li>
+          <p>
+            Product analytics sees what people did, but not the money. Billing sees the money, but
+            not what happened first. The leak sits in the gap between them.
+          </p>
+          <ul className="findings" aria-label="What the research says">
+            {RESEARCH.map((item) => (
+              <li key={item.id}>
+                <p>{item.finding}</p>
+                <a href={item.url} rel="noopener">
+                  {item.source}
+                </a>
+              </li>
             ))}
           </ul>
-          <p>
-            Your product analytics sees what people did, but not the money. Your billing tool sees
-            the money, but not what happened first. The leak sits in the gap between them.
-          </p>
-          <p className="sources">
-            For scale: across 62 B2B SaaS companies, the average activation rate was 37.5% (
-            <a href="https://userpilot.com/saas-product-metrics/" rel="noopener">
-              Userpilot, 2025
-            </a>
-            ), and about a third of SaaS churn is a payment that failed rather than a customer who
-            chose to leave (
-            <a href="https://www.recurly.com/research/churn-rate-benchmarks" rel="noopener">
-              Recurly, July 2026 data
-            </a>
-            ). Third-party figures, not Dripmetric data.
-          </p>
+          <p className="sources">Third-party research, not Dripmetric data.</p>
         </div>
       </div>
     </section>

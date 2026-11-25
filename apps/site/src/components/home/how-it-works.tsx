@@ -2,19 +2,17 @@ import type { ReactNode } from 'react';
 import { SectionHead } from '@/components/ui/section-head';
 import { withBase } from '@/lib/paths';
 
-const K = ({ children }: { children: string }) => <span className="tok-k">{children}</span>;
 const S = ({ children }: { children: string }) => <span className="tok-s">{children}</span>;
 const C = ({ children }: { children: string }) => <span className="tok-c">{children}</span>;
 const N = ({ children }: { children: string }) => <span className="tok-n">{children}</span>;
 
 const STEPS: { title: string; body: ReactNode }[] = [
   {
-    title: 'Install in 10–15 lines',
+    title: 'Add 10–15 lines',
     body: (
       <>
-        <code>npm install dripmetric</code>, then <code>identify()</code> and <code>track()</code>{' '}
-        where they belong. Or paste our prompt into Cursor or Copilot and let it write the
-        integration.
+        <code>identify()</code> and <code>track()</code> where they belong, in your app and on your
+        server. Or paste our prompt into Cursor or Copilot and let it write the integration.
       </>
     ),
   },
@@ -39,10 +37,11 @@ const STEPS: { title: string; body: ReactNode }[] = [
 ];
 
 /**
- * A sample walk-through of setup: three steps and the real install code. Event names and
- * properties are the catalog's own (packages/catalog/src/events.ts); the calls are the
- * SDK's (packages/sdk). Code is the one non-prose element on the page because it is
- * literally what a founder pastes.
+ * A sample walk-through of setup: three steps and the calls a founder adds. Event names
+ * and properties are the catalog's own (packages/catalog/src/events.ts); the calls are the
+ * SDK's (packages/sdk). No install command and no package name: the SDK is not on a public
+ * registry before launch, and the install steps come with an invite (docs/decisions.md,
+ * 2026-11-25).
  */
 export function HowItWorks() {
   return (
@@ -51,7 +50,7 @@ export function HowItWorks() {
         <SectionHead
           label="Setup"
           id="how-title"
-          title="Paste a snippet. See a real number in under 10 minutes."
+          title="A few lines of code. A real number in under 10 minutes."
         />
         <div className="how">
           <ol className="steps">
@@ -66,12 +65,11 @@ export function HowItWorks() {
             ))}
           </ol>
 
-          <div className="code" role="group" aria-label="Install example">
+          <div className="code" role="group" aria-label="Setup example">
             <p className="code__file">In your app</p>
             <pre tabIndex={0} role="region" aria-label="Browser example">
               <code>
-                <K>import</K> * <K>as</K> dripmetric <K>from</K> <S>{"'dripmetric/browser'"}</S>;
-                {'\n\n'}dripmetric.init(<S>{"'pk_live_…'"}</S>);
+                dripmetric.init(<S>{"'pk_live_…'"}</S>);
                 {'\n'}dripmetric.identify(user.id, {'{'} email: user.email {'}'});
                 {'\n'}dripmetric.track(<S>{"'Onboarding Step Completed'"}</S>, {'{'}
                 {'\n  '}step: <S>{"'connect-data'"}</S>,{'\n'}
@@ -91,10 +89,10 @@ export function HowItWorks() {
           </div>
         </div>
         <p className="section__foot">
-          Payment events arrive like any other event, so Stripe, Paddle, Lemon Squeezy, Chargebee
-          and a hand-rolled billing table all work the same way. Already on Segment, RudderStack or
-          PostHog? Forward events with no code.{' '}
-          <a href={withBase('/docs')}>Read the install guide</a>.
+          Payment events arrive like any other event, so Stripe, Paddle, Lemon Squeezy, Chargebee,
+          Razorpay, RevenueCat and your own billing table all work the same way. Already on Segment,
+          RudderStack or PostHog? Forward events with no code.{' '}
+          <a href={withBase('/docs')}>See how setup works</a>.
         </p>
       </div>
     </section>

@@ -1,6 +1,7 @@
 # Dripmetric — https://dripmetric.com
-# Every public page may be crawled. Whether to treat AI crawlers differently is an
-# owner decision: see apps/site/README.md before adding agent-specific rules.
+# Every public page may be crawled by every crawler, AI search and AI training crawlers
+# included (GPTBot, ClaudeBot, Google-Extended, OAI-SearchBot, Claude-SearchBot,
+# PerplexityBot): an owner decision, 25 Nov 2026. Do not add agent-specific blocks.
 User-agent: *
 Allow: /
 

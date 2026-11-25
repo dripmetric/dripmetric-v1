@@ -34,7 +34,7 @@ export const SITE = {
       ? ''
       : `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/waitlist`),
   /** The date every page on the site was last reviewed against the Ground Truth. */
-  updated: '2026-11-21',
+  updated: '2026-11-25',
 } as const;
 
 /**

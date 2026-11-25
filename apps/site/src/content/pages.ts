@@ -12,7 +12,11 @@
  */
 import inventory from '../../content/inventory.json';
 
-export type ArticleId = 'leaks' | 'buying-intent' | 'docs' | 'trial-to-paid' | 'posthog';
+export type ArticleId =
+  'about' | 'leaks' | 'buying-intent' | 'docs' | 'guides' | 'trial-to-paid' | 'compare' | 'posthog';
+
+/** The two hub pages. A page under a hub's path shows it in its breadcrumb trail. */
+export type HubId = 'guides' | 'compare';
 
 export interface ArticleMeta {
   id: ArticleId;
@@ -22,17 +26,38 @@ export interface ArticleMeta {
   description: string;
   /** Short label above the H1, and the page's name in breadcrumbs. */
   kicker: string;
-  /** TechArticle for reference pages and guides; WebPage for anything else. */
-  schemaType: 'TechArticle' | 'WebPage';
+  /**
+   * TechArticle for reference pages and guides, CollectionPage for a hub (with an
+   * ItemList of `items`), AboutPage for /about, WebPage for anything else.
+   */
+  schemaType: 'TechArticle' | 'CollectionPage' | 'AboutPage' | 'WebPage';
+  /** The hub this page sits under (its URL starts with the hub's path). */
+  hub?: HubId;
+  /** A hub's pages, in the order it lists them. Its Markdown body links every one. */
+  items?: ArticleId[];
   /** First published (fixed). The review date is `updated_at` in the inventory. */
   published: string;
-  /** Pages this one should send readers to next, by inventory id. */
+  /** Pages this one should send readers to next, by inventory id (none on a hub). */
   related: ArticleId[];
   /** The call to action at the foot of the page. */
   cta: { title: string; body: string };
 }
 
 export const ARTICLES: Record<ArticleId, ArticleMeta> = {
+  about: {
+    id: 'about',
+    metaTitle: 'About Dripmetric — revenue-leak detection for self-serve SaaS',
+    description:
+      'Dripmetric is a revenue-leak detector for self-serve SaaS. What it is and is not, who it is for, and where it stands: in private beta, free during the beta.',
+    kicker: 'About',
+    schemaType: 'AboutPage',
+    published: '2026-11-25',
+    related: ['leaks', 'buying-intent', 'compare'],
+    cta: {
+      title: 'Join the private beta',
+      body: 'Founders are invited weekly, in small cohorts. Dripmetric is free during the beta.',
+    },
+  },
   leaks: {
     id: 'leaks',
     metaTitle: 'The nine revenue leaks in a SaaS signup funnel — Dripmetric',
@@ -63,9 +88,9 @@ export const ARTICLES: Record<ArticleId, ArticleMeta> = {
   },
   docs: {
     id: 'docs',
-    metaTitle: 'Install Dripmetric: quickstart, SDKs and paid events',
+    metaTitle: 'Set up Dripmetric: browser, server and payment events',
     description:
-      'Install Dripmetric with npm in about 10–15 lines: browser and server SDKs, consent, and paid events from Stripe, Paddle, Lemon Squeezy or any provider.',
+      'How Dripmetric setup works: a few lines in your app and server, consent, and payment events from Stripe, Paddle, Lemon Squeezy or any billing provider.',
     kicker: 'Docs',
     schemaType: 'TechArticle',
     published: '2026-11-08',
@@ -75,8 +100,24 @@ export const ARTICLES: Record<ArticleId, ArticleMeta> = {
       body: 'Dripmetric is in private beta. Join the waitlist and your keys come with your invite.',
     },
   },
+  guides: {
+    id: 'guides',
+    metaTitle: 'Guides: revenue leaks and trial conversion in SaaS — Dripmetric',
+    description:
+      'Guides for self-serve SaaS founders: trial-to-paid conversion benchmarks, the nine revenue leaks between signup and payment, and buying-intent (PQL) scores.',
+    kicker: 'Guides',
+    schemaType: 'CollectionPage',
+    published: '2026-11-25',
+    items: ['trial-to-paid', 'leaks', 'buying-intent'],
+    related: [],
+    cta: {
+      title: 'See where your own funnel leaks',
+      body: 'Dripmetric watches for all nine leaks from the events you already send. Free during the private beta.',
+    },
+  },
   'trial-to-paid': {
     id: 'trial-to-paid',
+    hub: 'guides',
     metaTitle: 'Trial-to-paid conversion rate: 2026 benchmarks and formula',
     description:
       'Median free-to-paid conversion is 8%; card-required trials convert at about 30%. The 2026 benchmarks, the formula, and where trials leak before paying.',
@@ -89,8 +130,24 @@ export const ARTICLES: Record<ArticleId, ArticleMeta> = {
       body: 'Dripmetric checks six of these points for you, from the events you already have.',
     },
   },
+  compare: {
+    id: 'compare',
+    metaTitle: 'Dripmetric compared: PostHog and other analytics tools',
+    description:
+      'How Dripmetric, a revenue-leak detector for self-serve SaaS, differs from product analytics and other tools. Dated, sourced comparisons, and when to use both.',
+    kicker: 'Compare',
+    schemaType: 'CollectionPage',
+    published: '2026-11-25',
+    items: ['posthog'],
+    related: [],
+    cta: {
+      title: 'Keep your analytics. Add the money questions.',
+      body: 'Dripmetric reads the events you already send. No billing integration needed.',
+    },
+  },
   posthog: {
     id: 'posthog',
+    hub: 'compare',
     metaTitle: 'Dripmetric vs PostHog: revenue leaks or all-in-one analytics?',
     description:
       'PostHog is an all-in-one product platform; Dripmetric is a revenue-leak detector that works on day one. A fair, dated comparison, and how to use both.',

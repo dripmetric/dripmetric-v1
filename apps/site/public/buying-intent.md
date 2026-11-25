@@ -1,14 +1,14 @@
-# What a buying-intent score is
+# What a buying-intent (PQL) score is
 
-Canonical: [What a buying-intent score is](https://dripmetric.com/buying-intent)
+Canonical: [What a buying-intent (PQL) score is](https://dripmetric.com/buying-intent)
 
 Locale: en
 
 Purpose: What a buying-intent (PQL) score is, why knowing who is close to buying matters, what Dripmetric uses it for and the principles that keep it honest
 
-Content updated: 2026-11-21
+Content updated: 2026-11-25
 
-Source revision: site-2026-11-21
+Source revision: site-2026-11-25
 
 Maintenance owner: Dripmetric (hello@dripmetric.com)
 

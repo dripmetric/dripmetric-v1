@@ -2,4 +2,4 @@
 
 [Site content map](https://dripmetric.com/sitemap.md)
 
-- [Install Dripmetric](https://dripmetric.com/docs.md): Quickstart for the dripmetric npm package: browser and server SDKs, consent, paid events from Stripe, Paddle or Lemon Squeezy without an integration, other stacks and SDK promises (en); [canonical page](https://dripmetric.com/docs).
+- [Set up Dripmetric](https://dripmetric.com/docs.md): How setup works: browser and server events, consent, payment events from Stripe, Paddle or Lemon Squeezy without an integration, other stacks, what the library promises and event names. Install steps and keys come with an invite (en); [canonical page](https://dripmetric.com/docs).

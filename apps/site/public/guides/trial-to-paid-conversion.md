@@ -6,9 +6,9 @@ Locale: en
 
 Purpose: How to calculate trial-to-paid conversion, the 2026 free-to-paid benchmarks with sources and limits, activation, where trials leak and how to measure it with events
 
-Content updated: 2026-11-21
+Content updated: 2026-11-25
 
-Source revision: site-2026-11-21
+Source revision: site-2026-11-25
 
 Maintenance owner: Dripmetric (hello@dripmetric.com)
 
@@ -77,7 +77,7 @@ You need four events, sent from your server where you can:
 | `Checkout Started` | they begin paying |
 | `Subscription Started` | the first payment above zero arrives |
 
-With those, the conversion rate per weekly cohort, the time from trial start to activation, and the share of trials that reach each step are all countable. See the [install guide](https://dripmetric.com/docs#paid-events) for where each event usually comes from in Stripe, Paddle and Lemon Squeezy.
+With those, the conversion rate per weekly cohort, the time from trial start to activation, and the share of trials that reach each step are all countable. See [how setup works](https://dripmetric.com/docs#paid-events) for where each event usually comes from in Stripe, Paddle and Lemon Squeezy.
 
 ## How to improve it {#improve}
 

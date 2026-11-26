@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     url: SITE.homeUrl,
     title: 'Dripmetric — See where your signup funnel leaks revenue',
     description:
-      'A revenue-leak detector for self-serve SaaS. Nine readable rules over your product and payment events, with alerts and a weekly report. No billing integration. In private beta.',
+      'A revenue-leak detector for self-serve SaaS. Nine leak checks over your product and payment events, with alerts and a weekly report. No billing integration. Free during the private beta.',
   },
 };
 

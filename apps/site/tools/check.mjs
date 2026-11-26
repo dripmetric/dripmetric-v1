@@ -6,7 +6,8 @@
  *   pnpm site:check --require-build    # CI: fail if there is no build to check
  *
  * Source checks (always):
- *  - the Markdown copies are in sync with content/ (see build-markdown.mjs);
+ *  - the Markdown copies and sitemap.xml are in sync with content/ (see build-markdown.mjs),
+ *    so every lastmod is its page's updated_at;
  *  - sitemap.xml lists exactly the published pages in content/inventory.json;
  *  - robots.txt points at the sitemap and does not block the site;
  *  - every link in llms.txt resolves to a page or a public file;
@@ -17,15 +18,19 @@
  *  - the exact rules stay off the public site (founder's call, docs/decisions.md
  *    2026-11-21): no leak rule or intent rule sentence from the engine appears in
  *    content/, src/content or src/components;
- *  - every event name the install guide and the home page use is a real catalog event
- *    (packages/catalog/src/events.ts).
+ *  - every event name the setup guide and the home page use is a real catalog event
+ *    (packages/catalog/src/events.ts);
+ *  - no install command or package path: the SDK is not on a public registry before launch
+ *    (founder's call, docs/decisions.md 2026-11-25);
+ *  - each hub (/guides, /compare) links every page under its path.
  *
  * Rendered checks (on the prerendered HTML from `pnpm site:build`):
  *  - every page in content/inventory.json was built, with its language, title,
  *    description (70–160 characters), canonical and exactly one <h1>;
  *  - the canonical matches content/inventory.json;
- *  - JSON-LD parses, every offer price in it is visible on the page, and every FAQPage
- *    question is visible on the page;
+ *  - JSON-LD parses, every offer price in it is visible on the page, every FAQPage
+ *    question is visible on the page, every hub's ItemList entry is linked on the page,
+ *    and no node is a Person (the site names the product, never its maker);
  *  - every internal link and #anchor resolves; the 404 page is noindex;
  *  - the home page stays inside its length budget (HOME_BUDGET below).
  */
@@ -167,7 +172,32 @@ for (const name of usedEvents) {
     fail(`"${name}" is used as an event name but is not in the catalog`);
   }
 }
-if (usedEvents.size === 0) fail('found no event names in the install guide to check');
+if (usedEvents.size === 0) fail('found no event names in the setup guide to check');
+
+// Before launch the SDK is not on a public registry, so no page may tell anyone to install
+// it from one (docs/decisions.md, 2026-11-25). Lift this when the package is published.
+const REGISTRY_REFERENCES = [
+  /\bnpm\b/i,
+  /\b(?:pnpm|yarn) add\b/,
+  /['"`]dripmetric\/(?:browser|server)['"`]/,
+];
+for (const file of await publicFiles()) {
+  const text = await readFile(file, 'utf8');
+  for (const pattern of REGISTRY_REFERENCES) {
+    if (pattern.test(text))
+      fail(`${file.slice(SITE.length)} refers to a package registry (${pattern})`);
+  }
+}
+
+// A hub lists every page under its path; it may list others too.
+for (const hub of published.filter((p) => ['guides', 'compare'].includes(p.id))) {
+  const body = await readFile(join(SITE, 'content', hub.body_ref), 'utf8');
+  for (const page of published) {
+    if (page.url.startsWith(`${hub.url}/`) && !body.includes(`](${page.url})`)) {
+      fail(`content/${hub.body_ref} does not link ${page.url}`);
+    }
+  }
+}
 
 const png = async (file) => {
   const buffer = await readFile(join(PUBLIC, file));
@@ -291,6 +321,12 @@ if (Object.keys(html).length === 0) {
         for (const offer of node.offers || []) {
           const price = `$${Number(offer.price).toLocaleString('en-US')}`;
           if (!visible.includes(price)) fail(`${where}: JSON-LD offer ${price} is not on the page`);
+        }
+        if (node['@type'] === 'Person') fail(`${where}: JSON-LD names a Person`);
+        for (const item of node.mainEntity?.itemListElement || []) {
+          const path = new URL(item.url).pathname;
+          if (!doc.includes(`href="${path}"`))
+            fail(`${where}: ItemList entry ${path} is not linked`);
         }
         if (node['@type'] === 'FAQPage') {
           for (const question of node.mainEntity || []) {

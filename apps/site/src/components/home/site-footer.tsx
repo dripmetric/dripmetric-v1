@@ -33,9 +33,15 @@ export function SiteFooter({ full = true }: { full?: boolean }) {
             <p className="site-footer__h">Guides</p>
             <ul>
               <li>
+                <a href={withBase('/guides')}>All guides</a>
+              </li>
+              <li>
                 <a href={withBase('/guides/trial-to-paid-conversion')}>
                   Trial-to-paid conversion benchmarks
                 </a>
+              </li>
+              <li>
+                <a href={withBase('/compare')}>All comparisons</a>
               </li>
               <li>
                 <a href={withBase('/compare/posthog')}>Dripmetric vs PostHog</a>
@@ -45,6 +51,9 @@ export function SiteFooter({ full = true }: { full?: boolean }) {
           <nav aria-label="Company">
             <p className="site-footer__h">Company</p>
             <ul>
+              <li>
+                <a href={withBase('/about')}>About</a>
+              </li>
               <li>
                 <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>
               </li>

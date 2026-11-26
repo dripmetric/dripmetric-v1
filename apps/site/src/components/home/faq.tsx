@@ -32,6 +32,12 @@ const FAQ: Qa[] = [
     a: 'Small self-serve SaaS teams, from a few hundred signups a month, who want to know where people stop between signing up and paying. It suits products where people sign up and pay without talking to sales.',
   },
   {
+    // Founder decision, 25 Nov 2026: say the beta is free, and nothing more about price.
+    id: 'faq-cost',
+    q: 'How much does Dripmetric cost?',
+    a: 'Dripmetric is free during the private beta.',
+  },
+  {
     id: 'faq-touch',
     q: 'What does Dripmetric never touch?',
     a: 'Your billing provider: Dripmetric never connects to one, and payment events arrive only because you send them. Your visitors’ devices before consent: where consent is required, nothing is stored or sent until it is given. IP addresses, which are never stored. Keystrokes and screens: there is no session replay or fingerprinting. And your users themselves: Dripmetric does not message them.',

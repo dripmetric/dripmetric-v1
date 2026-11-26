@@ -108,13 +108,52 @@ export function homeStructuredData(faq: readonly FaqItem[]): Record<string, unkn
   };
 }
 
+interface Link {
+  name: string;
+  url: string;
+}
+
 export interface ArticlePageFacts {
   meta: ArticleMeta;
   url: string;
   title: string;
   updated: string;
   faq: readonly FaqItem[];
+  /** The hub the page sits under, for the middle breadcrumb. */
+  hub?: Link | null;
+  /** A hub's pages, for its ItemList. */
+  items?: readonly Link[];
 }
+
+/**
+ * The author of every page is the Organization, never a person: the founder chose to
+ * keep the site about the product (docs/decisions.md, 2026-11-25).
+ */
+const pageFields = (meta: ArticleMeta, url: string, title: string, items: readonly Link[]) => {
+  switch (meta.schemaType) {
+    case 'TechArticle':
+      return { headline: title, author: { '@id': ORG }, publisher: { '@id': ORG } };
+    case 'CollectionPage':
+      return {
+        name: title,
+        publisher: { '@id': ORG },
+        mainEntity: {
+          '@type': 'ItemList',
+          '@id': `${url}#items`,
+          itemListElement: items.map((item, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: item.name,
+            url: item.url,
+          })),
+        },
+      };
+    case 'AboutPage':
+      return { name: title, publisher: { '@id': ORG }, mainEntity: { '@id': ORG } };
+    default:
+      return { name: title };
+  }
+};
 
 export function articleStructuredData({
   meta,
@@ -122,14 +161,14 @@ export function articleStructuredData({
   title,
   updated,
   faq,
+  hub = null,
+  items = [],
 }: ArticlePageFacts): Record<string, unknown> {
   const page = {
     '@type': meta.schemaType,
     '@id': `${url}#page`,
     url,
-    ...(meta.schemaType === 'TechArticle'
-      ? { headline: title, author: { '@id': ORG }, publisher: { '@id': ORG } }
-      : { name: title }),
+    ...pageFields(meta, url, title, items),
     description: meta.description,
     inLanguage: 'en',
     datePublished: meta.published,
@@ -144,9 +183,10 @@ export function articleStructuredData({
     '@type': 'BreadcrumbList',
     '@id': `${url}#breadcrumb`,
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Dripmetric', item: SITE.homeUrl },
-      { '@type': 'ListItem', position: 2, name: title, item: url },
-    ],
+      { name: 'Dripmetric', item: SITE.homeUrl },
+      ...(hub ? [{ name: hub.name, item: hub.url }] : []),
+      { name: title, item: url },
+    ].map((crumb, index) => ({ '@type': 'ListItem', position: index + 1, ...crumb })),
   };
   return {
     '@context': 'https://schema.org',

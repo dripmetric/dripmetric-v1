@@ -48,15 +48,23 @@ ask (including what Dripmetric never touches), and the ask again. Seven sections
 nothing else. Depth lives on the pages below, each of which owns one topic and is linked
 from the section that raises it.
 
-Three rules hold the site honest:
+These rules hold the site honest:
 
 - **Text only, and only what is true today.** No illustrations and no sample data: the
   first screen is the claim, one sentence of what Dripmetric is, and the form. The only
-  non-prose element is the install code, because that is literally what a founder pastes.
+  non-prose element is the setup code, because that is literally what a founder adds.
   The verb is "see", not "fix" — Dripmetric finds and reports leaks; it does not act on
   them, and it does not message anyone's users (`docs/publishing.md`, "What is not built").
-- **No prices anywhere before launch.** No plan names, no price, no Offer markup. `/pricing`
-  is a permanent redirect to the home page (`content/redirects.json`).
+- **One sentence about price, and no price list.** The home FAQ and `/about` say Dripmetric
+  is free during the private beta, and nothing else about price (founder's call, 25 Nov
+  2026). No plan names, no amounts, no Offer markup. `/pricing` is a permanent redirect to
+  the home page (`content/redirects.json`).
+- **No package registry before launch.** No page names npm, an install command or a
+  package path; the install steps come with an invite (founder's call, 25 Nov 2026).
+  `pnpm site:check` fails if one comes back.
+- **The product, not the people.** No page names who builds Dripmetric, and the byline and
+  JSON-LD author are the Organization (founder's call, 25 Nov 2026). Nothing mentions the
+  product's earlier identity.
 - **General in public; exact for invited founders.** The public pages say what Dripmetric
   watches for and why it matters, and back the "why" with linked outside research instead
   of made-up scenarios. The exact rules, thresholds, intent points and the full event list
@@ -70,15 +78,23 @@ said, say it on the page that owns the topic and link to it.
 
 ## The pages, and what each one is for
 
-| Page                               | Owns searches like                                                       | Source                           |
-| ---------------------------------- | ------------------------------------------------------------------------ | -------------------------------- |
-| `/`                                | "dripmetric", "revenue leak detection SaaS"                              | `src/components/home/*`          |
-| `/leaks`                           | "SaaS revenue leaks", "onboarding drop off", "checkout abandonment SaaS" | `content/pages/leaks.md`         |
-| `/buying-intent`                   | "product qualified lead", "pql scoring", "buying intent score"           | `content/pages/buying-intent.md` |
-| `/docs`                            | "install dripmetric", "lemon squeezy analytics", "paddle analytics"      | `content/pages/docs.md`          |
-| `/guides/trial-to-paid-conversion` | "trial to paid conversion rate benchmark"                                | `content/pages/guides/…`         |
-| `/compare/posthog`                 | "posthog alternatives", "dripmetric vs posthog"                          | `content/pages/compare/…`        |
-| `/privacy`                         | —                                                                        | `src/app/privacy/page.tsx`       |
+| Page                               | Owns searches like                                                        | Source                           |
+| ---------------------------------- | ------------------------------------------------------------------------- | -------------------------------- |
+| `/`                                | "dripmetric", "revenue leak detection SaaS"                               | `src/components/home/*`          |
+| `/about`                           | "what is dripmetric", "is dripmetric free", "is dripmetric an email tool" | `content/pages/about.md`         |
+| `/leaks`                           | "SaaS revenue leaks", "onboarding drop off", "checkout abandonment SaaS"  | `content/pages/leaks.md`         |
+| `/buying-intent`                   | "product qualified lead", "pql scoring", "buying intent score"            | `content/pages/buying-intent.md` |
+| `/docs`                            | "dripmetric setup", "lemon squeezy analytics", "paddle analytics"         | `content/pages/docs.md`          |
+| `/guides`                          | hub: lists every guide                                                    | `content/pages/guides.md`        |
+| `/guides/trial-to-paid-conversion` | "trial to paid conversion rate benchmark"                                 | `content/pages/guides/…`         |
+| `/compare`                         | hub: "dripmetric alternatives", lists every comparison                    | `content/pages/compare.md`       |
+| `/compare/posthog`                 | "posthog alternatives", "dripmetric vs posthog"                           | `content/pages/compare/…`        |
+| `/privacy`                         | —                                                                         | `src/app/privacy/page.tsx`       |
+
+The header links The nine leaks, Guides, Compare and Docs. A page under `/guides/` or
+`/compare/` has its hub as the middle breadcrumb, in the HTML and in BreadcrumbList; each
+hub is a CollectionPage whose ItemList is the list on the page (`items` in
+`src/content/pages.ts`), and `pnpm site:check` fails if a hub misses a page under its path.
 
 A guide page's Markdown file is both the HTML page (rendered at build time by
 `src/lib/markdown.ts`) and the Markdown copy served at the same path plus `.md`, so the
@@ -245,13 +261,11 @@ build`, which builds `@dripmetric/db` (the waitlist's database code) before the 
 
 `next.config.ts` sends the security headers, serves the `.md` files as `text/markdown`
 with a `rel="canonical"` Link header pointing at their HTML page, serves `llms.txt` as
-`text/plain`, and permanently redirects the v1-only URLs listed in
-`content/redirects.json` (`/login`, `/signup`, `/dashboard`, `/terms`). Those redirects are
-why production belongs on Vercel: dripmetric.com has served v1 for months, and its old
-URLs are indexed.
-
-**Moving the domain from v1 to v2 is a site migration.** Follow `LAUNCH.md` — it lists
-the order (npm, founder app, terms, domain, search engines) and what to check live.
+`text/plain`, and permanently redirects the old URLs listed in `content/redirects.json`
+(`/login`, `/signup`, `/dashboard` and `/pricing`, all to the home page, where the
+waitlist is). `/terms` is a 404 until there are terms, at launch. The redirects are why
+production belongs on Vercel: the old URLs are indexed. Everything only the owner can do,
+in order, is in `LAUNCH.md`.
 
 **About the Content-Security-Policy:** Next.js bootstraps App Router pages with inline
 scripts, so this site's `script-src` allows `'unsafe-inline'`. The founder app uses a
@@ -329,8 +343,8 @@ for dripmetric.com.
 
 ## After it is live
 
-Everything outside the repository — the domain switch from v1, Search Console, Bing and
-IndexNow, the npm package, listings, launch posts and how to measure AI answers — is in
+Everything outside the repository — Search Console, Bing and IndexNow, the old domains and
+listings, the npm name, directories, launch posts and how to measure AI answers — is in
 **[LAUNCH.md](LAUNCH.md)**, in order. Also test the share card with a link preview (Slack,
 X, LinkedIn) and the structured data with Google's Rich Results Test and the Schema.org
 validator. The SoftwareApplication markup describes the product; it will not show a rich
@@ -354,16 +368,19 @@ Google Search.
 - **The pages are checked against the code.** `pnpm site:check` fails if `/leaks` stops
   naming a leak that `packages/engine/src/leaks/types.ts` has, if a rule sentence from that
   file or from `packages/engine/src/intent/points.ts` appears on a public page, or if the
-  install guide uses an event name that is not in `packages/catalog/src/events.ts`.
+  setup guide uses an event name that is not in `packages/catalog/src/events.ts`.
+- **Every page change sets its date.** Set `updated_at` in `content/inventory.json` on any
+  page whose words changed: `sitemap.xml` is generated from it by `pnpm site:markdown`, so
+  its lastmod can only be right.
 - **Facts about other companies are dated.** The PostHog comparison and the benchmark guide
   say when they were checked and link their sources. Re-check them every three months.
 - **New page:** add `content/pages/<slug>.md`, a row in `content/inventory.json`, an entry in
   `src/content/pages.ts` and a three-line route in `src/app/<slug>/page.tsx` (copy one), then
   `pnpm site:markdown && pnpm site:check`. After it is deployed,
   `pnpm site:indexnow --submit /<slug>`.
-- **Crawlers.** `robots.txt` allows every crawler. Blocking AI training crawlers (for
-  example `GPTBot` or `Google-Extended`) is a business decision with a visibility
-  trade-off; make it deliberately, against each vendor's current documentation.
+- **Crawlers.** `robots.txt` allows every crawler, AI training crawlers (`GPTBot`,
+  `ClaudeBot`, `Google-Extended`) included: the founder chose visibility in AI answers
+  (25 Nov 2026). Do not add agent-specific blocks.
 
 ## Commands
 
@@ -376,7 +393,7 @@ pnpm site:export     # static export to apps/site/out (GitHub Pages / any static
 pnpm site:indexnow   # dry run of an IndexNow submission; --submit sends it (after deploying)
 pnpm site:check      # sitemap, robots, llms.txt, images, Markdown sync; plus the rendered
                      # pages (title, canonical, one h1, JSON-LD prices, links) after a build
-pnpm site:markdown   # regenerate llms.txt, sitemap.md, topic maps and the .md copies
+pnpm site:markdown   # regenerate sitemap.xml, llms.txt, sitemap.md, topic maps, .md copies
 pnpm site:images     # regenerate og.png and the icons (needs Playwright's Chromium)
 pnpm waitlist:export # every waitlist address to a CSV (owner connection)
 pnpm waitlist:forward # how many addresses wait for the automation; --send sends them

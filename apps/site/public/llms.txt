@@ -1,6 +1,6 @@
 # Dripmetric
 
-> Dripmetric is a revenue-leak detector for self-serve SaaS. It reads product usage and, optionally, payment events together, watches for nine kinds of revenue leak (such as onboarding stalls, trials that end unpaid and likely buyers who go quiet), scores how close each user is to buying, and sends alerts to Slack or Discord plus a weekly leak report. It needs no billing integration and is in private beta with a waitlist.
+> Dripmetric is a revenue-leak detector for self-serve SaaS. It reads product usage and, optionally, payment events together, watches for nine kinds of revenue leak (such as onboarding stalls, trials that end unpaid and likely buyers who go quiet), scores how close each user is to buying, and sends alerts to Slack or Discord plus a weekly leak report. It needs no billing integration. It is in private beta, free during the beta, with a waitlist.
 
 Inventory scope: complete. Content is maintained by Dripmetric (hello@dripmetric.com).
 

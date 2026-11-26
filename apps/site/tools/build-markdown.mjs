@@ -3,6 +3,7 @@
  * Builds the public Markdown discovery files from apps/site/content:
  *
  *   public/llms.txt            entry point for LLM clients (llmstxt.org format)
+ *   public/sitemap.xml         every canonical page for search engines, lastmod = updated_at
  *   public/sitemap.md          every public document, with its canonical HTML page
  *   public/llm/topics/*.md     one map per topic
  *   public/index.md, ...       a Markdown copy of each page, with provenance header
@@ -72,6 +73,26 @@ outputs.set(
     "Use that document's cited sources and canonical page; if the requested information is absent, report that gap.\n\n" +
     `## Content map\n\n- [Site content map](${origin}/sitemap.md): All public document destinations within the declared inventory.\n\n` +
     `## Topics\n\n${topicLinks}\n`,
+);
+
+// The XML sitemap for search engines. Its lastmod is each page's updated_at, so it can
+// only say a page changed when the inventory says so, and `--check` fails when the
+// committed file disagrees with the inventory.
+outputs.set(
+  'sitemap.xml',
+  '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+    '<!--\n' +
+    `If you are an LLM looking for site information, start at ${origin}/llms.txt.\n` +
+    `Use ${origin}/sitemap.md to find the relevant topic and its linked Markdown answer; if it is absent, report that gap.\n` +
+    '-->\n' +
+    pages
+      .map(
+        (p) =>
+          `  <url>\n    <loc>${p.url}</loc>\n    <lastmod>${p.updated_at}</lastmod>\n  </url>\n`,
+      )
+      .join('') +
+    '</urlset>\n',
 );
 
 let stale = 0;

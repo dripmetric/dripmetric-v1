@@ -10,8 +10,10 @@ import { withBase } from '@/lib/paths';
 import { articleStructuredData, jsonLd } from '@/lib/structured-data';
 
 /**
- * One layout for every guide page: breadcrumb, H1, review date, the page's own Markdown,
- * a table of contents, a call to action and where to read next.
+ * One layout for every page rendered from content/pages: breadcrumb (with the hub, for a
+ * page under /guides or /compare), H1, review date, the page's own Markdown, a table of
+ * contents, a call to action and where to read next. The byline names the product, never
+ * a person (founder decision, 25 Nov 2026).
  *
  * Everything is rendered at build time. The words come from content/pages/*.md — the
  * same file served as the page's Markdown copy — so the HTML a crawler reads and the
@@ -52,12 +54,18 @@ export function ArticlePage({ id }: { id: ArticleId }) {
   const meta = ARTICLES[id];
   const page = inventoryPage(id);
   const { html, toc, faq } = renderMarkdown(readContent(page.body_ref));
+  const hub = meta.hub ? inventoryPage(meta.hub) : null;
   const data = articleStructuredData({
     meta,
     url: page.url,
     title: page.title,
     updated: page.updated_at,
     faq,
+    hub: hub ? { name: ARTICLES[hub.id as ArticleId].kicker, url: hub.url } : null,
+    items: (meta.items ?? []).map((itemId) => {
+      const item = inventoryPage(itemId);
+      return { name: item.title, url: item.url };
+    }),
   });
 
   return (
@@ -73,7 +81,14 @@ export function ArticlePage({ id }: { id: ArticleId }) {
                   Dripmetric
                 </Link>
               </li>
-              <li aria-current="page">{meta.kicker}</li>
+              {hub && meta.hub ? (
+                <li>
+                  <Link prefetch={false} href={pathOf(hub.url)}>
+                    {ARTICLES[meta.hub].kicker}
+                  </Link>
+                </li>
+              ) : null}
+              <li aria-current="page">{hub ? page.title : meta.kicker}</li>
             </ol>
           </nav>
 
@@ -81,9 +96,8 @@ export function ArticlePage({ id }: { id: ArticleId }) {
             <p className="label">{meta.kicker}</p>
             <h1 className="article__title">{page.title}</h1>
             <p className="article__meta">
-              Reviewed against the product code and its sources on{' '}
-              <time dateTime={page.updated_at}>{longDate(page.updated_at)}</time> · Written by the
-              Dripmetric team · Also in{' '}
+              By Dripmetric · Updated{' '}
+              <time dateTime={page.updated_at}>{longDate(page.updated_at)}</time> · Also in{' '}
               <a href={withBase(`/${page.md_path}`)} type="text/markdown">
                 Markdown
               </a>
@@ -121,24 +135,28 @@ export function ArticlePage({ id }: { id: ArticleId }) {
                 </div>
               </aside>
 
-              <nav className="related" aria-labelledby="related-title">
-                <h2 className="related__title" id="related-title">
-                  Read next
-                </h2>
-                <ul>
-                  {meta.related.map((relatedId) => {
-                    const next = inventoryPage(relatedId);
-                    return (
-                      <li key={relatedId}>
-                        <Link prefetch={false} href={pathOf(next.url)}>
-                          <span className="related__name">{next.title}</span>
-                          <span className="related__about">{ARTICLES[relatedId].description}</span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </nav>
+              {meta.related.length > 0 ? (
+                <nav className="related" aria-labelledby="related-title">
+                  <h2 className="related__title" id="related-title">
+                    Read next
+                  </h2>
+                  <ul>
+                    {meta.related.map((relatedId) => {
+                      const next = inventoryPage(relatedId);
+                      return (
+                        <li key={relatedId}>
+                          <Link prefetch={false} href={pathOf(next.url)}>
+                            <span className="related__name">{next.title}</span>
+                            <span className="related__about">
+                              {ARTICLES[relatedId].description}
+                            </span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </nav>
+              ) : null}
             </div>
           </div>
         </div>

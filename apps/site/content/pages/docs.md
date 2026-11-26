@@ -1,20 +1,14 @@
-Dripmetric installs with one npm package, `dripmetric`, which has two entry points: `dripmetric/browser` for your website and app, and `dripmetric/server` for your backend. A typical team product needs about 10–15 lines of code. Product events alone show where people stall before paying; one paid event from your billing webhook switches on the rest. There is no billing integration to connect.
+Setting up Dripmetric means a few lines in your website and app, and a few on your server. A typical team product needs about 10–15 lines of code. Product events alone show where people stall before paying; one paid event from your billing webhook switches on the rest. There is no billing integration to connect.
 
-Dripmetric is in private beta: your project keys (`pk_live_…` for the browser, a secret key for the server) come with your invite. [Join the waitlist](https://dripmetric.com/#waitlist).
+Dripmetric is in private beta: the install steps for your stack and your project keys (`pk_live_…` for the browser, a secret key for the server) come with your invite. [Join the waitlist](https://dripmetric.com/#waitlist).
 
-## 1. Install {#install}
-
-```bash
-npm install dripmetric
-```
+## 1. What to send, and from where {#overview}
 
 Send `Signed Up`, `Activated`, `Checkout Started` and billing events from your server where you can: ad blockers and a declined consent banner cannot stop those, and they are the events every number depends on.
 
 ## 2. In the browser {#browser}
 
 ```js
-import * as dripmetric from 'dripmetric/browser';
-
 // Once, in your page shell. Captures page views, time on page and sessions.
 dripmetric.init('pk_live_…');
 
@@ -30,15 +24,6 @@ dripmetric.group(account.id, { name: account.name, domain: 'acme.com' });
 
 // Your own events. Use a standard name where one fits, or your own name and map it later.
 dripmetric.track('Invoice Sent');
-```
-
-Prefer a script tag?
-
-```html
-<script src="https://cdn.dripmetric.com/v2/dripmetric.js"></script>
-<script>
-  dripmetric.init('pk_live_…');
-</script>
 ```
 
 **What it captures on its own:** page views including single-page-app route changes, time actually spent on a page, sessions, and — on your key pages only, loaded lazily after the page is idle — form starts, submits, abandons and errors, rage clicks, dead clicks, slow pages and pricing interactions. Where a guess would be weak, mark the element:
@@ -70,8 +55,6 @@ If your audience needs no banner, the generated snippet can carry `requireConsen
 ## 4. On your server {#server}
 
 ```js
-import { Dripmetric } from 'dripmetric/server';
-
 const dm = new Dripmetric({ secretKey: process.env.DRIPMETRIC_SECRET_KEY });
 
 dm.track(user.id, 'Signed Up', { method: 'google' });
@@ -87,7 +70,7 @@ A call only adds to an in-memory queue and returns, so it never slows a request,
 **Verifying identity.** A browser can claim to be any user id. With identity verification switched on, sign the id on your server and pass it along:
 
 ```js
-import { signUserId } from 'dripmetric/server';
+// On your server:
 const userIdHmac = signUserId(process.env.DRIPMETRIC_SECRET_KEY, user.id);
 // then in the browser:
 dripmetric.identify(user.id, { email: user.email, userIdHmac });
@@ -122,14 +105,7 @@ Two details that matter: trials create zero-amount invoices, so only count a pay
 
 ## 6. Other stacks {#stacks}
 
-The snippet generator writes ready-made installs for Next.js App Router, Node/Express, Django, Flask, Rails, Laravel, Go net/http and plain HTTP, and the setup includes a prompt you can paste into Cursor, Copilot or a similar AI coder to write the integration for you. Python, Ruby, PHP and Go can also use Segment's open-source libraries with the host pointed at Dripmetric, and Segment, RudderStack or PostHog can forward events with no code. Anything else can call the HTTPS API directly:
-
-```bash
-curl https://api.dripmetric.com/v1/batch \
-  -H "Authorization: Bearer $DRIPMETRIC_SECRET_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"batch":[{"type":"track","messageId":"evt-1","userId":"user_123","event":"Signed Up"}]}'
-```
+The snippet generator writes ready-made installs for Next.js App Router, Node/Express, Django, Flask, Rails, Laravel, Go net/http and plain HTTP, and the setup includes a prompt you can paste into Cursor, Copilot or a similar AI coder to write the integration for you. Python, Ruby, PHP and Go can also use Segment's open-source libraries with the host pointed at Dripmetric, and Segment, RudderStack or PostHog can forward events with no code. Anything else can send events to Dripmetric's HTTPS API; the address and an example come with your invite.
 
 ## 7. Promises the library keeps {#promises}
 
@@ -146,9 +122,9 @@ Dripmetric has its own standard events, such as `Signed Up`, `Activated`, `Check
 
 ## Frequently asked questions {#faq}
 
-### How do I install Dripmetric?
+### How do I set up Dripmetric?
 
-Run `npm install dripmetric`, call `init()` once in your page shell and `identify()` at signup, and send `Signed Up`, `Activated` and `Checkout Started` from your server. A typical team product needs about 10–15 lines of code, and the setup includes a prompt that lets an AI coder write them.
+Call `init()` once in your page shell and `identify()` at signup, and send `Signed Up`, `Activated` and `Checkout Started` from your server. A typical team product needs about 10–15 lines of code. The install steps for your stack and your keys come with your invite, and the setup includes a prompt that lets an AI coder write the lines for you.
 
 ### Do I need Stripe or a billing integration?
 
@@ -160,7 +136,7 @@ They can stop browser events, which is why the events every number depends on �
 
 ### Does it work with Next.js?
 
-Yes. The snippet generator has a ready-made Next.js App Router install, and the same package covers Node/Express on the server.
+Yes. The snippet generator has a ready-made Next.js App Router install, and the same server library covers Node/Express.
 
 ### Can I keep my own event names?
 

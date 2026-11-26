@@ -4,11 +4,11 @@ Canonical: [Dripmetric vs PostHog](https://dripmetric.com/compare/posthog)
 
 Locale: en
 
-Purpose: A dated, sourced comparison of Dripmetric and PostHog: what each is for, alerts, buying intent, revenue data, pricing, when to choose which and how to use both
+Purpose: A dated, sourced comparison of Dripmetric and PostHog: what each is for, alerts, buying intent, revenue data, when to choose which and how to use both
 
-Content updated: 2026-11-21
+Content updated: 2026-11-25
 
-Source revision: site-2026-11-21
+Source revision: site-2026-11-25
 
 Maintenance owner: Dripmetric (hello@dripmetric.com)
 
@@ -26,10 +26,10 @@ Facts about PostHog on this page come from PostHog's own documentation, checked 
 | You get on day one | Autocapture, then the funnels, insights and dashboards you build | Nine leak checks, a buying-intent score, masked alerts and a weekly leak report |
 | Funnels | Funnels, retention, paths, lifecycle and trends you configure | Your signup-to-payment funnel with step timing, cohorts and segment splits |
 | Alerts | On trends, funnels and SQL insights, with thresholds or anomaly detection | Instant alerts when a leak is found, about a person (masked by default) or about a step |
-| Buying intent / lead score | Parts to build your own (its docs include a lead-scoring guide) | A fixed, published 0–100 score with every point explained |
+| Buying intent / lead score | Parts to build your own (its docs include a lead-scoring guide) | A ready-made 0–100 score; each person's score shows the behaviour behind it |
 | Revenue data | Revenue analytics in beta: Stripe through its data warehouse (Chargebee, Polar and RevenueCat "coming soon"), or revenue events you capture | A paid event you send from any billing provider's webhook; no integration |
 | Money figures | Revenue metrics from your billing data | Potential revenue = people in a leak × your list price, with the formula shown |
-| Contacting your users | Can send emails to your users with workflows | Never contacts your users |
+| Contacting your users | Can send emails to your users with workflows | Does not message your users |
 | Session replay, feature flags, experiments, surveys | Yes | No |
 | Self-hosting | Open source, self-hostable | Not offered (the SDK is MIT licensed) |
 
@@ -49,7 +49,7 @@ Facts about PostHog on this page come from PostHog's own documentation, checked 
 
 ## Using both {#use-both}
 
-The two don't compete for the same job. Keep PostHog for exploration, replay and flags; add Dripmetric for the money questions. PostHog can forward events to Dripmetric with no code, or you can call both from the same `track()` points — Dripmetric maps your own event names once. See the [install guide](https://dripmetric.com/docs).
+The two don't compete for the same job. Keep PostHog for exploration, replay and flags; add Dripmetric for the money questions. PostHog can forward events to Dripmetric with no code, or you can call both from the same `track()` points — Dripmetric maps your own event names once. See [how setup works](https://dripmetric.com/docs).
 
 ## Frequently asked questions {#faq}
 

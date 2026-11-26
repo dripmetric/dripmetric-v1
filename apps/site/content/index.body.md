@@ -33,21 +33,19 @@ Finding a leak is half the job. Dripmetric also tells you in time to act, and sh
 - **An alert when it matters.** In Slack or Discord, and in the app, saying what leaked and what is at stake.
 - **A leak report every Monday.** Your biggest leak, who looked ready to buy and didn’t, and how your last change is doing.
 - **What each leak is worth.** Valued at your own prices, with the working shown beside the number.
-- **Who is closest to buying.** A buying-intent score for every user, so you know who to look at first. [What a buying-intent score is](https://dripmetric.com/buying-intent) ([Markdown](https://dripmetric.com/buying-intent.md)).
+- **Who is closest to buying.** A buying-intent score for every user, so you know who to look at first. [What a buying-intent (PQL) score is](https://dripmetric.com/buying-intent) ([Markdown](https://dripmetric.com/buying-intent.md)).
 - **A warning when tracking breaks.** If an event stops arriving or changes, you hear about it. Broken tracking never looks like users leaving.
 - **Proof your fix worked.** Mark a change and see whether it made a difference, measured fairly before and after.
 
-## Setup: paste a snippet, see a real number in under 10 minutes
+## Setup: a few lines of code, a real number in under 10 minutes
 
-1. **Install in 10–15 lines.** `npm install dripmetric`, then `identify()` and `track()` where they belong. Or paste our prompt into Cursor or Copilot and let it write the integration.
+1. **Add 10–15 lines.** `identify()` and `track()` where they belong, in your app and on your server. Or paste our prompt into Cursor or Copilot and let it write the integration.
 2. **Keep your own event names.** Dripmetric matches them to its own events, with suggestions you confirm. Nothing in your code gets renamed.
 3. **Let the leaks find you.** Dripmetric watches on its own. Alerts go to Slack or Discord, and a leak report arrives every Monday.
 
 In your app:
 
 ```js
-import * as dripmetric from 'dripmetric/browser';
-
 dripmetric.init('pk_live_…');
 dripmetric.identify(user.id, { email: user.email });
 dripmetric.track('Onboarding Step Completed', {
@@ -64,7 +62,7 @@ dm.track(user.id, 'Subscription Started', {
 });
 ```
 
-Payment events arrive like any other event, so Stripe, Paddle, Lemon Squeezy, Chargebee and a hand-rolled billing table all work the same way. Already on Segment, RudderStack or PostHog? Forward events with no code. The install guide has the browser and server SDKs, consent and payment events: [Install Dripmetric](https://dripmetric.com/docs) ([Markdown](https://dripmetric.com/docs.md)).
+Payment events arrive like any other event, so Stripe, Paddle, Lemon Squeezy, Chargebee, Razorpay, RevenueCat and your own billing table all work the same way. Already on Segment, RudderStack or PostHog? Forward events with no code. How setup works, from browser and server events to consent and payment events: [Set up Dripmetric](https://dripmetric.com/docs) ([Markdown](https://dripmetric.com/docs.md)).
 
 ## Frequently asked questions
 
@@ -75,6 +73,10 @@ Dripmetric is a revenue-leak detector for self-serve SaaS. It reads your product
 ### Who is Dripmetric for?
 
 Small self-serve SaaS teams, from a few hundred signups a month, who want to know where people stop between signing up and paying. It suits products where people sign up and pay without talking to sales.
+
+### How much does Dripmetric cost?
+
+Dripmetric is free during the private beta.
 
 ### What does Dripmetric never touch?
 
@@ -103,10 +105,13 @@ Dripmetric is in private beta, and founders are invited weekly in small cohorts.
 ## Guides and reference
 
 - [The nine revenue leaks in a self-serve SaaS funnel](https://dripmetric.com/leaks) ([Markdown](https://dripmetric.com/leaks.md))
-- [What a buying-intent score is](https://dripmetric.com/buying-intent) ([Markdown](https://dripmetric.com/buying-intent.md))
-- [Install Dripmetric](https://dripmetric.com/docs) ([Markdown](https://dripmetric.com/docs.md))
+- [What a buying-intent (PQL) score is](https://dripmetric.com/buying-intent) ([Markdown](https://dripmetric.com/buying-intent.md))
+- [Set up Dripmetric](https://dripmetric.com/docs) ([Markdown](https://dripmetric.com/docs.md))
+- [All guides](https://dripmetric.com/guides) ([Markdown](https://dripmetric.com/guides.md))
 - [Trial-to-paid conversion rate: 2026 benchmarks, formula and where trials leak](https://dripmetric.com/guides/trial-to-paid-conversion) ([Markdown](https://dripmetric.com/guides/trial-to-paid-conversion.md))
+- [All comparisons](https://dripmetric.com/compare) ([Markdown](https://dripmetric.com/compare.md))
 - [Dripmetric vs PostHog](https://dripmetric.com/compare/posthog) ([Markdown](https://dripmetric.com/compare/posthog.md))
+- [About Dripmetric](https://dripmetric.com/about) ([Markdown](https://dripmetric.com/about.md))
 
 ## Contact
 
